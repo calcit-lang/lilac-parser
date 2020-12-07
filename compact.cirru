@@ -1,21 +1,21 @@
 
 {} (:package |lilac-parser)
-  :configs $ {} (:init-fn |lilac-parser.main/main!) (:reload-fn |lilac-parser.main/reload!) (:modules $ [] |phlox/compact.cirru) (:version nil)
+  :configs $ {} (:init-fn |lilac-parser.main/main!) (:reload-fn |lilac-parser.main/reload!) (:modules $ [] |calcit-test/compact.cirru) (:version nil)
   :files $ {}
-    |lilac-parser.updater $ {}
-      :ns $ quote
-        ns lilac-parser.updater $ :require ([] respo.cursor :refer $ [] update-states)
-      :defs $ {}
-        |updater $ quote
-          defn updater (store op op-data op-id op-time)
-            case op (:states $ update-states store op-data) (:content $ assoc store :content op-data) (:hydrate-storage op-data) (, store)
-      :proc $ quote ()
     |lilac-parser.core $ {}
       :ns $ quote
-        ns lilac-parser.core
-          :require-macros ([] lilac-parser.core) ([] clojure.core.strint :refer $ [] <<)
-          :require ([] clojure.string :as string) ([] lilac-parser.config :refer $ [] dev?) ([] lilac-parser.util :refer $ [] seq-strip-beginning)
+        ns lilac-parser.core $ :require ([] lilac-parser.util :refer $ [] seq-strip-beginning)
       :defs $ {}
+        |defparser $ quote
+          defmacro defparser (comp-name args value-fn body) (assert "\"args in a list" $ list? args)
+            quote-replace $ defn (~ comp-name) (~ args)
+              assert "\"a function for parser" $ fn? (~ value-fn)
+              {} (:parser-node :component)
+                :name $ turn-keyword (quote $ ~ comp-name)
+                :blackbox? false
+                :value-fn $ ~ value-fn
+                :args $ [] (~@ args)
+                :fn $ fn (~ args) (~ body)
         |parse-label $ quote
           defn parse-label (xs rule)
             let
@@ -25,11 +25,24 @@
                 {} (:ok? false) (:message nil) (:parser-node :label) (:label $ :label rule) (:result result) (:rest $ :rest result)
         |core-methods $ quote
           def core-methods $ {} (:is parse-is) (:or parse-or) (:many parse-many) (:some parse-some) (:optional parse-optional) (:component parse-component) (:combine parse-combine) (:one-of parse-one-of) (:interleave parse-interleave) (:other-than parse-other-than) (:label parse-label) (:unicode-range parse-unicode-range)
+        |replace-iter $ quote
+          defn replace-iter (acc attempts content rule replacer) (echo "\"replace iter...") (assert "\"expects content in list" $ list? content)
+            if
+              either (empty? content) false
+              {} (:result acc) (:attempts attempts)
+              let
+                  attempt $ parse-lilac content rule
+                if (:ok? attempt)
+                  recur
+                    str acc $ replacer (:value attempt)
+                    append attempts attempt
+                    :rest attempt
+                    , rule replacer
+                  recur (str acc $ first content) (append attempts attempt) (rest content) (, rule replacer)
         |many+ $ quote
-          defn$ many+
-              item
-              many+ item nil
-            (item transform)
+          defn many+ (item & args)
+            let
+                transform $ either (first args) identity
               {} (:parser-node :many) (:item item) (:transform transform)
         |indent+ $ quote
           defn$ indent+() (indent+ identity)
@@ -80,6 +93,25 @@
                       :parser-node :some
                       :results acc
                       :peek-result result
+        |find-lilac-iter $ quote
+          defn find-lilac-iter (acc attempts content rule) (assert "\"expects content in sequence" $ list? content)
+            if (empty? content)
+              {} (:result acc) (:attempts attempts)
+              let
+                  attempt $ parse-lilac content rule
+                if (:ok? attempt)
+                  recur
+                    conj acc $ {}
+                      :content $ ->>
+                        take
+                          - (count content) (count $ :rest attempt)
+                          , content
+                        join "\""
+                      :value $ :value attempt
+                    conj attempts attempt
+                    :rest attempt
+                    , rule
+                  recur acc (conj attempts attempt) (rest content) (, rule)
         |parse-many $ quote
           defn parse-many (xs0 rule)
             let
@@ -103,10 +135,9 @@
                         :results acc
                         :peek-result result
         |some+ $ quote
-          defn$ some+
-              x
-              some+ x identity
-            (x transform)
+          defn some+ (x & args)
+            let
+                transform $ either (first args) identity
               {} (:parser-node :some) (:item x) (:transform transform)
         |parse-component $ quote
           defn parse-component (xs rule)
@@ -125,10 +156,9 @@
                   :result $ if blackbox? nil result
                 {} (:ok? false) (:message "\"failed branch") (:parser-node :component) (:label rule-name) (:result $ if blackbox? nil result) (:rest xs)
         |other-than+ $ quote
-          defn$ other-than+
-              items
-              other-than+ items identity
-            (items transform)
+          defn other-than+ (items & args)
+            let
+                transform $ either (first args) identity
               when
                 and dev? $ not
                   or (string? items) (set? items)
@@ -170,40 +200,18 @@
                     :rest $ rest xs
                     :parser-node :other-than
         |one-of+ $ quote
-          defn$ one-of+
-              xs
-              one-of+ xs identity
-            (xs transform)
+          defn one-of+ (xs & args)
+            let
+                transform $ either (first args) identity
               when
-                and dev? $ not
-                  or (string? xs) (set? xs)
+                not $ or (string? xs) (set? xs)
                 println "\"Unexpected argument passed to one-of+ :" xs
               {} (:parser-node :one-of) (:items xs) (:transform transform)
         |find-lilac $ quote
-          defn$ find-lilac
-              content rule
-              find-lilac ([]) ([])
-                if (string? content) (string/split content "\"") (, content)
-                , rule
-            (acc attempts content rule)
-              assert (sequential? content) "\"expects content in sequence"
-              if (empty? content)
-                {} (:result acc) (:attempts attempts)
-                let
-                    attempt $ parse-lilac content rule
-                  if (:ok? attempt)
-                    recur
-                      conj acc $ {}
-                        :content $ ->>
-                          take
-                            - (count content) (count $ :rest attempt)
-                            , content
-                          string/join "\""
-                        :value $ :value attempt
-                      conj attempts attempt
-                      :rest attempt
-                      , rule
-                    recur acc (conj attempts attempt) (rest content) (, rule)
+          defn find-lilac (content rule)
+            find-lilac-iter ([]) ([])
+              if (string? content) (split content "\"") (, content)
+              , rule
         |parse-unicode-range $ quote
           defn parse-unicode-range (xs rule) (js-debugger)
             if (empty? xs)
@@ -223,74 +231,61 @@
                     :parser-node :unicode-range
                   {} (:ok? false) (:message $ << "\"~(pr-str (first xs)) of code ~{head-code} is not in between [~{min-code}, ~{max-code}].") (:parser-node :unicode-range) (:rest xs)
         |combine+ $ quote
-          defn$ combine+
-              xs
-              combine+ xs identity
-            (xs transform)
+          defn combine+ (xs & args)
+            let
+                transform $ either (first args) identity
               {} (:parser-node :combine) (:items xs) (:transform transform)
         |replace-lilac $ quote
-          defn$ replace-lilac
-              content rule replacer
-              replace-lilac "\"" ([])
-                if (string? content) (string/split content "\"") (, content)
-                , rule replacer
-            (acc attempts content rule replacer)
-              assert (sequential? content) "\"expects content in sequence"
-              if (empty? content)
-                {} (:result acc) (:attempts attempts)
-                let
-                    attempt $ parse-lilac content rule
-                  if (:ok? attempt)
-                    recur
-                      str acc $ replacer (:value attempt)
-                      conj attempts attempt
-                      :rest attempt
-                      , rule replacer
-                    recur (str acc $ first content) (conj attempts attempt) (rest content) (, rule replacer)
+          defn replace-lilac (content rule replacer) (echo "\"calling")
+            replace-iter "\"" ([])
+              if (string? content) (string/split content "\"") (, content)
+              , rule replacer
         |optional+ $ quote
-          defn$ optional+
-              x
-              optional+ x identity
-            (x transform)
+          defn optional+ (x & args)
+            let
+                transform $ either (first args) identity
               {} (:parser-node :optional) (:item x) (:transform transform)
         |parse-lilac $ quote
           defn parse-lilac (x rule)
-            assert
-              or (sequential? x) (string? x)
-              , "\"expected to parse from a sequence or a string"
+            assert "\"expects content in list or string" $ or (list? x) (string? x)
             let
                 node $ :parser-node rule
                 method $ get core-methods node
-                user-method $ get @*custom-methods node
-                xs $ if (string? x) (string/split x "\"") (, x)
+                user-method $ get (deref *custom-methods) node
+                xs $ if (string? x) (split x "\"") (, x)
               cond
                   fn? method
                   method xs rule
                 (fn? user-method)
                   user-method xs rule
-                :else $ do (js/console.warn "\"Unknown node" rule) nil
-        |*custom-methods $ quote
-          defonce *custom-methods $ atom ({})
+                true $ do (echo "\"Unknown node" rule) nil
+        |*custom-methods $ quote (defatom *custom-methods $ {})
         |interleave+ $ quote
           defn$ interleave+
               x y
               interleave+ x y identity
             (x y transform)
               {} (:parser-node :interleave) (:x x) (:y y) (:transform transform)
+        |defparser- $ quote
+          defmacro defparser- (comp-name args value-fn body) (assert "\"args in a list" $ list? args)
+            quote-replace $ defn (~ comp-name) (~ args)
+              assert "\"a function for parser" $ fn? (~ value-fn)
+              {} (:parser-node :component)
+                :name $ turn-keyword (quote $ ~ comp-name)
+                :blackbox? true
+                :value-fn $ ~ value-fn
+                :args $ [] (~@ args)
+                :fn $ fn (~ args) (~ body)
         |or+ $ quote
-          defn$ or+
-              xs
-              or+ xs identity
-            (xs transform)
-              when
-                and dev? $ not (sequential? xs)
-                println "\"Expected argument passed to or+ :" xs
+          defn or+ (xs & args)
+            when (not $ list? xs) (println "\"Expected list passed to or+ :" xs)
+            let
+                transform $ either (first args) identity
               {} (:parser-node :or) (:items xs) (:transform transform)
         |is+ $ quote
-          defn$ is+
-              x
-              is+ x identity
-            (x transform)
+          defn is+ (x & args)
+            let
+                transform $ either (first args) identity
               {} (:parser-node :is) (:item x) (:transform transform)
         |label+ $ quote
           defn label+ (label item)
@@ -311,7 +306,7 @@
               let
                   item $ :item rule
                   transform $ :transform rule
-                  strip-result $ seq-strip-beginning xs (string/split item "\"")
+                  strip-result $ seq-strip-beginning xs (split item "\"")
                 if (:ok? strip-result)
                   {} (:ok? true)
                     :value $ if (some? transform) (transform item) (, item)
@@ -319,7 +314,7 @@
                     :parser-node :is
                   {} (:ok? false)
                     :message $ str "\"expects " (pr-str item) "\" but got "
-                      pr-str $ string/join "\""
+                      pr-str $ join "\""
                         take (count item) xs
                     :parser-node :is
                     :rest xs
@@ -375,7 +370,7 @@
                       :rest xs
                       :parser-node :combine
                       :results acc
-                  :else $ let
+                  true $ let
                       result $ parse-lilac xs (first ys)
                     if (:ok? result)
                       recur (conj acc result) (:rest result) (rest ys)
@@ -401,6 +396,7 @@
                     :parser-node :one-of
                     :rest xs
       :proc $ quote ()
+      :configs $ {} (:extension nil)
     |lilac-parser.demo.s-expr $ {}
       :ns $ quote
         ns lilac-parser.demo.s-expr $ :require ([] lilac-parser.core :refer $ [] parse-lilac defparser is+ combine+ some+ many+ optional+ or+ one-of+ some+) ([] clojure.string :as string)
@@ -419,36 +415,24 @@
       :configs $ {}
     |lilac-parser.main $ {}
       :ns $ quote
-        ns lilac-parser.main $ :require ([] respo.core :refer $ [] render! clear-cache! realize-ssr!) ([] lilac-parser.comp.container :refer $ [] comp-container) ([] lilac-parser.updater :refer $ [] updater) ([] lilac-parser.schema :as schema) ([] reel.util :refer $ [] listen-devtools!) ([] reel.core :refer $ [] reel-updater refresh-reel) ([] reel.schema :as reel-schema) ([] cljs.reader :refer $ [] read-string) ([] lilac-parser.config :as config) ([] cumulo-util.core :refer $ [] repeat!)
+        ns lilac-parser.main $ :require ([] lilac-parser.core :refer $ [] replace-lilac parse-lilac find-lilac) ([] lilac-parser.demo.s-expr :refer $ [] s-expr-parser+)
       :defs $ {}
-        |ssr? $ quote
-          def ssr? $ some? (js/document.querySelector |meta.respo-ssr)
-        |dispatch! $ quote
-          defn dispatch! (op op-data) (when config/dev? $ println "\"Dispatch:" op) (reset! *reel $ reel-updater updater @*reel op op-data)
         |main! $ quote
-          defn main! () (println "\"Running mode:" $ if config/dev? "\"dev" "\"release") (if ssr? $ render-app! realize-ssr!) (render-app! render!)
-            add-watch *reel :changes $ fn () (render-app! render!)
-            listen-devtools! |a dispatch!
-            .addEventListener js/window |beforeunload persist-storage!
-            repeat! 60 persist-storage!
+          defn main! () (println "|App started.") (run-demo)
+        |run-demo $ quote
+          defn run-demo () (echo "\"running demo")
             let
-                raw $ .getItem js/localStorage (:storage-key config/site)
-              when (some? raw) (dispatch! :hydrate-storage $ read-string raw)
-            println "|App started."
-        |persist-storage! $ quote
-          defn persist-storage! ()
-            .setItem js/localStorage (:storage-key config/site) (pr-str $ :store @*reel)
-        |*reel $ quote
-          defonce *reel $ atom
-            -> reel-schema/reel (assoc :base schema/store) (assoc :store schema/store)
-        |snippets $ quote
-          defn snippets () (println config/cdn?)
-        |render-app! $ quote
-          defn render-app! (renderer)
-            renderer mount-target (comp-container @*reel) ("#()" dispatch! %1 %2)
+                content "\"a"
+                result $ replace-lilac (split content "\"") (s-expr-parser+)
+                  fn (result) (println "\"replacing" result)
+                    str "\"<<<" (pr-str result) "\">>>"
+                find-result $ find-lilac (split content "\"") (s-expr-parser+)
+              println $ :result result
+              println "\"Find results:" $ pr-str (:result find-result)
         |reload! $ quote
-          defn ^:dev/after-load reload! () (clear-cache!) (reset! *reel $ refresh-reel @*reel schema/store updater) (println "|Code updated.")
-        |mount-target $ quote (def mount-target $ .querySelector js/document |.app)
+          defn ^:dev/after-load reload! () (println "|Code updated.") (run-demo)
+        |on-error $ quote
+          defn on-error (error) (echo "\"handle error:" error)
       :proc $ quote ()
     |lilac-parser.util $ {}
       :ns $ quote (ns lilac-parser.util)
@@ -463,49 +447,12 @@
                   :reason $ {} (:message "\"xs ends") (:ys ys)
               (= (first xs) (first ys))
                 recur (rest xs) (rest ys)
-              :else $ {} (:ok? false) (:message "\"not matching") (:xs xs) (:ys ys)
+              true $ {} (:ok? false) (:message "\"not matching") (:xs xs) (:ys ys)
       :proc $ quote ()
       :configs $ {}
-    |lilac-parser.page $ {}
-      :ns $ quote
-        ns lilac-parser.page
-          :require ([] respo.render.html :refer $ [] make-string) ([] shell-page.core :refer $ [] make-page spit slurp) ([] lilac-parser.comp.container :refer $ [] comp-container) ([] lilac-parser.schema :as schema) ([] reel.schema :as reel-schema) ([] cljs.reader :refer $ [] read-string) ([] lilac-parser.config :as config) ([] cumulo-util.build :refer $ [] get-ip!)
-          :require-macros $ [] clojure.core.strint :refer ([] <<)
-      :defs $ {}
-        |base-info $ quote
-          def base-info $ {} (:title $ :title config/site) (:icon $ :icon config/site) (:ssr nil) (:inline-html nil)
-        |dev-page $ quote
-          defn dev-page ()
-            make-page | $ merge base-info
-              {}
-                :styles $ [] (<< "\"http://~(get-ip!):8100/main.css") "\"/entry/main.css"
-                :scripts $ []
-                  {} (:src "\"/client.js") (:defer? true)
-                :inline-styles $ []
-        |main! $ quote
-          defn main! () (println "\"Running mode:" $ if config/dev? "\"dev" "\"release")
-            if config/dev? (spit "\"target/index.html" $ dev-page) (spit "\"dist/index.html" $ prod-page)
-        |prod-page $ quote
-          defn prod-page ()
-            let
-                reel $ -> reel-schema/reel (assoc :base schema/store) (assoc :store schema/store)
-                html-content $ make-string (comp-container reel)
-                assets $ read-string (slurp "\"dist/assets.edn")
-                cdn $ if config/cdn? (:cdn-url config/site) "\""
-                prefix-cdn $ fn (x) (str cdn x)
-              make-page html-content $ merge base-info
-                {}
-                  :styles $ [] (:release-ui config/site)
-                  :scripts $ map
-                    fn (x)
-                      {} (:src $ -> x :output-name prefix-cdn) (:defer? true)
-                    , assets
-                  :ssr "\"respo-ssr"
-                  :inline-styles $ [] (slurp "\"./entry/main.css")
-      :proc $ quote ()
     |lilac-parser.test $ {}
       :ns $ quote
-        ns lilac-parser.test $ :require ([] cljs.test :refer $ [] deftest is testing run-tests) ([] lilac-parser.core :refer $ [] parse-lilac defparser many+ is+ interleave+ some+ one-of+ combine+ optional+ other-than+ or+ unicode-range+ replace-lilac find-lilac) ([] lilac-parser.preset :refer $ [] lilac-digit lilac-alphabet lilac-comma-space lilac-chinese-char)
+        ns lilac-parser.test $ :require ([] calcit-test.core :refer $ [] deftest is testing) ([] lilac-parser.core :refer $ [] parse-lilac defparser many+ is+ interleave+ some+ one-of+ combine+ optional+ other-than+ or+ unicode-range+ replace-lilac find-lilac) ([] lilac-parser.preset :refer $ [] lilac-digit lilac-alphabet lilac-comma-space lilac-chinese-char)
       :defs $ {}
         |test-preset $ quote
           deftest test-preset
@@ -738,206 +685,6 @@
               fn (x) nil
       :proc $ quote ()
       :configs $ {}
-    |lilac-parser.schema $ {}
-      :ns $ quote (ns lilac-parser.schema)
-      :defs $ {}
-        |store $ quote
-          def store $ {} (:states $ {})
-      :proc $ quote ()
-    |lilac-parser.comp.container $ {}
-      :ns $ quote
-        ns lilac-parser.comp.container $ :require ([] hsl.core :refer $ [] hsl) ([] respo-ui.core :as ui) ([] respo.core :refer $ [] defcomp defeffect >> list-> <> div button textarea span input a) ([] respo.comp.space :refer $ [] =<) ([] reel.comp.reel :refer $ [] comp-reel) ([] respo-md.comp.md :refer $ [] comp-md) ([] lilac-parser.config :refer $ [] dev?) ([] lilac-parser.core :refer $ [] parse-lilac replace-lilac find-lilac defparser is+ combine+ some+ many+ optional+ or+ one-of+ some+ unicode-range+) ([] "\"@mvc-works/codearea" :refer $ [] codearea) ([] clojure.string :as string) ([] cirru-edn.core :as cirru-edn) ([] feather.core :refer $ [] comp-icon) ([] lilac-parser.demo.s-expr :refer $ [] s-expr-parser+) ([] lilac-parser.demo.json :refer $ [] demo-parser number-parser string-parser array-parser+ value-parser+ boolean-parser) ([] respo-alerts.core :refer $ [] use-prompt) ([] cljs.reader :refer $ [] read-string) ([] favored-edn.core :refer $ [] write-edn)
-      :defs $ {}
-        |comp-container $ quote
-          defcomp comp-container (reel)
-            let
-                store $ :store reel
-                states $ :states store
-                cursor $ []
-                state $ or (:data states)
-                  {} (:code "\"(def a (add 1 2))") (:result nil) (:gui? false)
-                load-plugin $ use-prompt (>> states :load)
-                  {} (:text "\"Load EDN") (:multiline? true) (:placeholder "\"lilac-parser parsing rule...")
-                    :input-style $ {} (:font-family ui/font-code) (:height 400) (:white-space :pre) (:font-size 12) (:line-height "\"18px")
-                    :initial $ write-edn (:result state) ({} $ :indent 2)
-                    :validator $ fn (x)
-                      try
-                        do (read-string x) nil
-                        catch js/Error e (js/console.log "\"Failed to parse") e
-              div
-                {} $ :style (merge ui/global ui/fullscreen ui/column)
-                div
-                  {} $ :style
-                    merge ui/row-middle $ {} (:padding 8)
-                  button $ {} (:style ui/button) (:inner-text "\"Parse")
-                    :on-click $ fn (e d!)
-                      let
-                          result $ parse-lilac
-                            string/split (:code state) "\""
-                            s-expr-parser+
-                          r1 $ parse-lilac
-                            string/split (:code state) "\""
-                            value-parser+
-                          r2 $ parse-lilac (:code state) (unicode-range+ 97 122)
-                        d! cursor $ assoc state :result result
-                  =< 16 nil
-                  span $ {} (:inner-text "\"GUI")
-                    :style $ {} (:font-family ui/font-fancy)
-                      :color $ if (:gui? state) (hsl 200 80 40) (hsl 200 80 80)
-                      :font-weight 300
-                      :font-size 20
-                      :cursor :pointer
-                      :line-height "\"24px"
-                    :on-click $ fn (e d!) (d! cursor $ update state :gui? not)
-                  =< 16 nil
-                  a $ {} (:inner-text "\"Load EDN") (:style ui/link)
-                    :on-click $ fn (e d!)
-                        :show load-plugin
-                        , d!
-                        fn (text)
-                          let
-                              snapshot $ read-string text
-                            ; println "\"text" snapshot
-                            if (vector? snapshot) (d! cursor $ assoc state :result snapshot) (d! cursor $ assoc state :result snapshot)
-                  =< 16 nil
-                  a $ {} (:inner-text "\"Replacer") (:style ui/link)
-                    :on-click $ fn (e d!)
-                      let
-                          result $ replace-lilac
-                            string/split (:code state) "\""
-                            s-expr-parser+
-                            fn (result) (println "\"replacing" result)
-                              str "\"<<<" (pr-str result) "\">>>"
-                          find-result $ find-lilac
-                            string/split (:code state) "\""
-                            s-expr-parser+
-                        println $ :result result
-                        d! cursor $ assoc state :result (:attempts result)
-                        println "\"Find results:" $ pr-str (:result find-result)
-                div
-                  {} $ :style (merge ui/expand ui/row)
-                  textarea $ {} (:value $ :code state) (:class-name "\"codearea") (:placeholder "\"Content")
-                    :style $ merge ui/textarea
-                      {} (:font-family ui/font-code) (:width 300)
-                    :on-input $ fn (e d!)
-                      d! cursor $ assoc state :code (:value e)
-                  if (:gui? state)
-                    div
-                      {} $ :style
-                        merge ui/expand $ {} (:padding-bottom 400)
-                      if (vector? $ :result state)
-                        list-> ({})
-                          ->> (:result state)
-                            map-indexed $ fn (idx value)
-                              [] idx $ comp-node (>> states $ str :tree-viewer idx) (, value)
-                        comp-node (>> states :tree-viewer) (:result state)
-                    textarea $ {}
-                      :style $ merge ui/expand ui/textarea
-                        {} (:font-family ui/font-code) (:font-size 12) (:white-space :pre)
-                      :disabled true
-                      :spellcheck false
-                      :value $ cirru-edn/write (:result state)
-                when dev? $ comp-reel (>> states :reel) reel ({})
-                :ui load-plugin
-        |effect-codearea $ quote
-          defeffect effect-codearea () (action el)
-            when (= action :mount)
-              let
-                  target $ .querySelector el "\".codearea"
-                codearea target
-        |comp-node $ quote
-          defcomp comp-node (states node)
-            let
-                cursor $ :cursor states
-                state $ or (:data states) ({} $ :folded? false)
-                has-children? $ or (some? $ :result node) (some? $ :peek-result node)
-                  not $ empty? (:results node)
-              div
-                {} $ :style
-                  merge ui/expand $ {} (:padding 4)
-                    :border-left $ str "\"1px solid " (hsl 0 0 90)
-                    :border-top $ str "\"1px solid " (hsl 0 0 90)
-                div ({} $ :style ui/row-middle)
-                  if has-children?
-                    comp-icon
-                      if (:folded? state) :play :chevron-down
-                      {} (:font-size 14)
-                        :color $ if (:folded? state) (hsl 200 80 40) (hsl 200 80 80)
-                        :margin 8
-                        :cursor :pointer
-                      fn (e d!) (d! cursor $ update state :folded? not)
-                    comp-icon :minus
-                      {} (:font-size 14) (:color $ hsl 200 80 90) (:margin 8) (:cursor :pointer)
-                      fn $ e d!
-                  if (:ok? node)
-                    <> "\"Ok" $ merge style-label
-                      {} (:background-color $ hsl 200 80 70) (:font-family ui/font-fancy)
-                    <> "\"Fail" $ merge style-label
-                      {} (:background-color $ hsl 20 80 50) (:font-family ui/font-fancy)
-                  <> (name $ :parser-node node)
-                    merge style-label $ {} (:background-color $ hsl 200 80 76) (:font-family ui/font-fancy)
-                  if
-                    or (= :label $ :parser-node node) (= :component $ :parser-node node)
-                    <> (:label node)
-                      merge style-label $ {} (:background-color $ hsl 200 90 60)
-                  if-not (:ok? node)
-                    <> (:message node)
-                      merge style-label $ {} (:background-color $ hsl 0 80 60)
-                  if
-                    and (:ok? node) (= :is $ :parser-node node)
-                    <> (:value node)
-                      merge style-label $ {} (:background-color $ hsl 200 80 70)
-                  if (:ok? node)
-                    <> (pr-str $ :value node)
-                      merge style-label $ {} (:background-color $ hsl 200 80 80) (:font-size 10)
-                  <>
-                    ->> (:rest node) (take 10) (string/join "\"")
-                    merge style-label $ {} (:background-color $ hsl 100 10 70) (:font-size 10) (:min-height 16)
-                if
-                  and has-children? $ not (:folded? state)
-                  div ({})
-                    list->
-                      {} $ :style
-                        {} (:padding-left 16) (:margin-top 8)
-                      ->>
-                        or (:results node) (:previous-results node)
-                        map-indexed $ fn (idx child)
-                          [] idx $ comp-node (>> states idx) child
-                    if (some? $ :result node)
-                      div
-                        {} $ :style
-                          {} (:padding-left 16) (:margin-top 8)
-                        comp-node (>> states :result) (:result node)
-                    if (some? $ :peek-result node)
-                      div
-                        {} $ :style
-                          {} (:padding-left 16) (:margin-top 8)
-                        comp-node (>> states :peek-result) (:peek-result node)
-        |style-label $ quote
-          def style-label $ {} (:font-family ui/font-code) (:color $ hsl 0 0 100) (:display :inline-block) (:line-height "\"22px") (:padding "\"0 4px") (:border-radius "\"4px") (:margin-right 8) (:white-space :pre) (:min-height 14) (:font-size 13)
-      :proc $ quote ()
-    |lilac-parser.config $ {}
-      :ns $ quote (ns lilac-parser.config)
-      :defs $ {}
-        |cdn? $ quote
-          def cdn? $ cond
-              exists? js/window
-              , false
-            (exists? js/process)
-              = "\"true" js/process.env.cdn
-            :else false
-        |dev? $ quote
-          def dev? $ let
-              debug? $ do ^boolean js/goog.DEBUG
-            cond
-                exists? js/window
-                , debug?
-              (exists? js/process)
-                not= "\"true" js/process.env.release
-              :else true
-        |site $ quote
-          def site $ {} (:dev-ui "\"http://localhost:8100/main-fonts.css") (:release-ui "\"http://cdn.tiye.me/favored-fonts/main-fonts.css") (:cdn-url "\"http://cdn.tiye.me/lilac-parser/") (:title "\"Lilac Parser") (:icon "\"http://cdn.tiye.me/logo/mvc-works.png") (:storage-key "\"lilac-parser")
-      :proc $ quote ()
     |lilac-parser.preset $ {}
       :ns $ quote
         ns lilac-parser.preset $ :require ([] lilac-parser.core :refer $ [] parse-lilac defparser many+ is+ interleave+ some+ one-of+ combine+ optional+ other-than+ or+ unicode-range+ label+)
