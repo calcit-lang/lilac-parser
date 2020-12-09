@@ -188,10 +188,10 @@
                   transform $ :transform rule
                   x0 $ first xs
                 if
-                  if (string? items) (string/includes? items x0) (contains? items x0)
+                  if (string? items) (contains? items x0) (contains? items x0)
                   {} (:ok? false)
                     :message $ str (pr-str x0) "\" among "
-                      pr-str $ if (string? items) items (string/join "\"" items)
+                      pr-str $ if (string? items) items (join-str "\"" items)
                       , "\" is invalid"
                     :parser-node :other-than
                     :rest xs
@@ -238,7 +238,7 @@
         |replace-lilac $ quote
           defn replace-lilac (content rule replacer) (echo "\"calling")
             replace-iter "\"" ([])
-              if (string? content) (string/split content "\"") (, content)
+              if (string? content) (split content "\"") (, content)
               , rule replacer
         |optional+ $ quote
           defn optional+ (x & args)
@@ -383,7 +383,7 @@
                   items $ :items rule
                   transform $ :transform rule
                 if
-                  if (string? items) (string/includes? items $ first xs) (contains? items $ first xs)
+                  if (string? items) (contains? items $ first xs) (contains? items $ first xs)
                   {} (:ok? true)
                     :value $ let
                         v $ first xs
@@ -392,7 +392,7 @@
                     :parser-node :one-of
                   {} (:ok? false)
                     :message $ str (pr-str $ first xs) (, "\" is not in ")
-                      pr-str $ if (string? items) items (string/join "\"" items)
+                      pr-str $ if (string? items) items (join-str "\"" items)
                     :parser-node :one-of
                     :rest xs
       :proc $ quote ()
@@ -415,10 +415,12 @@
       :configs $ {}
     |lilac-parser.main $ {}
       :ns $ quote
-        ns lilac-parser.main $ :require ([] lilac-parser.core :refer $ [] replace-lilac parse-lilac find-lilac) ([] lilac-parser.demo.s-expr :refer $ [] s-expr-parser+)
+        ns lilac-parser.main $ :require ([] lilac-parser.core :refer $ [] replace-lilac parse-lilac find-lilac) ([] lilac-parser.demo.s-expr :refer $ [] s-expr-parser+) ([] calcit-test.core :refer $ [] *quit-on-failure?)
       :defs $ {}
         |main! $ quote
-          defn main! () (println "|App started.") (run-demo)
+          defn main! () (println "|App started.")
+            if (= "\"ci" $ get-env "\"env") (reset! *quit-on-failure? true)
+            run-demo
         |run-demo $ quote
           defn run-demo () (echo "\"running demo")
             let
@@ -429,6 +431,7 @@
                 find-result $ find-lilac (split content "\"") (s-expr-parser+)
               println $ :result result
               println "\"Find results:" $ pr-str (:result find-result)
+              echo &newline "\"NO TESTS YET!"
         |reload! $ quote
           defn ^:dev/after-load reload! () (println "|Code updated.") (run-demo)
         |on-error $ quote
