@@ -474,8 +474,8 @@
               is $ exactly-ok? (parse-lilac "\"  , " lilac-comma-space)
               is $ not-ok? (parse-lilac "\"." lilac-comma-space)
             testing "\"chinese character"
-              ; "\"disabled since Nim handles UTF8 differently" $ is
-                exactly-ok? $ with-log (parse-lilac "\"汉" lilac-chinese-char)
+              is $ exactly-ok? (parse-lilac "\"汉" lilac-chinese-char)
+              is $ not-ok? (parse-lilac "\"a" lilac-chinese-char)
               is $ not-ok? (parse-lilac "\"E" lilac-chinese-char)
               is $ not-ok? (parse-lilac "\"," lilac-chinese-char)
               is $ not-ok? (parse-lilac "\"，" lilac-chinese-char)

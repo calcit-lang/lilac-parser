@@ -4403,27 +4403,20 @@
                 :data $ {}
                   |T $ {} (:type :leaf) (:by |rJG4IHzWf) (:at 1593950600156) (:text |testing) (:id |Bd6l7SdbIleaf)
                   |j $ {} (:type :leaf) (:by |rJG4IHzWf) (:at 1593950604192) (:text "|\"chinese character") (:id |kb7drnelbo)
-                  |r $ {} (:type :expr) (:by |u0) (:at 1607596620884)
+                  |r $ {} (:type :expr) (:by |rJG4IHzWf) (:at 1593950605105)
                     :data $ {}
-                      |T $ {} (:type :expr) (:by |rJG4IHzWf) (:at 1593950605105)
+                      |T $ {} (:type :leaf) (:by |rJG4IHzWf) (:at 1593950605369) (:text |is) (:id |qnCzyZqODC)
+                      |j $ {} (:type :expr) (:by |rJG4IHzWf) (:at 1593950606183)
                         :data $ {}
-                          |T $ {} (:type :leaf) (:by |rJG4IHzWf) (:at 1593950605369) (:text |is) (:id |qnCzyZqODC)
-                          |j $ {} (:type :expr) (:by |rJG4IHzWf) (:at 1593950606183)
+                          |T $ {} (:type :leaf) (:by |rJG4IHzWf) (:at 1593950609035) (:text |exactly-ok?) (:id |KY-PSNy6MK)
+                          |j $ {} (:type :expr) (:by |rJG4IHzWf) (:at 1593950610199)
                             :data $ {}
-                              |T $ {} (:type :leaf) (:by |rJG4IHzWf) (:at 1593950609035) (:text |exactly-ok?) (:id |KY-PSNy6MK)
-                              |j $ {} (:type :expr) (:by |u0) (:at 1607596063207)
-                                :data $ {}
-                                  |T $ {} (:type :expr) (:by |rJG4IHzWf) (:at 1593950610199)
-                                    :data $ {}
-                                      |T $ {} (:type :leaf) (:by |rJG4IHzWf) (:at 1593950609525) (:text |lilac-chinese-char) (:id |rMgjcQ6sY)
-                                      |D $ {} (:type :leaf) (:by |rJG4IHzWf) (:at 1593950612470) (:text |parse-lilac) (:id |-VxokHkxI9)
-                                      |L $ {} (:type :leaf) (:by |rJG4IHzWf) (:at 1593950615569) (:text "|\"汉") (:id |RnfatjHAJl)
-                                    :id |aL40WLcYO
-                                  |D $ {} (:type :leaf) (:by |u0) (:at 1607596066139) (:text |with-log)
-                            :id |6lXgvIepA
-                        :id |SNfoXVtjr
-                      |D $ {} (:type :leaf) (:by |u0) (:at 1607596628435) (:text |;)
-                      |L $ {} (:type :leaf) (:by |u0) (:at 1607596642441) (:text "|\"disabled since Nim handles UTF8 differently")
+                              |T $ {} (:type :leaf) (:by |rJG4IHzWf) (:at 1593950609525) (:text |lilac-chinese-char) (:id |rMgjcQ6sY)
+                              |D $ {} (:type :leaf) (:by |rJG4IHzWf) (:at 1593950612470) (:text |parse-lilac) (:id |-VxokHkxI9)
+                              |L $ {} (:type :leaf) (:by |rJG4IHzWf) (:at 1593950615569) (:text "|\"汉") (:id |RnfatjHAJl)
+                            :id |aL40WLcYO
+                        :id |6lXgvIepA
+                    :id |SNfoXVtjr
                   |v $ {} (:type :expr) (:by |rJG4IHzWf) (:at 1593950605105)
                     :data $ {}
                       |T $ {} (:type :leaf) (:by |rJG4IHzWf) (:at 1593950605369) (:text |is) (:id |qnCzyZqODC)
@@ -4466,6 +4459,20 @@
                             :id |aL40WLcYO
                         :id |6lXgvIepA
                     :id |Yv235GPUyO
+                  |t $ {} (:type :expr) (:by |rJG4IHzWf) (:at 1593950605105)
+                    :data $ {}
+                      |T $ {} (:type :leaf) (:by |rJG4IHzWf) (:at 1593950605369) (:text |is) (:id |qnCzyZqODC)
+                      |j $ {} (:type :expr) (:by |rJG4IHzWf) (:at 1593950606183)
+                        :data $ {}
+                          |T $ {} (:type :leaf) (:by |u0) (:at 1608026309354) (:text |not-ok?) (:id |KY-PSNy6MK)
+                          |j $ {} (:type :expr) (:by |rJG4IHzWf) (:at 1593950610199)
+                            :data $ {}
+                              |T $ {} (:type :leaf) (:by |rJG4IHzWf) (:at 1593950609525) (:text |lilac-chinese-char) (:id |rMgjcQ6sY)
+                              |D $ {} (:type :leaf) (:by |rJG4IHzWf) (:at 1593950612470) (:text |parse-lilac) (:id |-VxokHkxI9)
+                              |L $ {} (:type :leaf) (:by |u0) (:at 1608026296669) (:text "|\"a") (:id |RnfatjHAJl)
+                            :id |aL40WLcYO
+                        :id |6lXgvIepA
+                    :id |SNfoXVtjr
                 :id |Bd6l7SdbI
             :id |YZ5YOM1CYR
           |test-interleave $ {} (:type :expr) (:by |rJG4IHzWf) (:at 1589734940407)
