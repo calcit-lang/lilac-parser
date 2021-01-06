@@ -67,7 +67,7 @@
                       {} (:ok? false) (:message "\"no match") (:parser-node :interleave) (:peek-result result) (:rest xs)
                       {} (:ok? true)
                         :value $ let
-                            v $ map :value acc
+                            v $ map (\ :value %) acc
                           if (some? transform) (transform v) (, v)
                         :rest xs
                         :parser-node :interleave
@@ -87,7 +87,7 @@
                     recur (conj acc result) (:rest result)
                     {} (:ok? true)
                       :value $ let
-                          v $ map :value acc
+                          v $ map (\ :value %) acc
                         if (some? transform) (transform v) (, v)
                       :rest xs
                       :parser-node :some
@@ -128,7 +128,7 @@
                       {} (:ok? false) (:message "\"no match") (:parser-node :many) (:peek-result result) (:rest xs)
                       {} (:ok? true)
                         :value $ let
-                            v $ map :value acc
+                            v $ map (\ :value %) acc
                           if (some? transform) (transform v) (, v)
                         :rest xs
                         :parser-node :many
@@ -316,7 +316,9 @@
                   {} (:ok? false)
                     :message $ str "\"expects " (pr-str item) "\" but got "
                       pr-str $ join "\""
-                        take (count item) xs
+                        take
+                          &min (count item) (count xs)
+                          , xs
                     :parser-node :is
                     :rest xs
         |unindent+ $ quote
@@ -365,7 +367,7 @@
                     empty? ys
                     {} (:ok? true)
                       :value $ let
-                          v $ map :value acc
+                          v $ map (\ :value %) acc
                         if (some? transform) (transform v) (, v)
                       :rest xs
                       :parser-node :combine
