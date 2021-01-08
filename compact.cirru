@@ -83,7 +83,8 @@
                   xs xs0
                 let
                     result $ parse-lilac xs item
-                  if (:ok? result)
+                  if
+                    :ok? $ either result ({})
                     recur (conj acc result) (:rest result)
                     {} (:ok? true)
                       :value $ let
@@ -136,6 +137,7 @@
                         :peek-result result
         |some+ $ quote
           defn some+ (x & args)
+            if (nil? x) (raise "\"expected non-empty rule")
             let
                 transform $ either (first args) identity
               {} (:parser-node :some) (:item x) (:transform transform)
@@ -401,7 +403,7 @@
       :configs $ {} (:extension nil)
     |lilac-parser.demo.s-expr $ {}
       :ns $ quote
-        ns lilac-parser.demo.s-expr $ :require ([] lilac-parser.core :refer $ [] parse-lilac defparser is+ combine+ some+ many+ optional+ or+ one-of+ some+) ([] clojure.string :as string)
+        ns lilac-parser.demo.s-expr $ :require ([] lilac-parser.core :refer $ [] parse-lilac defparser is+ combine+ some+ many+ optional+ or+ one-of+ some+)
       :defs $ {}
         |number-parser $ quote
           def number-parser $ many+ (one-of+ "\"1234567890")
@@ -422,6 +424,7 @@
         |main! $ quote
           defn main! () (println "|App started.")
             if (= "\"ci" $ get-env "\"env") (reset! *quit-on-failure? true)
+            reset! *quit-on-failure? true
             run-demo
         |run-demo $ quote
           defn run-demo () (echo "\"running demo")
