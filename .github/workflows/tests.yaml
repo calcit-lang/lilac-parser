@@ -21,3 +21,10 @@ jobs:
 
     - name: "test"
       run: env=ci ./ci-bin/cr_once
+
+    - name: "test js"
+      run: >
+        ci-bin/cr_once --emit-js
+        && cp -v js/main.mjs js-out/main.mjs
+        && wget -O js-out/calcit.procs.mjs http://js.calcit-lang.org/calcit.procs.mjs
+        && env=ci node js-out/main.mjs
