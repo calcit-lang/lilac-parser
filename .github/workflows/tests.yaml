@@ -11,20 +11,27 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v1
-    - name: wget
-      run: mkdir ci-bin/ && wget -O ci-bin/cr_once http://repo.calcit-lang.org/binaries/linux/cr_once
-    - name: "permission"
-      run: chmod +x ci-bin/cr_once
+
+    - name: ACTIONS_ALLOW_UNSECURE_COMMANDS
+      id: ACTIONS_ALLOW_UNSECURE_COMMANDS
+      run: echo 'ACTIONS_ALLOW_UNSECURE_COMMANDS=true' >> $GITHUB_ENV
+
+    - name: add cr
+      run: |
+        mkdir -p $GITHUB_WORKSPACE/bin
+        wget -O $GITHUB_WORKSPACE/bin/cr http://repo.calcit-lang.org/binaries/linux/cr
+        chmod +x $GITHUB_WORKSPACE/bin/cr
+        echo "::add-path::$GITHUB_WORKSPACE/bin"
 
     - name: "prepare modules"
-      run: mkdir -p ~/.config/calcit/modules/ && cd ~/.config/calcit/modules/ && git clone https://github.com/calcit-lang/calcit-test
+      run: >
+        mkdir -p ~/.config/calcit/modules/ && cd ~/.config/calcit/modules/
+        && git clone https://github.com/calcit-lang/calcit-test --branch=0.0.3
 
     - name: "test"
-      run: env=ci ./ci-bin/cr_once
+      run: env=ci cr -1
 
     - name: "test js"
       run: >
-        ci-bin/cr_once --emit-js
-        && cp -v js/main.mjs js-out/main.mjs
-        && wget -O js-out/calcit.procs.mjs http://js.calcit-lang.org/calcit.procs.mjs
-        && env=ci node js-out/main.mjs
+        cr --emit-js -1
+        && yarn && target=node yarn webpack && node js-out/bundle.js
