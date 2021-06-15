@@ -3,3 +3,5 @@
 .calcit-error.cirru
 
 js-out/
+
+node_modules

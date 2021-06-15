@@ -1,17 +1,22 @@
 
 {} (:package |lilac-parser)
-  :configs $ {} (:init-fn |lilac-parser.main/main!) (:reload-fn |lilac-parser.main/reload!) (:modules $ [] |calcit-test/compact.cirru) (:version nil)
+  :configs $ {} (:init-fn |lilac-parser.main/main!) (:reload-fn |lilac-parser.main/reload!)
+    :modules $ [] |calcit-test/compact.cirru
+    :version |0.0.1
   :files $ {}
     |lilac-parser.core $ {}
       :ns $ quote
-        ns lilac-parser.core $ :require ([] lilac-parser.util :refer $ [] seq-strip-beginning)
+        ns lilac-parser.core $ :require
+          [] lilac-parser.util :refer $ [] seq-strip-beginning
       :defs $ {}
         |defparser $ quote
-          defmacro defparser (comp-name args value-fn body) (assert "\"args in a list" $ list? args)
-            quote-replace $ defn (~ comp-name) (~ args)
+          defmacro defparser (comp-name args value-fn body)
+            assert "\"args in a list" $ list? args
+            quasiquote $ defn (~ comp-name) (~ args)
               assert "\"a function for parser" $ fn? (~ value-fn)
               {} (:parser-node :component)
-                :name $ turn-keyword (quote $ ~ comp-name)
+                :name $ turn-keyword
+                  quote $ ~ comp-name
                 :blackbox? false
                 :value-fn $ ~ value-fn
                 :args $ [] (~@ args)
@@ -21,12 +26,20 @@
             let
                 result $ parse-lilac xs (:item rule)
               if (:ok? result)
-                {} (:ok? true) (:parser-node :label) (:label $ :label rule) (:value $ :value result) (:rest $ :rest result) (:result result)
-                {} (:ok? false) (:message nil) (:parser-node :label) (:label $ :label rule) (:result result) (:rest $ :rest result)
+                {} (:ok? true) (:parser-node :label)
+                  :label $ :label rule
+                  :value $ :value result
+                  :rest $ :rest result
+                  :result result
+                {} (:ok? false) (:message nil) (:parser-node :label)
+                  :label $ :label rule
+                  :result result
+                  :rest $ :rest result
         |core-methods $ quote
           def core-methods $ {} (:is parse-is) (:or parse-or) (:many parse-many) (:some parse-some) (:optional parse-optional) (:component parse-component) (:combine parse-combine) (:one-of parse-one-of) (:interleave parse-interleave) (:other-than parse-other-than) (:label parse-label) (:unicode-range parse-unicode-range)
         |replace-iter $ quote
-          defn replace-iter (acc attempts content rule replacer) (echo "\"replace iter...") (assert "\"expects content in list" $ list? content)
+          defn replace-iter (acc attempts content rule replacer) (echo "\"replace iter...")
+            assert "\"expects content in list" $ list? content
             if
               either (empty? content) false
               {} (:result acc) (:attempts attempts)
@@ -38,14 +51,18 @@
                     append attempts attempt
                     :rest attempt
                     , rule replacer
-                  recur (str acc $ first content) (append attempts attempt) (rest content) (, rule replacer)
+                  recur
+                    str acc $ first content
+                    append attempts attempt
+                    rest content
+                    , rule replacer
         |many+ $ quote
           defn many+ (item & args)
             let
                 transform $ either (first args) identity
               {} (:parser-node :many) (:item item) (:transform transform)
         |indent+ $ quote
-          defn$ indent+() (indent+ identity)
+          defn$ indent+() $ indent+ identity
             (transform)
               {} (:parser-node :indent) (:transform transform)
         |parse-interleave $ quote
@@ -62,13 +79,13 @@
                 let
                     result $ parse-lilac xs x
                   if (:ok? result)
-                    recur (conj acc result) (:rest result) (, y x)
+                    recur (conj acc result) (:rest result) y x
                     if (empty? acc)
                       {} (:ok? false) (:message "\"no match") (:parser-node :interleave) (:peek-result result) (:rest xs)
                       {} (:ok? true)
                         :value $ let
-                            v $ map (\ :value %) acc
-                          if (some? transform) (transform v) (, v)
+                            v $ map acc (\ :value %)
+                          if (some? transform) (transform v) v
                         :rest xs
                         :parser-node :interleave
                         :results acc
@@ -88,14 +105,15 @@
                     recur (conj acc result) (:rest result)
                     {} (:ok? true)
                       :value $ let
-                          v $ map (\ :value %) acc
-                        if (some? transform) (transform v) (, v)
+                          v $ map acc (\ :value %)
+                        if (some? transform) (transform v) v
                       :rest xs
                       :parser-node :some
                       :results acc
                       :peek-result result
         |find-lilac-iter $ quote
-          defn find-lilac-iter (acc attempts content rule) (assert "\"expects content in sequence" $ list? content)
+          defn find-lilac-iter (acc attempts content rule)
+            assert "\"expects content in sequence" $ list? content
             if (empty? content)
               {} (:result acc) (:attempts attempts)
               let
@@ -103,16 +121,15 @@
                 if (:ok? attempt)
                   recur
                     conj acc $ {}
-                      :content $ ->>
-                        take
-                          - (count content) (count $ :rest attempt)
-                          , content
+                      :content $ ->
+                        take content $ - (count content)
+                          count $ :rest attempt
                         join "\""
                       :value $ :value attempt
                     conj attempts attempt
                     :rest attempt
                     , rule
-                  recur acc (conj attempts attempt) (rest content) (, rule)
+                  recur acc (conj attempts attempt) (rest content) rule
         |parse-many $ quote
           defn parse-many (xs0 rule)
             let
@@ -129,8 +146,8 @@
                       {} (:ok? false) (:message "\"no match") (:parser-node :many) (:peek-result result) (:rest xs)
                       {} (:ok? true)
                         :value $ let
-                            v $ map (\ :value %) acc
-                          if (some? transform) (transform v) (, v)
+                            v $ map acc (\ :value %)
+                          if (some? transform) (transform v) v
                         :rest xs
                         :parser-node :many
                         :results acc
@@ -156,7 +173,9 @@
                   :parser-node :component
                   :label rule-name
                   :result $ if blackbox? nil result
-                {} (:ok? false) (:message "\"failed branch") (:parser-node :component) (:label rule-name) (:result $ if blackbox? nil result) (:rest xs)
+                {} (:ok? false) (:message "\"failed branch") (:parser-node :component) (:label rule-name)
+                  :result $ if blackbox? nil result
+                  :rest xs
         |other-than+ $ quote
           defn other-than+ (items & args)
             let
@@ -175,7 +194,7 @@
                 {} (:ok? true)
                   :value $ let
                       v $ :value result
-                    if (some? transform) (transform v) (, v)
+                    if (some? transform) (transform v) v
                   :rest $ :rest result
                   :parser-node :optional
                   :result result
@@ -189,7 +208,7 @@
                   transform $ :transform rule
                   x0 $ first xs
                 if
-                  if (string? items) (contains? items x0) (contains? items x0)
+                  if (string? items) (includes? items x0) (includes? items x0)
                   {} (:ok? false)
                     :message $ str (pr-str x0) "\" among "
                       pr-str $ if (string? items) items (join-str "\"" items)
@@ -197,7 +216,7 @@
                     :parser-node :other-than
                     :rest xs
                   {} (:ok? true)
-                    :value $ if (some? transform) (transform x0) (, x0)
+                    :value $ if (some? transform) (transform x0) x0
                     :rest $ rest xs
                     :parser-node :other-than
         |one-of+ $ quote
@@ -211,7 +230,7 @@
         |find-lilac $ quote
           defn find-lilac (content rule)
             find-lilac-iter ([]) ([])
-              if (string? content) (split content "\"") (, content)
+              if (string? content) (split content "\"") content
               , rule
         |parse-unicode-range $ quote
           defn parse-unicode-range (xs rule)
@@ -221,17 +240,20 @@
                   min-code $ :min-code rule
                   max-code $ :max-code rule
                   transform $ :transform rule
-                  head-code $ get-char-code (first $ first xs)
+                  head-code $ get-char-code
+                    first $ first xs
                 if
                   and (>= head-code min-code) (<= head-code max-code)
                   {} (:ok? true)
                     :value $ let
                         v $ first xs
-                      if (some? transform) (transform v) (, v)
+                      if (some? transform) (transform v) v
                     :rest $ rest xs
                     :parser-node :unicode-range
                   {} (:ok? false)
-                    :message $ str (pr-str $ first xs) (, "\" of code " head-code "\" is not in between [" min-code "\", " max-code "\"]")
+                    :message $ str
+                      pr-str $ first xs
+                      , "\" of code " head-code "\" is not in between [" min-code "\", " max-code "\"]"
                     :parser-node :unicode-range
                     :rest xs
         |combine+ $ quote
@@ -242,7 +264,7 @@
         |replace-lilac $ quote
           defn replace-lilac (content rule replacer) (echo "\"calling")
             replace-iter "\"" ([])
-              if (string? content) (split content "\"") (, content)
+              if (string? content) (split content "\"") content
               , rule replacer
         |optional+ $ quote
           defn optional+ (x & args)
@@ -256,32 +278,36 @@
                 node $ :parser-node rule
                 method $ get core-methods node
                 user-method $ get (deref *custom-methods) node
-                xs $ if (string? x) (split x "\"") (, x)
+                xs $ if (string? x) (split x "\"") x
               cond
                   fn? method
                   method xs rule
-                (fn? user-method)
-                  user-method xs rule
+                (fn? user-method) (user-method xs rule)
                 true $ do (echo "\"Unknown node" rule) nil
-        |*custom-methods $ quote (defatom *custom-methods $ {})
+        |*custom-methods $ quote
+          defatom *custom-methods $ {}
         |interleave+ $ quote
           defn interleave+ (x y & args)
             let
                 transform $ either (first args) identity
               {} (:parser-node :interleave) (:x x) (:y y) (:transform transform)
         |defparser- $ quote
-          defmacro defparser- (comp-name args value-fn body) (assert "\"args in a list" $ list? args)
-            quote-replace $ defn (~ comp-name) (~ args)
+          defmacro defparser- (comp-name args value-fn body)
+            assert "\"args in a list" $ list? args
+            quasiquote $ defn (~ comp-name) (~ args)
               assert "\"a function for parser" $ fn? (~ value-fn)
               {} (:parser-node :component)
-                :name $ turn-keyword (quote $ ~ comp-name)
+                :name $ turn-keyword
+                  quote $ ~ comp-name
                 :blackbox? true
                 :value-fn $ ~ value-fn
                 :args $ [] (~@ args)
                 :fn $ fn (~ args) (~ body)
         |or+ $ quote
           defn or+ (xs & args)
-            when (not $ list? xs) (println "\"Expected list passed to or+ :" xs)
+            when
+              not $ list? xs
+              println "\"Expected list passed to or+ :" xs
             let
                 transform $ either (first args) identity
               {} (:parser-node :or) (:items xs) (:transform transform)
@@ -303,7 +329,9 @@
           defn parse-is (xs rule)
             if (empty? xs)
               {} (:ok? false)
-                :message $ str "\"expects " (pr-str $ :item rule) (, "\" but got EOF")
+                :message $ str "\"expects "
+                  pr-str $ :item rule
+                  , "\" but got EOF"
                 :parser-node :is
                 :rest xs
               let
@@ -312,19 +340,18 @@
                   strip-result $ seq-strip-beginning xs (split item "\"")
                 if (:ok? strip-result)
                   {} (:ok? true)
-                    :value $ if (some? transform) (transform item) (, item)
+                    :value $ if (some? transform) (transform item) item
                     :rest $ :rest strip-result
                     :parser-node :is
                   {} (:ok? false)
                     :message $ str "\"expects " (pr-str item) "\" but got "
-                      pr-str $ join "\""
-                        take
-                          &min (count item) (count xs)
-                          , xs
+                      pr-str $ join
+                        take xs $ &min (count item) (count xs)
+                        , "\""
                     :parser-node :is
                     :rest xs
         |unindent+ $ quote
-          defn unindent+ () ({} $ :parser-node :unindent)
+          defn unindent+ () $ {} (:parser-node :unindent)
         |parse-or $ quote
           defn parse-or (xs rule)
             let
@@ -345,7 +372,7 @@
                       {} (:ok? true)
                         :value $ let
                             v $ :value result
-                          if (some? transform) (transform v) (, v)
+                          if (some? transform) (transform v) v
                         :rest $ :rest result
                         :parser-node :or
                         :results failures
@@ -369,8 +396,8 @@
                     empty? ys
                     {} (:ok? true)
                       :value $ let
-                          v $ map (\ :value %) acc
-                        if (some? transform) (transform v) (, v)
+                          v $ map acc (\ :value %)
+                        if (some? transform) (transform v) v
                       :rest xs
                       :parser-node :combine
                       :results acc
@@ -387,43 +414,56 @@
                   items $ :items rule
                   transform $ :transform rule
                 if
-                  if (string? items) (contains? items $ first xs) (contains? items $ first xs)
+                  if (string? items)
+                    includes? items $ first xs
+                    includes? items $ first xs
                   {} (:ok? true)
                     :value $ let
                         v $ first xs
-                      if (some? transform) (transform v) (, v)
+                      if (some? transform) (transform v) v
                     :rest $ rest xs
                     :parser-node :one-of
                   {} (:ok? false)
-                    :message $ str (pr-str $ first xs) (, "\" is not in ")
-                      pr-str $ if (string? items) items (join-str "\"" items)
+                    :message $ str
+                      pr-str $ first xs
+                      , "\" is not in "
+                        pr-str $ if (string? items) items (join-str "\"" items)
                     :parser-node :one-of
                     :rest xs
       :proc $ quote ()
       :configs $ {} (:extension nil)
     |lilac-parser.demo.s-expr $ {}
       :ns $ quote
-        ns lilac-parser.demo.s-expr $ :require ([] lilac-parser.core :refer $ [] parse-lilac defparser is+ combine+ some+ many+ optional+ or+ one-of+ some+)
+        ns lilac-parser.demo.s-expr $ :require
+          [] lilac-parser.core :refer $ [] parse-lilac defparser is+ combine+ some+ many+ optional+ or+ one-of+ some+
       :defs $ {}
         |number-parser $ quote
           def number-parser $ many+ (one-of+ "\"1234567890")
         |word-parser $ quote
           def word-parser $ many+ (one-of+ "\"qwertyuiopasdfghjklzxcvbnm")
-        |space-parser $ quote (def space-parser $ is+ "\" ")
+        |space-parser $ quote
+          def space-parser $ is+ "\" "
         |s-expr-parser+ $ quote
           defparser s-expr-parser+ () identity $ combine+
             [] (is+ "\"(")
-              some+ $ or+ ([] number-parser word-parser space-parser $ s-expr-parser+)
+              some+ $ or+
+                [] number-parser word-parser space-parser $ s-expr-parser+
               is+ "\")"
       :proc $ quote ()
       :configs $ {}
     |lilac-parser.main $ {}
       :ns $ quote
-        ns lilac-parser.main $ :require ([] lilac-parser.core :refer $ [] replace-lilac parse-lilac find-lilac) ([] lilac-parser.demo.s-expr :refer $ [] s-expr-parser+) ([] calcit-test.core :refer $ [] *quit-on-failure?) ([] lilac-parser.test :refer $ [] run-tests)
+        ns lilac-parser.main $ :require
+          [] lilac-parser.core :refer $ [] replace-lilac parse-lilac find-lilac
+          [] lilac-parser.demo.s-expr :refer $ [] s-expr-parser+
+          [] calcit-test.core :refer $ [] *quit-on-failure?
+          [] lilac-parser.test :refer $ [] run-tests
       :defs $ {}
         |main! $ quote
           defn main! () (println "|App started.")
-            if (= "\"ci" $ get-env "\"env") (reset! *quit-on-failure? true)
+            if
+              = "\"ci" $ get-env "\"env"
+              reset! *quit-on-failure? true
             reset! *quit-on-failure? true
             run-demo
         |run-demo $ quote
@@ -460,7 +500,10 @@
       :configs $ {}
     |lilac-parser.test $ {}
       :ns $ quote
-        ns lilac-parser.test $ :require ([] calcit-test.core :refer $ [] deftest is testing) ([] lilac-parser.core :refer $ [] parse-lilac defparser many+ is+ interleave+ some+ one-of+ combine+ optional+ other-than+ or+ unicode-range+ replace-lilac find-lilac) ([] lilac-parser.preset :refer $ [] lilac-digit lilac-alphabet lilac-comma-space lilac-chinese-char)
+        ns lilac-parser.test $ :require
+          [] calcit-test.core :refer $ [] deftest is testing
+          [] lilac-parser.core :refer $ [] parse-lilac defparser many+ is+ interleave+ some+ one-of+ combine+ optional+ other-than+ or+ unicode-range+ replace-lilac find-lilac
+          [] lilac-parser.preset :refer $ [] lilac-digit lilac-alphabet lilac-comma-space lilac-chinese-char
       :defs $ {}
         |test-preset $ quote
           deftest test-preset
@@ -543,26 +586,33 @@
             testing "\"has x" $ is
               roughly-ok? $ parse-lilac "\"xy" (is+ "\"x")
             testing "\"roughly ok is not same as exactly ok" $ is
-              not $ exactly-ok? (parse-lilac "\"xy" $ is+ "\"x")
+              not $ exactly-ok?
+                parse-lilac "\"xy" $ is+ "\"x"
             testing "\"is not x" $ is
               not-ok? $ parse-lilac "\"y" (is+ "\"x")
         |run-tests $ quote
           defn run-tests () (test-or) (test-is) (test-some) (test-many) (test-find) (test-one-of) (test-preset) (test-combine) (test-replace) (test-optional) (test-interleave) (test-other-than) (test-unicode-range)
         |exactly-ok? $ quote
           defn exactly-ok? (x)
-            and (:ok? x) (empty? $ :rest x)
+            and (:ok? x)
+              empty? $ :rest x
         |not-ok? $ quote
-          defn not-ok? (x) (not $ :ok? x)
+          defn not-ok? (x)
+            not $ :ok? x
         |test-many $ quote
           deftest test-many
             testing "\"an x" $ is
-              exactly-ok? $ parse-lilac "\"x" (many+ $ is+ "\"x")
+              exactly-ok? $ parse-lilac "\"x"
+                many+ $ is+ "\"x"
             testing "\"two xs" $ is
-              exactly-ok? $ parse-lilac "\"xx" (many+ $ is+ "\"x")
+              exactly-ok? $ parse-lilac "\"xx"
+                many+ $ is+ "\"x"
             testing "\"many xs" $ is
-              exactly-ok? $ parse-lilac "\"xxx" (many+ $ is+ "\"x")
+              exactly-ok? $ parse-lilac "\"xxx"
+                many+ $ is+ "\"x"
             testing "\"contains many xs" $ is
-              roughly-ok? $ parse-lilac "\"xxxy" (many+ $ is+ "\"x")
+              roughly-ok? $ parse-lilac "\"xxxy"
+                many+ $ is+ "\"x"
         |roughly-ok? $ quote
           defn roughly-ok? (x)
             and (:ok? x)
@@ -570,21 +620,29 @@
         |test-some $ quote
           deftest test-some
             testing "\"no x" $ is
-              exactly-ok? $ parse-lilac "\"" (some+ $ is+ "\"x")
+              exactly-ok? $ parse-lilac "\""
+                some+ $ is+ "\"x"
             testing "\"an x" $ is
-              exactly-ok? $ parse-lilac "\"x" (some+ $ is+ "\"x")
+              exactly-ok? $ parse-lilac "\"x"
+                some+ $ is+ "\"x"
             testing "\"multiple x" $ is
-              exactly-ok? $ parse-lilac "\"xx" (some+ $ is+ "\"x")
+              exactly-ok? $ parse-lilac "\"xx"
+                some+ $ is+ "\"x"
             testing "\"contains multiple x" $ is
-              roughly-ok? $ parse-lilac "\"xxy" (some+ $ is+ "\"x")
+              roughly-ok? $ parse-lilac "\"xxy"
+                some+ $ is+ "\"x"
             testing "\"no x in y" $ is
-              roughly-ok? $ parse-lilac "\"y" (some+ $ is+ "\"x")
+              roughly-ok? $ parse-lilac "\"y"
+                some+ $ is+ "\"x"
         |test-one-of $ quote
           deftest test-one-of
             testing "\"x/y/z is one of xyz"
-              is $ exactly-ok? (parse-lilac "\"x" $ one-of+ "\"xyz")
-              is $ exactly-ok? (parse-lilac "\"y" $ one-of+ "\"xyz")
-              is $ exactly-ok? (parse-lilac "\"z" $ one-of+ "\"xyz")
+              is $ exactly-ok?
+                parse-lilac "\"x" $ one-of+ "\"xyz"
+              is $ exactly-ok?
+                parse-lilac "\"y" $ one-of+ "\"xyz"
+              is $ exactly-ok?
+                parse-lilac "\"z" $ one-of+ "\"xyz"
             testing "\"w is not one of xyz" $ is
               not-ok? $ parse-lilac "\"w" (one-of+ "\"xyz")
             testing "\"xy has one of xyz" $ is
@@ -600,16 +658,22 @@
         |test-optional $ quote
           deftest test-optional
             testing "\"optional x" $ is
-              exactly-ok? $ parse-lilac "\"x" (optional+ $ is+ "\"x")
+              exactly-ok? $ parse-lilac "\"x"
+                optional+ $ is+ "\"x"
             testing "\"optional nil x" $ is
-              exactly-ok? $ parse-lilac "\"" (optional+ $ is+ "\"x")
+              exactly-ok? $ parse-lilac "\""
+                optional+ $ is+ "\"x"
             testing "\"x for optional y" $ is
-              roughly-ok? $ parse-lilac "\"x" (optional+ $ is+ "\"y")
+              roughly-ok? $ parse-lilac "\"x"
+                optional+ $ is+ "\"y"
         |test-unicode-range $ quote
           deftest test-unicode-range $ testing "\"parse by unicode"
-            is $ exactly-ok? (parse-lilac "\"a" $ unicode-range+ 97 122)
-            is $ exactly-ok? (parse-lilac "\"z" $ unicode-range+ 97 122)
-            is $ not-ok? (parse-lilac "\"A" $ unicode-range+ 97 122)
+            is $ exactly-ok?
+              parse-lilac "\"a" $ unicode-range+ 97 122
+            is $ exactly-ok?
+              parse-lilac "\"z" $ unicode-range+ 97 122
+            is $ not-ok?
+              parse-lilac "\"A" $ unicode-range+ 97 122
         |test-replace $ quote
           deftest test-replace $ testing "\"replaced content"
             ; is $ = "\"my project"
@@ -627,7 +691,9 @@
       :proc $ quote ()
     |lilac-parser.demo.json $ {}
       :ns $ quote
-        ns lilac-parser.demo.json $ :require ([] lilac-parser.core :refer $ [] interleave+ is+ other-than+ many+ combine+ optional+ one-of+ some+ or+ defparser label+) ([] clojure.string :as string)
+        ns lilac-parser.demo.json $ :require
+          [] lilac-parser.core :refer $ [] interleave+ is+ other-than+ many+ combine+ optional+ one-of+ some+ or+ defparser label+
+          [] clojure.string :as string
       :defs $ {}
         |space-parser $ quote
           def space-parser $ label+ "\"space"
@@ -648,7 +714,8 @@
                 some+ $ or+
                   [] (other-than+ "\"\"\\") (is+ "\"\\\"") (is+ "\"\\\\") (is+ "\"\\n")
                 is+ "\"\""
-              fn (xs) (string/join "\"" $ nth xs 1)
+              fn (xs)
+                string/join "\"" $ nth xs 1
         |array-parser+ $ quote
           defparser array-parser+ ()
             fn (x)
@@ -669,7 +736,7 @@
                   fn (xs)
                     [] (nth xs 0) (nth xs 4)
                 , comma-parser
-                fn (xs) (take-nth 2 xs)
+                  fn (xs) (take-nth 2 xs)
               is+ "\"}"
             fn (xs)
               into ({}) (nth xs 1)
@@ -684,11 +751,14 @@
         |number-parser $ quote
           def number-parser $ label+ "\"number"
             combine+
-              [] (optional+ $ is+ "\"-") (, digits-parser)
-                optional+ $ combine+
-                  [] (is+ "\".") digits-parser
-                  fn (xs) (string/join "\"" xs)
-              fn (xs) (js/Number $ string/join "\"" xs)
+              []
+                optional+ $ is+ "\"-"
+                , digits-parser $ optional+
+                  combine+
+                    [] (is+ "\".") digits-parser
+                    fn (xs) (string/join "\"" xs)
+              fn (xs)
+                js/Number $ string/join "\"" xs
         |nil-parser $ quote
           def nil-parser $ label+ "\"nil"
             or+
@@ -698,13 +768,15 @@
       :configs $ {}
     |lilac-parser.preset $ {}
       :ns $ quote
-        ns lilac-parser.preset $ :require ([] lilac-parser.core :refer $ [] parse-lilac defparser many+ is+ interleave+ some+ one-of+ combine+ optional+ other-than+ or+ unicode-range+ label+)
+        ns lilac-parser.preset $ :require
+          [] lilac-parser.core :refer $ [] parse-lilac defparser many+ is+ interleave+ some+ one-of+ combine+ optional+ other-than+ or+ unicode-range+ label+
       :defs $ {}
         |lilac-digit $ quote
           def lilac-digit $ label+ "\"digit" (one-of+ "\"0123456789")
         |lilac-alphabet $ quote
           def lilac-alphabet $ label+ "\"alphabet" (one-of+ "\"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz")
-        |lilac-space $ quote (def lilac-space $ is+ "\" ")
+        |lilac-space $ quote
+          def lilac-space $ is+ "\" "
         |lilac-comma-space $ quote
           def lilac-comma-space $ label+ "\"comma with spaces"
             combine+
