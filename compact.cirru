@@ -1,10 +1,374 @@
 
 {} (:package |lilac-parser)
   :configs $ {} (:init-fn |lilac-parser.main/main!) (:reload-fn |lilac-parser.main/reload!)
-    :modules $ [] |calcit-test/compact.cirru
+    :modules $ [] |calcit-test/ |lilac/ |respo.calcit/ |memof/ |respo-ui.calcit/ |respo-markdown.calcit/ |reel.calcit/ |alerts.calcit/ |respo-feather.calcit/
     :version |0.0.1
   :entries $ {}
+    :test $ {} (:reload-fn |lilac-parser.test/reload!)
+      :modules $ [] |calcit-test/ |respo.calcit/ |memof/
+      :init-fn |lilac-parser.test/main!
+      :version |0.0.1
   :files $ {}
+    |lilac-parser.demo.json $ {}
+      :ns $ quote
+        ns lilac-parser.demo.json $ :require
+          [] lilac-parser.core :refer $ [] interleave+ is+ other-than+ many+ combine+ optional+ one-of+ some+ or+ defparser label+
+          [] clojure.string :as string
+      :defs $ {}
+        |comma-parser $ quote
+          def comma-parser $ label+ "\"comma"
+            combine+
+              [] space-parser (is+ "\",") space-parser
+              fn (x) nil
+        |demo-parser $ quote
+          def demo-parser $ many+ (other-than+ "\"abc")
+        |take-nth $ quote
+          defn take-nth (xs n)
+            take-nth-iter ([]) 0 xs n
+        |string-parser $ quote
+          def string-parser $ label+ "\"string"
+            combine+
+              [] (is+ "\"\"")
+                some+ $ or+
+                  [] (other-than+ "\"\"\\") (is+ "\"\\\"") (is+ "\"\\\\") (is+ "\"\\n")
+                is+ "\"\""
+              fn (xs)
+                .join-str (nth xs 1) "\""
+        |number-parser $ quote
+          def number-parser $ label+ "\"number"
+            combine+
+              []
+                optional+ $ is+ "\"-"
+                , digits-parser $ optional+
+                  combine+
+                    [] (is+ "\".") digits-parser
+                    fn (xs) (.join-str xs "\"")
+              fn (xs)
+                js/Number $ .join-str xs "\""
+        |boolean-parser $ quote
+          def boolean-parser $ label+ "\"boolean"
+            or+
+              [] (is+ "\"true") (is+ "\"false")
+              fn (x)
+                if (= x "\"true") true false
+        |array-parser+ $ quote
+          defparser array-parser+ ()
+            fn (x)
+              first $ nth x 1
+            combine+ $ [] (is+ "\"[")
+              some+ $ interleave+ (value-parser+) comma-parser
+                fn (xs) (take-nth xs 2)
+              is+ "\"]"
+        |space-parser $ quote
+          def space-parser $ label+ "\"space"
+            some+ (is+ "\" ")
+              fn (x) nil
+        |value-parser+ $ quote
+          defparser value-parser+ () identity $ or+
+            [] number-parser string-parser nil-parser boolean-parser (array-parser+) (object-parser+)
+        |nil-parser $ quote
+          def nil-parser $ label+ "\"nil"
+            or+
+              [] (is+ "\"null") (is+ "\"undefined")
+              fn (x) nil
+        |take-nth-iter $ quote
+          defn take-nth-iter (acc i xs step)
+            if (empty? xs) acc $ cond
+                = i 0
+                recur
+                  conj acc $ first xs
+                  inc i
+                  rest xs
+                  , step
+              (= i (dec step))
+                recur acc 0 (rest xs) step
+              true $ recur acc (inc i) (rest xs) step
+        |digits-parser $ quote
+          def digits-parser $ many+ (one-of+ "\"0123456789")
+            fn (xs) (.join-str xs "\"")
+        |object-parser+ $ quote
+          defparser object-parser+ () identity $ combine+
+            [] (is+ "\"{")
+              optional+ $ interleave+
+                combine+
+                  [] string-parser space-parser (is+ "\":") space-parser $ value-parser+
+                  fn (xs)
+                    [] (nth xs 0) (nth xs 4)
+                , comma-parser
+                  fn (xs) (take-nth xs 2)
+              is+ "\"}"
+            fn (xs)
+              pairs-map $ nth xs 1
+    |lilac-parser.updater $ {}
+      :ns $ quote
+        ns lilac-parser.updater $ :require
+          [] respo.cursor :refer $ [] update-states
+      :defs $ {}
+        |updater $ quote
+          defn updater (store op op-data op-id op-time)
+            case-default op store
+              :states $ update-states store op-data
+              :content $ assoc store :content op-data
+              :hydrate-storage op-data
+    |lilac-parser.demo.s-expr $ {}
+      :ns $ quote
+        ns lilac-parser.demo.s-expr $ :require
+          [] lilac-parser.core :refer $ [] parse-lilac defparser is+ combine+ some+ many+ optional+ or+ one-of+ some+
+      :defs $ {}
+        |number-parser $ quote
+          def number-parser $ many+ (one-of+ "\"1234567890")
+        |word-parser $ quote
+          def word-parser $ many+ (one-of+ "\"qwertyuiopasdfghjklzxcvbnm")
+        |space-parser $ quote
+          def space-parser $ is+ "\" "
+        |s-expr-parser+ $ quote
+          defparser s-expr-parser+ () identity $ combine+
+            [] (is+ "\"(")
+              some+ $ or+
+                [] number-parser word-parser space-parser $ s-expr-parser+
+              is+ "\")"
+    |lilac-parser.comp.container $ {}
+      :ns $ quote
+        ns lilac-parser.comp.container $ :require (respo-ui.core :as ui)
+          respo-ui.core :refer $ hsl
+          respo.core :refer $ defcomp defeffect >> list-> <> div button textarea span input a
+          respo.comp.space :refer $ =<
+          reel.comp.reel :refer $ comp-reel
+          respo-md.comp.md :refer $ comp-md
+          lilac-parser.config :refer $ dev?
+          lilac-parser.core :refer $ parse-lilac replace-lilac find-lilac defparser is+ combine+ some+ many+ optional+ or+ one-of+ some+ unicode-range+
+          "\"@mvc-works/codearea" :refer $ codearea
+          feather.core :refer $ comp-icon
+          lilac-parser.demo.s-expr :refer $ s-expr-parser+
+          lilac-parser.demo.json :refer $ demo-parser number-parser string-parser array-parser+ value-parser+ boolean-parser
+          respo-alerts.core :refer $ use-prompt
+      :defs $ {}
+        |comp-container $ quote
+          defcomp comp-container (reel)
+            let
+                store $ :store reel
+                states $ :states store
+                cursor $ []
+                state $ or (:data states)
+                  {} (:code "\"(def a (add 1 2))") (:result nil) (:gui? false)
+                load-plugin $ use-prompt (>> states :load)
+                  {} (:text "\"Load EDN") (:multiline? true) (:placeholder "\"lilac-parser parsing rule...")
+                    :input-style $ {} (:font-family ui/font-code) (:height 400) (:white-space :pre) (:font-size 12) (:line-height "\"18px")
+                    :initial $ format-cirru-edn (:result state)
+                      {} $ :indent 2
+                    :validator $ fn (x)
+                      try
+                        do (parse-cirru-edn x) nil
+                        fn (e) (js/console.log "\"Failed to parse") e
+              div
+                {} $ :style (merge ui/global ui/fullscreen ui/column)
+                div
+                  {} $ :style
+                    merge ui/row-middle $ {} (:padding 8)
+                  button $ {} (:style ui/button) (:inner-text "\"Parse")
+                    :on-click $ fn (e d!)
+                      let
+                          result $ parse-lilac
+                            .split (:code state) "\""
+                            s-expr-parser+
+                          r1 $ parse-lilac
+                            .split (:code state) "\""
+                            value-parser+
+                          r2 $ parse-lilac (:code state) (unicode-range+ 97 122)
+                        d! cursor $ assoc state :result result
+                  =< 16 nil
+                  span $ {} (:inner-text "\"GUI")
+                    :style $ {} (:font-family ui/font-fancy)
+                      :color $ if (:gui? state) (hsl 200 80 40) (hsl 200 80 80)
+                      :font-weight 300
+                      :font-size 20
+                      :cursor :pointer
+                      :line-height "\"24px"
+                    :on-click $ fn (e d!)
+                      d! cursor $ update state :gui? not
+                  =< 16 nil
+                  a $ {} (:inner-text "\"Load EDN") (:style ui/link)
+                    :on-click $ fn (e d!)
+                      .show load-plugin d! $ fn (text)
+                        let
+                            snapshot $ parse-cirru-edn text
+                          ; println "\"text" snapshot
+                          if (list? snapshot)
+                            d! cursor $ assoc state :result snapshot
+                            d! cursor $ assoc state :result snapshot
+                  =< 16 nil
+                  a $ {} (:inner-text "\"Replacer") (:style ui/link)
+                    :on-click $ fn (e d!)
+                      let
+                          result $ replace-lilac
+                            .split (:code state) "\""
+                            s-expr-parser+
+                            fn (result) (println "\"replacing" result)
+                              str "\"<<<" (pr-str result) "\">>>"
+                          find-result $ find-lilac
+                            .split (:code state) "\""
+                            s-expr-parser+
+                        println $ :result result
+                        d! cursor $ assoc state :result (:attempts result)
+                        println "\"Find results:" $ pr-str (:result find-result)
+                div
+                  {} $ :style (merge ui/expand ui/row)
+                  textarea $ {}
+                    :value $ :code state
+                    :class-name "\"codearea"
+                    :placeholder "\"Content"
+                    :style $ merge ui/textarea
+                      {} (:font-family ui/font-code) (:width 300)
+                    :on-input $ fn (e d!)
+                      d! cursor $ assoc state :code (:value e)
+                  if (:gui? state)
+                    div
+                      {} $ :style
+                        merge ui/expand $ {} (:padding-bottom 400)
+                      if
+                        list? $ :result state
+                        list-> ({})
+                          ->> (:result state)
+                            map-indexed $ fn (idx value)
+                              [] idx $ comp-node
+                                >> states $ str :tree-viewer idx
+                                , value
+                        comp-node (>> states :tree-viewer) (:result state)
+                    textarea $ {}
+                      :style $ merge ui/expand ui/textarea
+                        {} (:font-family ui/font-code) (:font-size 12) (:white-space :pre)
+                      :disabled true
+                      :spellcheck false
+                      :value $ format-cirru-edn (:result state)
+                when dev? $ comp-reel (>> states :reel) reel ({})
+                .render load-plugin
+        |effect-codearea $ quote
+          defeffect effect-codearea () (action el)
+            when (= action :mount)
+              let
+                  target $ .querySelector el "\".codearea"
+                codearea target
+        |comp-node $ quote
+          defcomp comp-node (states node)
+            let
+                cursor $ :cursor states
+                state $ or (:data states)
+                  {} $ :folded? false
+                has-children? $ or
+                  some? $ :result node
+                  some? $ :peek-result node
+                  not $ empty? (:results node)
+              div
+                {} $ :style
+                  merge ui/expand $ {} (:padding 4)
+                    :border-left $ str "\"1px solid " (hsl 0 0 90)
+                    :border-top $ str "\"1px solid " (hsl 0 0 90)
+                div
+                  {} $ :style ui/row-middle
+                  if has-children?
+                    comp-icon
+                      if (:folded? state) :play :chevron-down
+                      {} (:font-size 14)
+                        :color $ if (:folded? state) (hsl 200 80 40) (hsl 200 80 80)
+                        :margin 8
+                        :cursor :pointer
+                      fn (e d!)
+                        d! cursor $ update state :folded? not
+                    comp-icon :minus
+                      {} (:font-size 14)
+                        :color $ hsl 200 80 90
+                        :margin 8
+                        :cursor :pointer
+                      fn $ e d!
+                  if (:ok? node)
+                    <> "\"Ok" $ merge style-label
+                      {}
+                        :background-color $ hsl 200 80 70
+                        :font-family ui/font-fancy
+                    <> "\"Fail" $ merge style-label
+                      {}
+                        :background-color $ hsl 20 80 50
+                        :font-family ui/font-fancy
+                  <>
+                    turn-string $ :parser-node node
+                    merge style-label $ {}
+                      :background-color $ hsl 200 80 76
+                      :font-family ui/font-fancy
+                  if
+                    or
+                      = :label $ :parser-node node
+                      = :component $ :parser-node node
+                    <> (:label node)
+                      merge style-label $ {}
+                        :background-color $ hsl 200 90 60
+                  if-not (:ok? node)
+                    <> (:message node)
+                      merge style-label $ {}
+                        :background-color $ hsl 0 80 60
+                  if
+                    and (:ok? node)
+                      = :is $ :parser-node node
+                    <> (:value node)
+                      merge style-label $ {}
+                        :background-color $ hsl 200 80 70
+                  if (:ok? node)
+                    <>
+                      pr-str $ :value node
+                      merge style-label $ {}
+                        :background-color $ hsl 200 80 80
+                        :font-size 10
+                  <>
+                    -> (:rest node) (take 10) (.join-str "\"")
+                    merge style-label $ {}
+                      :background-color $ hsl 100 10 70
+                      :font-size 10
+                      :min-height 16
+                if
+                  and has-children? $ not (:folded? state)
+                  div ({})
+                    list->
+                      {} $ :style
+                        {} (:padding-left 16) (:margin-top 8)
+                      ->
+                        or (:results node) (:previous-results node) ([])
+                        map-indexed $ fn (idx child)
+                          [] idx $ comp-node (>> states idx) child
+                    if
+                      some? $ :result node
+                      div
+                        {} $ :style
+                          {} (:padding-left 16) (:margin-top 8)
+                        comp-node (>> states :result) (:result node)
+                    if
+                      some? $ :peek-result node
+                      div
+                        {} $ :style
+                          {} (:padding-left 16) (:margin-top 8)
+                        comp-node (>> states :peek-result) (:peek-result node)
+        |style-label $ quote
+          def style-label $ {} (:font-family ui/font-code)
+            :color $ hsl 0 0 100
+            :display :inline-block
+            :line-height "\"22px"
+            :padding "\"0 4px"
+            :border-radius "\"4px"
+            :margin-right 8
+            :white-space :pre
+            :min-height 14
+            :font-size 13
+    |lilac-parser.config $ {}
+      :ns $ quote (ns lilac-parser.config)
+      :defs $ {}
+        |cdn? $ quote
+          def cdn? $ cond
+              exists? js/window
+              , false
+            (exists? js/process) (= "\"true" js/process.env.cdn)
+            :else false
+        |dev? $ quote
+          def dev? $ = "\"dev" (get-env "\"mode")
+        |site $ quote
+          def site $ {} (:storage-key "\"lilac-parser")
     |lilac-parser.core $ {}
       :ns $ quote
         ns lilac-parser.core $ :require
@@ -62,7 +426,7 @@
                     :parser-node :unicode-range
                     :rest xs
         |replace-iter $ quote
-          defn replace-iter (acc attempts content rule replacer) (echo "\"replace iter...")
+          defn replace-iter (acc attempts content rule replacer) (; echo "\"replace iter...")
             assert "\"expects content in list" $ list? content
             if
               either (empty? content) false
@@ -125,6 +489,8 @@
                 {} (:ok? false) (:message "\"failed branch") (:parser-node :component) (:label rule-name)
                   :result $ if blackbox? nil result
                   :rest xs
+        |dev-check $ quote
+          defmacro dev-check (& xs) "\"TODO"
         |is+ $ quote
           defn is+ (x & args)
             let
@@ -425,87 +791,69 @@
             let
                 transform $ either (first args) identity
               {} (:parser-node :optional) (:item x) (:transform transform)
-    |lilac-parser.demo.s-expr $ {}
-      :ns $ quote
-        ns lilac-parser.demo.s-expr $ :require
-          [] lilac-parser.core :refer $ [] parse-lilac defparser is+ combine+ some+ many+ optional+ or+ one-of+ some+
-      :defs $ {}
-        |number-parser $ quote
-          def number-parser $ many+ (one-of+ "\"1234567890")
-        |word-parser $ quote
-          def word-parser $ many+ (one-of+ "\"qwertyuiopasdfghjklzxcvbnm")
-        |space-parser $ quote
-          def space-parser $ is+ "\" "
-        |s-expr-parser+ $ quote
-          defparser s-expr-parser+ () identity $ combine+
-            [] (is+ "\"(")
-              some+ $ or+
-                [] number-parser word-parser space-parser $ s-expr-parser+
-              is+ "\")"
     |lilac-parser.main $ {}
       :ns $ quote
         ns lilac-parser.main $ :require
-          [] lilac-parser.core :refer $ [] replace-lilac parse-lilac find-lilac
-          [] lilac-parser.demo.s-expr :refer $ [] s-expr-parser+
-          [] calcit-test.core :refer $ [] *quit-on-failure?
-          [] lilac-parser.test :refer $ [] run-tests
+          [] respo.core :refer $ [] render! clear-cache! realize-ssr!
+          [] lilac-parser.comp.container :refer $ [] comp-container
+          [] lilac-parser.updater :refer $ [] updater
+          [] lilac-parser.schema :as schema
+          [] reel.util :refer $ [] listen-devtools!
+          [] reel.core :refer $ [] reel-updater refresh-reel
+          [] reel.schema :as reel-schema
+          [] cljs.reader :refer $ [] read-string
+          [] lilac-parser.config :as config
+          [] cumulo-util.core :refer $ [] repeat!
+          "\"./calcit.build-errors" :default build-errors
+          "\"bottom-tip" :default hud!
       :defs $ {}
+        |render-app! $ quote
+          defn render-app! () $ render! mount-target (comp-container @*reel) dispatch!
+        |ssr? $ quote
+          def ssr? $ some? (js/document.querySelector |meta.respo-ssr)
+        |persist-storage! $ quote
+          defn persist-storage! () $ js/localStorage.setItem (:storage-key config/site)
+            format-cirru-edn $ :store @*reel
+        |mount-target $ quote
+          def mount-target $ .querySelector js/document |.app
+        |*reel $ quote
+          defatom *reel $ -> reel-schema/reel (assoc :base schema/store) (assoc :store schema/store)
         |main! $ quote
-          defn main! () (println "|App started.")
-            if
-              = "\"ci" $ get-env "\"env"
-              reset! *quit-on-failure? true
-            reset! *quit-on-failure? true
-            run-demo
-        |run-demo $ quote
-          defn run-demo () (echo "\"running demo")
+          defn main! ()
+            println "\"Running mode:" $ if config/dev? "\"dev" "\"release"
+            if config/dev? $ load-console-formatter!
+            render-app!
+            add-watch *reel :changes $ fn (reel prev) (render-app!)
+            listen-devtools! |k dispatch!
+            js/window.addEventListener |beforeunload $ fn (event) (persist-storage!)
+            flipped js/setInterval 60000 persist-storage!
             let
-                content "\"a"
-                result $ replace-lilac (split content "\"") (s-expr-parser+)
-                  fn (result) (println "\"replacing" result)
-                    str "\"<<<" (pr-str result) "\">>>"
-                find-result $ find-lilac (split content "\"") (s-expr-parser+)
-              println $ :result result
-              println "\"Find results:" $ pr-str (:result find-result)
-            run-tests
+                raw $ js/localStorage.getItem (:storage-key config/site)
+              when (some? raw)
+                dispatch! :hydrate-storage $ parse-cirru-edn raw
+            println "|App started."
+        |snippets $ quote
+          defn snippets () $ println config/cdn?
+        |dispatch! $ quote
+          defn dispatch! (op op-data)
+            when
+              and config/dev? $ not= op :states
+              println "\"Dispatch:" op
+            reset! *reel $ reel-updater updater @*reel op op-data
         |reload! $ quote
-          defn reload! () (println "|Code updated.") (run-demo)
-        |on-error $ quote
-          defn on-error (error) (echo "\"handle error:" error)
-    |lilac-parser.util $ {}
-      :ns $ quote (ns lilac-parser.util)
-      :defs $ {}
-        |seq-strip-beginning $ quote
-          defn seq-strip-beginning (xs ys)
-            cond
-                empty? ys
-                {} (:ok? true) (:rest xs)
-              (empty? xs)
-                {} (:ok? false) (:rest nil)
-                  :reason $ {} (:message "\"xs ends") (:ys ys)
-              (= (first xs) (first ys))
-                recur (rest xs) (rest ys)
-              true $ {} (:ok? false) (:message "\"not matching") (:xs xs) (:ys ys)
+          defn reload! () $ if (nil? build-errors)
+            do (remove-watch *reel :changes) (clear-cache!)
+              add-watch *reel :changes $ fn (reel prev) (render-app!)
+              reset! *reel $ refresh-reel @*reel schema/store updater
+              hud! "\"ok~" "\"Ok"
+            hud! "\"error" build-errors
     |lilac-parser.test $ {}
       :ns $ quote
         ns lilac-parser.test $ :require
-          [] calcit-test.core :refer $ [] deftest is testing
+          [] calcit-test.core :refer $ [] deftest is testing *quit-on-failure?
           [] lilac-parser.core :refer $ [] parse-lilac defparser many+ is+ interleave+ some+ one-of+ combine+ optional+ other-than+ or+ unicode-range+ replace-lilac find-lilac
           [] lilac-parser.preset :refer $ [] lilac-digit lilac-alphabet lilac-comma-space lilac-chinese-char
       :defs $ {}
-        |test-one-of $ quote
-          deftest test-one-of
-            testing "\"x/y/z is one of xyz"
-              is $ exactly-ok?
-                parse-lilac "\"x" $ one-of+ "\"xyz"
-              is $ exactly-ok?
-                parse-lilac "\"y" $ one-of+ "\"xyz"
-              is $ exactly-ok?
-                parse-lilac "\"z" $ one-of+ "\"xyz"
-            testing "\"w is not one of xyz" $ is
-              not-ok? $ parse-lilac "\"w" (one-of+ "\"xyz")
-            testing "\"xy has one of xyz" $ is
-              roughly-ok? $ parse-lilac "\"xy" (one-of+ "\"xyz")
         |test-preset $ quote
           deftest test-preset
             testing "\"find alphabet"
@@ -524,7 +872,6 @@
               is $ not-ok? (parse-lilac "\"." lilac-comma-space)
             testing "\"chinese character"
               is $ exactly-ok? (parse-lilac "\"汉" lilac-chinese-char)
-              is $ not-ok? (parse-lilac "\"a" lilac-chinese-char)
               is $ not-ok? (parse-lilac "\"E" lilac-chinese-char)
               is $ not-ok? (parse-lilac "\"," lilac-chinese-char)
               is $ not-ok? (parse-lilac "\"，" lilac-chinese-char)
@@ -536,8 +883,19 @@
               parse-lilac "\"z" $ unicode-range+ 97 122
             is $ not-ok?
               parse-lilac "\"A" $ unicode-range+ 97 122
-        |run-tests $ quote
-          defn run-tests () (test-or) (test-is) (test-some) (test-many) (test-find) (test-one-of) (test-preset) (test-combine) (test-replace) (test-optional) (test-interleave) (test-other-than) (test-unicode-range)
+        |test-oneof $ quote
+          deftest test-oneof
+            testing "\"x/y/z is one of xyz"
+              is $ exactly-ok?
+                parse-lilac "\"x" $ one-of+ "\"xyz"
+              is $ exactly-ok?
+                parse-lilac "\"y" $ one-of+ "\"xyz"
+              is $ exactly-ok?
+                parse-lilac "\"z" $ one-of+ "\"xyz"
+            testing "\"w is not one of xyz" $ is
+              not-ok? $ parse-lilac "\"w" (one-of+ "\"xyz")
+            testing "\"xy has one of xyz" $ is
+              roughly-ok? $ parse-lilac "\"xy" (one-of+ "\"xyz")
         |not-ok? $ quote
           defn not-ok? (x)
             not $ :ok? x
@@ -597,6 +955,8 @@
             testing "\"x for optional y" $ is
               roughly-ok? $ parse-lilac "\"x"
                 optional+ $ is+ "\"y"
+        |main! $ quote
+          defn main! () (reset! *quit-on-failure? true) (test-combine) (test-find) (test-interleave) (test-is) (test-many) (test-oneof) (test-optional) (test-or) (test-other-than) (test-preset) (test-replace) (test-some) (test-unicode-range)
         |test-is $ quote
           deftest test-is
             testing "\"is x" $ is
@@ -652,15 +1012,15 @@
                 combine+ $ [] (is+ "\"y") (is+ "\"x")
         |test-replace $ quote
           deftest test-replace $ testing "\"replaced content"
-            ; is $ = "\"my project"
+            is $ = "\"my project"
               :result $ replace-lilac "\"cumulo project"
                 or+ $ [] (is+ "\"cumulo") (is+ "\"respo")
                 fn (x) "\"my"
-            ; is $ = "\"my project"
+            is $ = "\"my project"
               :result $ replace-lilac "\"respo project"
                 or+ $ [] (is+ "\"cumulo") (is+ "\"respo")
                 fn (x) "\"my"
-            ; is $ = "\"phlox project"
+            is $ = "\"phlox project"
               :result $ replace-lilac "\"phlox project"
                 or+ $ [] (is+ "\"cumulo") (is+ "\"respo")
                 fn (x) "\"my"
@@ -676,81 +1036,22 @@
               roughly-ok? $ parse-lilac "\"xy" (other-than+ "\"abc")
             testing "\"a is in abc" $ is
               not-ok? $ parse-lilac "\"a" (other-than+ "\"abc")
-    |lilac-parser.demo.json $ {}
-      :ns $ quote
-        ns lilac-parser.demo.json $ :require
-          [] lilac-parser.core :refer $ [] interleave+ is+ other-than+ many+ combine+ optional+ one-of+ some+ or+ defparser label+
-          [] clojure.string :as string
+        |reload! $ quote
+          defn reload! () $ println "\"TODO"
+    |lilac-parser.util $ {}
+      :ns $ quote (ns lilac-parser.util)
       :defs $ {}
-        |comma-parser $ quote
-          def comma-parser $ label+ "\"comma"
-            combine+
-              [] space-parser (is+ "\",") space-parser
-              fn (x) nil
-        |demo-parser $ quote
-          def demo-parser $ many+ (other-than+ "\"abc")
-        |string-parser $ quote
-          def string-parser $ label+ "\"string"
-            combine+
-              [] (is+ "\"\"")
-                some+ $ or+
-                  [] (other-than+ "\"\"\\") (is+ "\"\\\"") (is+ "\"\\\\") (is+ "\"\\n")
-                is+ "\"\""
-              fn (xs)
-                string/join "\"" $ nth xs 1
-        |number-parser $ quote
-          def number-parser $ label+ "\"number"
-            combine+
-              []
-                optional+ $ is+ "\"-"
-                , digits-parser $ optional+
-                  combine+
-                    [] (is+ "\".") digits-parser
-                    fn (xs) (string/join "\"" xs)
-              fn (xs)
-                js/Number $ string/join "\"" xs
-        |boolean-parser $ quote
-          def boolean-parser $ label+ "\"boolean"
-            or+
-              [] (is+ "\"true") (is+ "\"false")
-              fn (x)
-                if (= x "\"true") true false
-        |array-parser+ $ quote
-          defparser array-parser+ ()
-            fn (x)
-              vec $ first (nth x 1)
-            combine+ $ [] (is+ "\"[")
-              some+ $ interleave+ (value-parser+) comma-parser
-                fn (xs) (take-nth 2 xs)
-              is+ "\"]"
-        |space-parser $ quote
-          def space-parser $ label+ "\"space"
-            some+ (is+ "\" ")
-              fn (x) nil
-        |value-parser+ $ quote
-          defparser value-parser+ () identity $ or+
-            [] number-parser string-parser nil-parser boolean-parser (array-parser+) (object-parser+)
-        |nil-parser $ quote
-          def nil-parser $ label+ "\"nil"
-            or+
-              [] (is+ "\"null") (is+ "\"undefined")
-              fn (x) nil
-        |digits-parser $ quote
-          def digits-parser $ many+ (one-of+ "\"0123456789")
-            fn (xs) (string/join "\"" xs)
-        |object-parser+ $ quote
-          defparser object-parser+ () identity $ combine+
-            [] (is+ "\"{")
-              optional+ $ interleave+
-                combine+
-                  [] string-parser space-parser (is+ "\":") space-parser $ value-parser+
-                  fn (xs)
-                    [] (nth xs 0) (nth xs 4)
-                , comma-parser
-                  fn (xs) (take-nth 2 xs)
-              is+ "\"}"
-            fn (xs)
-              into ({}) (nth xs 1)
+        |seq-strip-beginning $ quote
+          defn seq-strip-beginning (xs ys)
+            cond
+                empty? ys
+                {} (:ok? true) (:rest xs)
+              (empty? xs)
+                {} (:ok? false) (:rest nil)
+                  :reason $ {} (:message "\"xs ends") (:ys ys)
+              (= (first xs) (first ys))
+                recur (rest xs) (rest ys)
+              true $ {} (:ok? false) (:message "\"not matching") (:xs xs) (:ys ys)
     |lilac-parser.preset $ {}
       :ns $ quote
         ns lilac-parser.preset $ :require
@@ -769,3 +1070,9 @@
               fn (x) nil
         |lilac-chinese-char $ quote
           def lilac-chinese-char $ label+ "\"Chinese char" (unicode-range+ 0x4e00 0x9fa5)
+    |lilac-parser.schema $ {}
+      :ns $ quote (ns lilac-parser.schema)
+      :defs $ {}
+        |store $ quote
+          def store $ {}
+            :states $ {}
