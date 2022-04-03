@@ -875,6 +875,7 @@
                     |l $ {} (:type :expr) (:by |u0) (:at 1649007928567)
                       :data $ {}
                         |b $ {} (:type :leaf) (:by |u0) (:at 1649007928567) (:text |s-expr-parser+)
+                        |h $ {} (:type :leaf) (:by |u0) (:at 1649011018570) (:text |value-parser+)
         :defs $ {}
           |comp-container $ {} (:type :expr) (:by |u0) (:at 1649007928567)
             :data $ {}
@@ -6471,6 +6472,7 @@
                             :data $ {}
                               |T $ {} (:type :leaf) (:by |u0) (:at 1649009078276) (:text |parse-cirru-edn)
                               |b $ {} (:type :leaf) (:by |u0) (:at 1649009078276) (:text |raw)
+                  |D $ {} (:type :leaf) (:by |u0) (:at 1649010631993) (:text |;)
               |x $ {} (:type :expr) (:by |u0) (:at 1649009078276)
                 :data $ {}
                   |T $ {} (:type :leaf) (:by |u0) (:at 1649009078276) (:text |println)

@@ -139,7 +139,7 @@
           lilac-parser.core :refer $ parse-lilac replace-lilac find-lilac defparser is+ combine+ some+ many+ optional+ or+ one-of+ some+ unicode-range+
           "\"@mvc-works/codearea" :refer $ codearea
           feather.core :refer $ comp-icon
-          lilac-parser.demo.s-expr :refer $ s-expr-parser+
+          lilac-parser.demo.s-expr :refer $ s-expr-parser+ value-parser+
           lilac-parser.demo.json :refer $ demo-parser number-parser string-parser array-parser+ value-parser+ boolean-parser
           respo-alerts.core :refer $ use-prompt
       :defs $ {}
@@ -827,7 +827,7 @@
             listen-devtools! |k dispatch!
             js/window.addEventListener |beforeunload $ fn (event) (persist-storage!)
             flipped js/setInterval 60000 persist-storage!
-            let
+            ; let
                 raw $ js/localStorage.getItem (:storage-key config/site)
               when (some? raw)
                 dispatch! :hydrate-storage $ parse-cirru-edn raw
