@@ -259,7 +259,7 @@
             quasiquote $ defn (~ comp-name) (~ args)
               assert "\"a function for parser" $ fn? (~ value-fn)
               {} (:parser-node :component)
-                :name $ turn-keyword
+                :name $ turn-tag
                   quote $ ~ comp-name
                 :blackbox? false
                 :value-fn $ ~ value-fn
@@ -271,7 +271,7 @@
             quasiquote $ defn (~ comp-name) (~ args)
               assert "\"a function for parser" $ fn? (~ value-fn)
               {} (:parser-node :component)
-                :name $ turn-keyword
+                :name $ turn-tag
                   quote $ ~ comp-name
                 :blackbox? true
                 :value-fn $ ~ value-fn
@@ -620,6 +620,12 @@
                       , "\" of code " head-code "\" is not in between [" min-code "\", " max-code "\"]"
                     :parser-node :unicode-range
                     :rest xs
+        |register-custom-rule! $ quote
+          defn register-custom-rule! (kind f)
+            assert (tag? kind) "\"expects kind in tag"
+            assert (fn? f) "\"expects parser rule in function"
+            println "\"registering parser rule" kind
+            swap! *custom-methods assoc kind f
         |replace-iter $ quote
           defn replace-iter (acc attempts content rule replacer) (; echo "\"replace iter...")
             assert "\"expects content in list" $ list? content
@@ -644,12 +650,6 @@
             replace-iter "\"" ([])
               if (string? content) (split content "\"") content
               , rule replacer
-        |resigter-custom-rule! $ quote
-          defn resigter-custom-rule! (kind f)
-            assert (keyword? kind) "\"expects kind in keyword"
-            assert (fn? f) "\"expects parser rule in function"
-            println "\"registering parser rule" kind
-            swap! *custom-methods assoc kind f
         |some+ $ quote
           defn some+ (x & args)
             if (nil? x) (raise "\"expected non-empty rule")
