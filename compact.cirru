@@ -492,28 +492,23 @@
                         :peek-result result
         |parse-one-of $ quote
           defn parse-one-of (xs rule)
-            if (empty? xs)
-              {} (:ok? false) (:message "\"unexpected EOF") (:parser-node :one-of) (:rest xs)
-              let
-                  items $ :items rule
-                  transform $ :transform rule
-                if
-                  if (string? items)
-                    includes? items $ first xs
-                    includes? items $ first xs
-                  {} (:ok? true)
-                    :value $ let
-                        v $ first xs
-                      if (some? transform) (transform v) v
-                    :rest $ rest xs
-                    :parser-node :one-of
-                  {} (:ok? false)
-                    :message $ str
-                      pr-str $ first xs
-                      , "\" is not in "
+            list-match xs
+              () $ {} (:ok? false) (:message "\"unexpected EOF") (:parser-node :one-of) (:rest xs)
+              (x0 xss)
+                let
+                    items $ :items rule
+                    transform $ :transform rule
+                  if
+                    if (string? items) (includes? items x0) (includes? items x0)
+                    {} (:ok? true)
+                      :value $ if (some? transform) (transform x0) x0
+                      :rest xss
+                      :parser-node :one-of
+                    {} (:ok? false)
+                      :message $ str (pr-str x0) "\" is not in "
                         pr-str $ if (string? items) items (join-str "\"" items)
-                    :parser-node :one-of
-                    :rest xs
+                      :parser-node :one-of
+                      :rest xs
         |parse-optional $ quote
           defn parse-optional (xs rule)
             let
@@ -557,24 +552,24 @@
                       recur (rest rules) (conj failures result)
         |parse-other-than $ quote
           defn parse-other-than (xs rule)
-            if (empty? xs)
-              {} (:ok? false) (:message "\"Unexpected EOF") (:parser-node :other-than) (:rest xs)
-              let
-                  items $ :items rule
-                  transform $ :transform rule
-                  x0 $ first xs
-                if
-                  if (string? items) (includes? items x0) (includes? items x0)
-                  {} (:ok? false)
-                    :message $ str (pr-str x0) "\" among "
-                      pr-str $ if (string? items) items (join-str "\"" items)
-                      , "\" is invalid"
-                    :parser-node :other-than
-                    :rest xs
-                  {} (:ok? true)
-                    :value $ if (some? transform) (transform x0) x0
-                    :rest $ rest xs
-                    :parser-node :other-than
+            list-match xs
+              () $ {} (:ok? false) (:message "\"Unexpected EOF") (:parser-node :other-than) (:rest xs)
+              (x0 xss)
+                let
+                    items $ :items rule
+                    transform $ :transform rule
+                  if
+                    if (string? items) (includes? items x0) (includes? items x0)
+                    {} (:ok? false)
+                      :message $ str (pr-str x0) "\" among "
+                        pr-str $ if (string? items) items (join-str "\"" items)
+                        , "\" is invalid"
+                      :parser-node :other-than
+                      :rest xs
+                    {} (:ok? true)
+                      :value $ if (some? transform) (transform x0) x0
+                      :rest xss
+                      :parser-node :other-than
         |parse-some $ quote
           defn parse-some (xs0 rule)
             let
@@ -598,28 +593,24 @@
                       :peek-result result
         |parse-unicode-range $ quote
           defn parse-unicode-range (xs rule)
-            if (empty? xs)
-              {} (:ok? false) (:message "\"unexpected EOF") (:parser-node :unicode-range) (:rest xs)
-              let
-                  min-code $ :min-code rule
-                  max-code $ :max-code rule
-                  transform $ :transform rule
-                  head-code $ get-char-code
-                    first $ first xs
-                if
-                  and (>= head-code min-code) (<= head-code max-code)
-                  {} (:ok? true)
-                    :value $ let
-                        v $ first xs
-                      if (some? transform) (transform v) v
-                    :rest $ rest xs
-                    :parser-node :unicode-range
-                  {} (:ok? false)
-                    :message $ str
-                      pr-str $ first xs
-                      , "\" of code " head-code "\" is not in between [" min-code "\", " max-code "\"]"
-                    :parser-node :unicode-range
-                    :rest xs
+            list-match xs
+              () $ {} (:ok? false) (:message "\"unexpected EOF") (:parser-node :unicode-range) (:rest xs)
+              (x0 xss)
+                let
+                    min-code $ :min-code rule
+                    max-code $ :max-code rule
+                    transform $ :transform rule
+                    head-code $ get-char-code (first x0)
+                  if
+                    and (>= head-code min-code) (<= head-code max-code)
+                    {} (:ok? true)
+                      :value $ if (some? transform) (transform x0) x0
+                      :rest xss
+                      :parser-node :unicode-range
+                    {} (:ok? false)
+                      :message $ str (pr-str x0) "\" of code " head-code "\" is not in between [" min-code "\", " max-code "\"]"
+                      :parser-node :unicode-range
+                      :rest xs
         |register-custom-rule! $ quote
           defn register-custom-rule! (kind f)
             assert (tag? kind) "\"expects kind in tag"
@@ -629,22 +620,18 @@
         |replace-iter $ quote
           defn replace-iter (acc attempts content rule replacer) (; echo "\"replace iter...")
             assert "\"expects content in list" $ list? content
-            if
-              either (empty? content) false
-              {} (:result acc) (:attempts attempts)
-              let
-                  attempt $ parse-lilac content rule
-                if (:ok? attempt)
-                  recur
-                    str acc $ replacer (:value attempt)
-                    append attempts attempt
-                    :rest attempt
-                    , rule replacer
-                  recur
-                    str acc $ first content
-                    append attempts attempt
-                    rest content
-                    , rule replacer
+            list-match content
+              () $ {} (:result acc) (:attempts attempts)
+              (c0 cs)
+                let
+                    attempt $ parse-lilac content rule
+                  if (:ok? attempt)
+                    recur
+                      str acc $ replacer (:value attempt)
+                      append attempts attempt
+                      :rest attempt
+                      , rule replacer
+                    recur (str acc c0) (append attempts attempt) cs rule replacer
         |replace-lilac $ quote
           defn replace-lilac (content rule replacer) (echo "\"calling")
             replace-iter "\"" ([])
@@ -737,16 +724,13 @@
             take-nth-iter ([]) 0 xs n
         |take-nth-iter $ quote
           defn take-nth-iter (acc i xs step)
-            if (empty? xs) acc $ cond
-                = i 0
-                recur
-                  conj acc $ first xs
-                  inc i
-                  rest xs
-                  , step
-              (= i (dec step))
-                recur acc 0 (rest xs) step
-              true $ recur acc (inc i) (rest xs) step
+            list-match xs
+              () acc
+              (x0 xss)
+                case-default
+                  recur acc (inc i) xss step
+                  0 $ recur (conj acc x0) (inc i) xss step
+                  (dec step) (recur acc 0 xss step)
         |value-parser+ $ quote
           defparser value-parser+ () identity $ or+
             [] number-parser string-parser nil-parser boolean-parser (array-parser+) (object-parser+)
@@ -776,11 +760,11 @@
         |*reel $ quote
           defatom *reel $ -> reel-schema/reel (assoc :base schema/store) (assoc :store schema/store)
         |dispatch! $ quote
-          defn dispatch! (op op-data)
+          defn dispatch! (op)
             when
-              and config/dev? $ not= op :states
+              and config/dev? $ not= (nth op 0) :states
               println "\"Dispatch:" op
-            reset! *reel $ reel-updater updater @*reel op op-data
+            reset! *reel $ reel-updater updater @*reel op
         |main! $ quote
           defn main! ()
             println "\"Running mode:" $ if config/dev? "\"dev" "\"release"
@@ -1045,11 +1029,13 @@
     |lilac-parser.updater $ {}
       :defs $ {}
         |updater $ quote
-          defn updater (store op op-data op-id op-time)
-            case-default op store
-              :states $ update-states store op-data
-              :content $ assoc store :content op-data
-              :hydrate-storage op-data
+          defn updater (store op op-id op-time)
+            tag-match op
+                :states cursor s
+                update-states store cursor s
+              (:content c) (assoc store :content c)
+              (:hydrate-storage d) d
+              _ $ do (eprintln "\"Unknown op:" op) store
       :ns $ quote
         ns lilac-parser.updater $ :require
           [] respo.cursor :refer $ [] update-states
