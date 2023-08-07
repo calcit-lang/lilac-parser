@@ -1,6 +1,6 @@
 
 {} (:package |lilac-parser)
-  :configs $ {} (:init-fn |lilac-parser.main/main!) (:reload-fn |lilac-parser.main/reload!) (:version |0.0.1)
+  :configs $ {} (:init-fn |lilac-parser.main/main!) (:reload-fn |lilac-parser.main/reload!) (:version |0.0.2)
     :modules $ [] |calcit-test/ |lilac/ |respo.calcit/ |memof/ |respo-ui.calcit/ |respo-markdown.calcit/ |reel.calcit/ |alerts.calcit/ |respo-feather.calcit/
   :entries $ {}
     :test $ {} (:init-fn |lilac-parser.test/main!) (:reload-fn |lilac-parser.test/reload!) (:version |0.0.1)
@@ -26,11 +26,11 @@
                         do (parse-cirru-edn x) nil
                         fn (e) (js/console.log "\"Failed to parse") e
               div
-                {} $ :style (merge ui/global ui/fullscreen ui/column)
+                {} $ :class-name (str-spaced css/global css/fullscreen css/column)
                 div
-                  {} $ :style
-                    merge ui/row-middle $ {} (:padding 8)
-                  button $ {} (:style ui/button) (:inner-text "\"Parse")
+                  {} (:class-name css/row-middle)
+                    :style $ {} (:padding 8)
+                  button $ {} (:class-name css/button) (:inner-text "\"Parse")
                     :on-click $ fn (e d!)
                       let
                           result $ parse-lilac
@@ -42,17 +42,13 @@
                           r2 $ parse-lilac (:code state) (unicode-range+ 97 122)
                         d! cursor $ assoc state :result result
                   =< 16 nil
-                  span $ {} (:inner-text "\"GUI")
-                    :style $ {} (:font-family ui/font-fancy)
+                  span $ {} (:inner-text "\"GUI") (:class-name css-gui-toggler)
+                    :style $ {}
                       :color $ if (:gui? state) (hsl 200 80 40) (hsl 200 80 80)
-                      :font-weight 300
-                      :font-size 20
-                      :cursor :pointer
-                      :line-height "\"24px"
                     :on-click $ fn (e d!)
                       d! cursor $ update state :gui? not
                   =< 16 nil
-                  a $ {} (:inner-text "\"Load EDN") (:style ui/link)
+                  a $ {} (:inner-text "\"Load EDN") (:class-name css/link)
                     :on-click $ fn (e d!)
                       .show load-plugin d! $ fn (text)
                         let
@@ -62,7 +58,7 @@
                             d! cursor $ assoc state :result snapshot
                             d! cursor $ assoc state :result snapshot
                   =< 16 nil
-                  a $ {} (:inner-text "\"Replacer") (:style ui/link)
+                  a $ {} (:inner-text "\"Replacer") (:class-name css/link)
                     :on-click $ fn (e d!)
                       let
                           result $ replace-lilac
@@ -77,31 +73,29 @@
                         d! cursor $ assoc state :result (:attempts result)
                         println "\"Find results:" $ pr-str (:result find-result)
                 div
-                  {} $ :style (merge ui/expand ui/row)
-                  textarea $ {}
+                  {} $ :class-name (str-spaced css/expand css/row)
+                  textarea $ {} (:class-name "\"codearea") (:placeholder "\"Content")
                     :value $ :code state
-                    :class-name "\"codearea"
-                    :placeholder "\"Content"
-                    :style $ merge ui/textarea
-                      {} (:font-family ui/font-code) (:width 300)
+                    :class-name $ str-spaced css/textarea css/font-code
+                    :style $ {} (:width 300)
                     :on-input $ fn (e d!)
                       d! cursor $ assoc state :code (:value e)
                   if (:gui? state)
                     div
-                      {} $ :style
-                        merge ui/expand $ {} (:padding-bottom 400)
+                      {} (:class-name css/expand)
+                        :style $ {} (:padding-bottom 400)
                       if
                         list? $ :result state
                         list-> ({})
-                          ->> (:result state)
+                          -> (:result state)
                             map-indexed $ fn (idx value)
                               [] idx $ comp-node
                                 >> states $ str :tree-viewer idx
                                 , value
                         comp-node (>> states :tree-viewer) (:result state)
                     textarea $ {}
-                      :style $ merge ui/expand ui/textarea
-                        {} (:font-family ui/font-code) (:font-size 12) (:white-space :pre)
+                      :class-name $ str-spaced css/expand css/textarea css/font-code
+                      :style $ {} (:font-size 12) (:white-space :pre) (:font-family ui/font-code)
                       :disabled true
                       :spellcheck false
                       :value $ format-cirru-edn (:result state)
@@ -118,12 +112,9 @@
                   some? $ :peek-result node
                   not $ empty? (:results node)
               div
-                {} $ :style
-                  merge ui/expand $ {} (:padding 4)
-                    :border-left $ str "\"1px solid " (hsl 0 0 90)
-                    :border-top $ str "\"1px solid " (hsl 0 0 90)
+                {} $ :class-name css-node
                 div
-                  {} $ :style ui/row-middle
+                  {} $ :class-name css/row-middle
                   if has-children?
                     comp-icon
                       if (:folded? state) :play :chevron-down
@@ -140,45 +131,50 @@
                         :cursor :pointer
                       fn $ e d!
                   if (:ok? node)
-                    <> "\"Ok" $ merge style-label
-                      {}
+                    span $ {}
+                      :class-name $ str-spaced css-label css/font-fancy
+                      :inner-text "\"Ok"
+                      :style $ {}
                         :background-color $ hsl 200 80 70
-                        :font-family ui/font-fancy
-                    <> "\"Fail" $ merge style-label
-                      {}
+                    span $ {}
+                      :class-name $ str-spaced css-label css/font-fancy
+                      :inner-text "\"Fail"
+                      :style $ {}
                         :background-color $ hsl 20 80 50
-                        :font-family ui/font-fancy
-                  <>
-                    turn-string $ :parser-node node
-                    merge style-label $ {}
+                  span $ {}
+                    :class-name $ str-spaced css-label css/font-fancy
+                    :inner-text $ :parser-node node
+                    :style $ {}
                       :background-color $ hsl 200 80 76
-                      :font-family ui/font-fancy
                   if
                     or
                       = :label $ :parser-node node
                       = :component $ :parser-node node
-                    <> (:label node)
-                      merge style-label $ {}
+                    span $ {} (:class-name css-label)
+                      :inner-text $ :label node
+                      :style $ {}
                         :background-color $ hsl 200 90 60
                   if-not (:ok? node)
-                    <> (:message node)
-                      merge style-label $ {}
+                    span $ {} (:class-name css-label)
+                      :inner-text $ :message node
+                      :style $ {}
                         :background-color $ hsl 0 80 60
                   if
                     and (:ok? node)
                       = :is $ :parser-node node
-                    <> (:value node)
-                      merge style-label $ {}
+                    span $ {} (:class-name css-label)
+                      :inner-text $ :value node
+                      :style $ {}
                         :background-color $ hsl 200 80 70
                   if (:ok? node)
-                    <>
-                      pr-str $ :value node
-                      merge style-label $ {}
+                    span $ {} (:class-name css-label)
+                      :inner-text $ pr-str (:value node)
+                      :style $ {}
                         :background-color $ hsl 200 80 80
                         :font-size 10
-                  <>
-                    -> (:rest node) (take 10) (.join-str "\"")
-                    merge style-label $ {}
+                  span $ {} (:class-name css-label)
+                    :inner-text $ -> (:rest node) (take 10) (.join-str "\"")
+                    :style $ {}
                       :background-color $ hsl 100 10 70
                       :font-size 10
                       :min-height 16
@@ -204,23 +200,33 @@
                         {} $ :style
                           {} (:padding-left 16) (:margin-top 8)
                         comp-node (>> states :peek-result) (:peek-result node)
+        |css-gui-toggler $ quote
+          defstyle css-gui-toggler $ {}
+            "\"&" $ {} (:font-family ui/font-fancy) (:font-weight 300) (:font-size 20) (:cursor :pointer) (:line-height "\"24px")
+        |css-label $ quote
+          defstyle css-label $ {}
+            "\"&" $ {} (:font-family ui/font-code)
+              :color $ hsl 0 0 100
+              :display :inline-block
+              :line-height "\"22px"
+              :padding "\"0 4px"
+              :border-radius "\"4px"
+              :margin-right 8
+              :white-space :pre
+              :min-height 14
+              :font-size 13
+        |css-node $ quote
+          defstyle css-node $ {}
+            "\"&" $ merge ui/expand
+              {} (:padding 4)
+                :border-left $ str "\"1px solid " (hsl 0 0 90)
+                :border-top $ str "\"1px solid " (hsl 0 0 90)
         |effect-codearea $ quote
           defeffect effect-codearea () (action el)
             when (= action :mount)
               let
                   target $ .querySelector el "\".codearea"
                 codearea target
-        |style-label $ quote
-          def style-label $ {} (:font-family ui/font-code)
-            :color $ hsl 0 0 100
-            :display :inline-block
-            :line-height "\"22px"
-            :padding "\"0 4px"
-            :border-radius "\"4px"
-            :margin-right 8
-            :white-space :pre
-            :min-height 14
-            :font-size 13
       :ns $ quote
         ns lilac-parser.comp.container $ :require (respo-ui.core :as ui)
           respo-ui.core :refer $ hsl
@@ -235,6 +241,8 @@
           lilac-parser.demo.s-expr :refer $ s-expr-parser+ value-parser+
           lilac-parser.demo.json :refer $ demo-parser number-parser string-parser array-parser+ value-parser+ boolean-parser
           respo-alerts.core :refer $ use-prompt
+          respo-ui.css :as css
+          respo.css :refer $ defstyle
     |lilac-parser.config $ {}
       :defs $ {}
         |dev? $ quote

@@ -1,6 +1,6 @@
 {
   "name": "lilac-parser",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "repository": "git@github.com:calcit-lang/lilac-parser.git",
   "author": "jiyinyiyong <jiyinyiyong@gmail.com>",
   "devDependencies": {
