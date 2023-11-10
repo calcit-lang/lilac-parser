@@ -1,15 +1,15 @@
 {
   "name": "lilac-parser",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "repository": "git@github.com:calcit-lang/lilac-parser.git",
   "author": "jiyinyiyong <jiyinyiyong@gmail.com>",
   "devDependencies": {
     "bottom-tip": "^0.1.5",
-    "feather-icons": "^4.29.0",
-    "vite": "^4.4.9"
+    "feather-icons": "^4.29.1",
+    "vite": "^4.5.0"
   },
   "license": "MIT",
   "dependencies": {
-    "@calcit/procs": "^0.7.12"
+    "@calcit/procs": "^0.8.9"
   }
 }
