@@ -6,10 +6,10 @@
   "devDependencies": {
     "bottom-tip": "^0.1.5",
     "feather-icons": "^4.29.1",
-    "vite": "^4.5.0"
+    "vite": "^5.2.6"
   },
   "license": "MIT",
   "dependencies": {
-    "@calcit/procs": "^0.8.9"
+    "@calcit/procs": "^0.8.45"
   }
 }

@@ -792,7 +792,7 @@
               list-match xs
                 () acc
                 (x0 xss)
-                  case-default
+                  case-default i
                     recur acc (inc i) xss step
                     0 $ recur (conj acc x0) (inc i) xss step
                     (dec step) (recur acc 0 xss step)
