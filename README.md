@@ -164,3 +164,13 @@ https://github.com/calcit-lang/respo-calcit-workflow
 ### License
 
 MIT
+
+### Development
+
+Requires the Calcit 0.14.11 toolchain and `@calcit/procs` 0.14.11.
+
+- `caps --strict` — resolve immutable dependencies
+- `calcit calcit.cirru --check-only` — strict snapshot check
+- `calcit --entry test` — native parser tests
+- `calcit --entry test --emit-path js-out js && node test.mjs` — JavaScript parser tests
+- `calcit calcit.cirru js && yarn vite build --base=./` — production build
