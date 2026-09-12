@@ -3,11 +3,11 @@
   :entries $ {}
     :default $ {} (:description |) (:init-fn 'lilac-parser.main/main!) (:mode :native) (:reload-fn 'lilac-parser.main/reload!)
       :feature-policy $ {}
-      :modules $ [] |lilac/ |respo.calcit/ |memof/ |respo-ui.calcit/ |respo-markdown.calcit/ |reel.calcit/ |alerts.calcit/ |respo-feather.calcit/
+      :modules $ [] |respo.calcit/ |respo-ui.calcit/ |respo-markdown.calcit/ |reel.calcit/ |alerts.calcit/ |respo-feather.calcit/
       :type-slots $ {}
     :test $ {} (:description |) (:init-fn 'lilac-parser.test/main!) (:mode :native) (:reload-fn 'lilac-parser.test/reload!)
       :feature-policy $ {}
-      :modules $ [] |respo.calcit/ |memof/
+      :modules $ [] |respo.calcit/
       :type-slots $ {}
   :files $ {}
     'lilac-parser.comp.container $ %{} 'FileEntry
