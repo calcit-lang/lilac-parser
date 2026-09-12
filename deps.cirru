@@ -1,8 +1,6 @@
 {} (:calcit-version |0.14.11)
   :version |0.0.3
   :dependencies $ {}
-    |calcit-lang/lilac |0.5.9
-    |calcit-lang/memof |0.0.31
     |Respo/alerts.calcit |0.10.31
     |Respo/reel.calcit |0.6.20
     |Respo/respo-feather.calcit |0.4.12
