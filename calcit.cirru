@@ -92,9 +92,8 @@
                         if
                           list? $ &map:get state :result
                           list-> ({})
-                            ->
-                              assert-type (&map:get state :result) (:: 'List 'Map)
-                              map-indexed $ fn (idx value)
+                            -> (&map:get state :result)
+                              lilac-parser.util/map-indexed-dynamic $ fn (idx value)
                                 [] idx $ comp-node
                                   >> states $ str :tree-viewer idx
                                   , value
@@ -197,10 +196,8 @@
                         {} $ :style
                           {} (:padding-left 16) (:margin-top 8)
                         ->
-                          assert-type
-                            or (&map:get node :results) (&map:get node :previous-results) ([])
-                            :: 'List 'Map
-                          map-indexed $ fn (idx child)
+                          or (&map:get node :results) (&map:get node :previous-results) ([])
+                          lilac-parser.util/map-indexed-dynamic $ fn (idx child)
                             [] idx $ comp-node (>> states idx) child
                       if
                         some? $ &map:get node :result
@@ -264,10 +261,10 @@
             reel.comp.reel :refer $ comp-reel
             respo-md.comp.md :refer $ comp-md
             lilac-parser.config :refer $ dev?
-            lilac-parser.core :refer $ parse-lilac replace-lilac find-lilac defparser is+ combine+ some+ many+ optional+ or+ one-of+ some+ unicode-range+
+            lilac-parser.core :refer $ parse-lilac replace-lilac find-lilac defparser is+ combine+ some+ many+ optional+ or+ one-of+ unicode-range+
             |@mvc-works/codearea :refer $ codearea
             feather.core :refer $ comp-icon
-            lilac-parser.demo.s-expr :refer $ s-expr-parser+ value-parser+
+            lilac-parser.demo.s-expr :refer $ s-expr-parser+
             lilac-parser.demo.json :refer $ demo-parser number-parser string-parser array-parser+ value-parser+ boolean-parser
             respo-alerts.core :refer $ use-prompt
             respo-ui.css :as css
@@ -365,7 +362,7 @@
           :examples $ []
           :schema $ :: 'Fn
             {} (:return 'Dynamic)
-              :args $ [] (:: 'List 'Dynamic) 'Dynamic
+              :args $ [] 'Dynamic 'Dynamic
               :features $ #{} :js-ffi
         'find-lilac-iter $ %{} 'CodeEntry (:doc |)
           :code $ quote
@@ -816,8 +813,7 @@
                       min-code $ &map:get rule :min-code
                       max-code $ &map:get rule :max-code
                       transform $ &map:get rule :transform
-                      head-code $ get-char-code
-                        assert-type (&list:first x0) String
+                      head-code $ get-char-code (assert-type x0 String)
                     if
                       and (>= head-code min-code) (<= head-code max-code)
                       {} (:ok? true)
@@ -875,7 +871,7 @@
           :examples $ []
           :schema $ :: 'Fn
             {} (:return 'Dynamic)
-              :args $ [] (:: 'List 'Dynamic) 'Dynamic 'Dynamic
+              :args $ [] 'Dynamic 'Dynamic 'Dynamic
               :features $ #{} :js-ffi
         'some+ $ %{} 'CodeEntry (:doc |)
           :code $ quote
@@ -1066,21 +1062,23 @@
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote
           ns lilac-parser.demo.s-expr $ :require
-            [] lilac-parser.core :refer $ [] parse-lilac defparser is+ combine+ some+ many+ optional+ or+ one-of+ some+
+            [] lilac-parser.core :refer $ [] parse-lilac defparser is+ combine+ some+ many+ optional+ or+ one-of+
     'lilac-parser.main $ %{} 'FileEntry
       :defs $ {}
         '*reel $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defatom *reel $ -> reel-schema/reel (assoc :base schema/store) (assoc :store schema/store)
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Ref
+            :: 'reel.typed/State 'Enum $ :: 'Map 'Dynamic 'Dynamic
         'dispatch! $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn dispatch! (op)
               when
-                and config/dev? $ not= (&list:nth op 0) :states
+                and config/dev? $ not
+                  &= (&enum:nth op 0) :states
                 println |Dispatch: op
-              reset! *reel $ reel-updater updater @*reel op
+              reset! *reel $ next-reel op
           :examples $ []
           :schema $ :: 'Fn
             {} (:return 'Dynamic)
@@ -1111,6 +1109,20 @@
             def mount-target $ .querySelector js/document |.app
           :examples $ []
           :schema $ :: 'Dynamic
+        'next-reel $ %{} 'CodeEntry (:doc |)
+          :code $ quote
+            defn next-reel (op)
+              typed/record-op updater
+                assert-type @*reel $ :: 'reel.typed/State 'Enum (:: 'Map 'Dynamic 'Dynamic)
+                assert-type op 'Enum
+                generate-id!
+                unsafe-coerce js/Date.now 'Number
+          :examples $ []
+          :schema $ :: 'Fn
+            {}
+              :args $ [] 'Enum
+              :features $ #{} :js-ffi
+              :return $ :: 'reel.typed/State 'Enum (:: 'Map 'Dynamic 'Dynamic)
         'persist-storage! $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn persist-storage! () $ js/localStorage.setItem (&map:get config/site :storage-key)
@@ -1125,7 +1137,7 @@
             defn reload! () $ if (nil? build-errors)
               do (remove-watch *reel :changes) (clear-cache!)
                 add-watch *reel :changes $ fn (reel prev) (render-app!)
-                reset! *reel $ refresh-reel @*reel schema/store updater
+                reset! *reel $ reloaded-reel
                 hud! |ok~ |Ok
               hud! |error build-errors
           :examples $ []
@@ -1133,6 +1145,16 @@
             {} (:return 'Dynamic)
               :args $ []
               :features $ #{} :js-ffi
+        'reloaded-reel $ %{} 'CodeEntry (:doc |)
+          :code $ quote
+            defn reloaded-reel () $ typed/refresh updater
+              assert-type @*reel $ :: 'reel.typed/State 'Enum (:: 'Map 'Dynamic 'Dynamic)
+              assert-type schema/store $ :: 'Map 'Dynamic 'Dynamic
+          :examples $ []
+          :schema $ :: 'Fn
+            {}
+              :args $ []
+              :return $ :: 'reel.typed/State 'Enum (:: 'Map 'Dynamic 'Dynamic)
         'render-app! $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn render-app! () $ render! mount-target (comp-container @*reel) dispatch!
@@ -1161,9 +1183,10 @@
             [] lilac-parser.comp.container :refer $ [] comp-container
             [] lilac-parser.updater :refer $ [] updater
             [] lilac-parser.schema :as schema
-            [] reel.util :refer $ [] listen-devtools!
+            [] reel.util :refer $ [] listen-devtools! generate-id!
             [] reel.core :refer $ [] reel-updater refresh-reel
             [] reel.schema :as reel-schema
+            [] reel.typed :as typed
             [] cljs.reader :refer $ [] read-string
             [] lilac-parser.config :as config
             [] cumulo-util.core :refer $ [] repeat!
@@ -1215,6 +1238,21 @@
         :code $ quote (ns lilac-parser.schema)
     'lilac-parser.test $ %{} 'FileEntry
       :defs $ {}
+        '*quit-on-failure? $ %{} 'CodeEntry (:doc |)
+          :code $ quote (defatom *quit-on-failure? false)
+          :examples $ []
+          :schema $ :: 'Ref 'Bool
+        'deftest $ %{} 'CodeEntry (:doc |)
+          :code $ quote
+            defmacro deftest (name & body)
+              quasiquote $ defn (~ name) ()
+                do $ ~@ body
+          :examples $ []
+          :schema $ :: 'Macro
+            {} (:rest 'Syntax)
+              :capabilities $ #{}
+              :expansion $ :: 'Definition 'Dynamic
+              :required $ [] 'SyntaxSymbol
         'exactly-ok? $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn exactly-ok? (x)
@@ -1225,6 +1263,13 @@
             {} (:return 'Dynamic)
               :args $ [] 'Dynamic
               :features $ #{} :js-ffi
+        'is $ %{} 'CodeEntry (:doc |)
+          :code $ quote
+            defn is (x) (assert x "|assertion failed")
+          :examples $ []
+          :schema $ :: 'Fn
+            {} (:return 'Unit)
+              :args $ [] 'Dynamic
         'main! $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn main! () (reset! *quit-on-failure? true) (test-combine) (test-find) (test-interleave) (test-is) (test-many) (test-oneof) (test-optional) (test-or) (test-other-than) (test-preset) (test-replace) (test-some) (test-unicode-range)
@@ -1277,17 +1322,17 @@
         'test-find $ %{} 'CodeEntry (:doc |)
           :code $ quote
             deftest test-find $ testing
-              is $ = 2
+              is $ &= 2
                 count $ &map:get
                   find-lilac "|write cumulo and respo" $ or+
                     [] (is+ |cumulo) (is+ |respo)
                   , :result
-              is $ = 1
+              is $ &= 1
                 count $ &map:get
                   find-lilac "|write cumulo and phlox" $ or+
                     [] (is+ |cumulo) (is+ |respo)
                   , :result
-              is $ = 0
+              is $ &= 0
                 count $ &map:get
                   find-lilac "|write cumulo and phlox" $ or+
                     [] (is+ |cirru) (is+ |respo)
@@ -1426,19 +1471,19 @@
         'test-replace $ %{} 'CodeEntry (:doc |)
           :code $ quote
             deftest test-replace $ testing "|replaced content"
-              is $ = "|my project"
+              is $ &= "|my project"
                 &map:get
                   replace-lilac "|cumulo project"
                     or+ $ [] (is+ |cumulo) (is+ |respo)
                     fn (x) |my
                   , :result
-              is $ = "|my project"
+              is $ &= "|my project"
                 &map:get
                   replace-lilac "|respo project"
                     or+ $ [] (is+ |cumulo) (is+ |respo)
                     fn (x) |my
                   , :result
-              is $ = "|phlox project"
+              is $ &= "|phlox project"
                 &map:get
                   replace-lilac "|phlox project"
                     or+ $ [] (is+ |cumulo) (is+ |respo)
@@ -1477,10 +1522,16 @@
                 parse-lilac |A $ unicode-range+ 97 122
           :examples $ []
           :schema $ :: 'Dynamic
+        'testing $ %{} 'CodeEntry (:doc |)
+          :code $ quote
+            defn testing (& xs) nil
+          :examples $ []
+          :schema $ :: 'Fn
+            {} (:rest 'Dynamic) (:return 'Dynamic)
+              :args $ []
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote
           ns lilac-parser.test $ :require
-            [] calcit-test.core :refer $ [] deftest is testing *quit-on-failure?
             [] lilac-parser.core :refer $ [] parse-lilac defparser many+ is+ interleave+ some+ one-of+ combine+ optional+ other-than+ or+ unicode-range+ replace-lilac find-lilac
             [] lilac-parser.preset :refer $ [] lilac-digit lilac-alphabet lilac-comma-space lilac-chinese-char
     'lilac-parser.updater $ %{} 'FileEntry
@@ -1491,19 +1542,38 @@
               tag-match op
                 (:states cursor s) (update-states store cursor s)
                 (:content c) (&map:assoc store :content c)
-                (:hydrate-storage d) d
+                (:hydrate-storage d)
+                  assert-type d $ :: 'Map 'Dynamic 'Dynamic
                 _ $ do (eprintln "|Unknown op:" op) store
           :examples $ []
           :schema $ :: 'Fn
-            {} (:return 'Dynamic)
-              :args $ [] 'Dynamic 'Dynamic 'Dynamic 'Dynamic
+            {}
+              :args $ [] (:: 'Map 'Dynamic 'Dynamic) 'Enum 'String 'Number
               :features $ #{} :js-ffi
+              :return $ :: 'Map 'Dynamic 'Dynamic
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote
           ns lilac-parser.updater $ :require
             [] respo.cursor :refer $ [] update-states
     'lilac-parser.util $ %{} 'FileEntry
       :defs $ {}
+        'map-indexed-dynamic $ %{} 'CodeEntry (:doc |)
+          :code $ quote
+            defn map-indexed-dynamic (xs f)
+              loop
+                  i 0
+                  acc $ []
+                if
+                  >= i $ &list:count xs
+                  acc
+                  recur (inc i)
+                    &list:append acc $ f i (&list:nth xs i)
+          :examples $ []
+          :schema $ :: 'Fn
+            {} (:return 'Dynamic)
+              :args $ [] 'Dynamic
+                :: 'Fn $ {} (:return 'Dynamic)
+                  :args $ [] 'Number 'Dynamic
         'seq-strip-beginning $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn seq-strip-beginning (xs ys)
