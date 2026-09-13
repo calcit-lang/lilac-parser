@@ -486,7 +486,8 @@
           :code $ quote $ defn parse-component (xs rule)
             let
                 rule-name $ &map:get rule :name
-                item $ apply (&map:get rule :fn) (&map:get rule :args)
+                item $ apply (&map:get rule :fn)
+                  unsafe-coerce (&map:get rule :args) (:: 'List 'Dynamic)
                 result $ parse-lilac xs item
                 value-fn $ &map:get rule :value-fn
                 blackbox? $ &map:get rule :blackbox?
@@ -639,7 +640,9 @@
                       :parser-node :one-of
                     {} (:ok? false)
                       :message $ str (to-lispy-string x0) "| is not in " $ to-lispy-string
-                        if (string? items) items $ join-str items |
+                        if (string? items) items $ join-str
+                          unsafe-coerce items $ :: 'List 'Dynamic
+                          , |
                       :parser-node :one-of
                       :rest xs
           :examples $ []
@@ -707,7 +710,9 @@
                     if (string? items) (includes? items x0) (includes? items x0)
                     {} (:ok? false)
                       :message $ str (to-lispy-string x0) "| among "
-                        to-lispy-string $ if (string? items) items $ join-str items |
+                        to-lispy-string $ if (string? items) items $ join-str
+                          unsafe-coerce items $ :: 'List 'Dynamic
+                          , |
                         , "| is invalid"
                       :parser-node :other-than
                       :rest xs
@@ -865,7 +870,10 @@
         'digits-parser $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def digits-parser
             many+ (one-of+ |0123456789)
-              fn (xs) (join-str xs |)
+              fn (xs)
+                join-str
+                  assert-type xs $ :: 'List 'Dynamic
+                  , |
           :examples $ []
           :schema $ :: 'Dynamic
         'nil-parser $ %{} 'CodeEntry (:doc |)
@@ -882,9 +890,14 @@
                 optional+ $ is+ |-
                 , digits-parser $ optional+ $ combine+
                   [] (is+ |.) digits-parser
-                  fn (xs) (join-str xs |)
+                  fn (xs)
+                    join-str
+                      assert-type xs $ :: 'List 'Dynamic
+                      , |
               fn (xs)
-                js/Number $ join-str xs |
+                js/Number $ join-str
+                  assert-type xs $ :: 'List 'Dynamic
+                  , |
           :examples $ []
           :schema $ :: 'Dynamic
         'object-parser+ $ %{} 'CodeEntry (:doc |)
@@ -1028,7 +1041,7 @@
         'persist-storage! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn persist-storage! ()
             js/localStorage.setItem (&map:get config/site :storage-key)
-              format-cirru-edn $ &map:get @*reel :store
+              format-cirru-edn $ :store @*reel
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'Dynamic)
             :args $ []
@@ -1383,7 +1396,7 @@
       :defs $ {} $ 'updater
         %{} 'CodeEntry (:doc |)
           :code $ quote $ defn updater (store op op-id op-time)
-            tag-match op
+            match op
               (:states cursor s) (update-states store cursor s)
               (:content c) (&map:assoc store :content c)
               (:hydrate-storage d)
