@@ -10,6 +10,6 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@calcit/procs": "0.14.11"
+    "@calcit/procs": "0.14.16"
   }
 }
