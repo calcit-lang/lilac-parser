@@ -3,17 +3,11 @@
   :about "|Machine-generated snapshot. Do not edit directly — changes will be overwritten. Use `calcit query` to inspect and `calcit edit`/`calcit tree` to modify. Run `calcit docs agents --contract` before mutations; use `--full` for first orientation or changed contract digest. Manual edits must follow format and schema conventions, then run `calcit edit format`."
   :package |lilac-parser
   :entries $ {}
-    :default $ {} (:description |)
-      :init-fn 'lilac-parser.main/main!
-      :mode :native
-      :reload-fn 'lilac-parser.main/reload!
+    :default $ {} (:description |) (:init-fn 'lilac-parser.main/main!) (:mode :native) (:reload-fn 'lilac-parser.main/reload!)
       :feature-policy $ {}
       :modules $ [] |respo.calcit/ |respo-ui.calcit/ |respo-markdown.calcit/ |reel.calcit/ |alerts.calcit/ |respo-feather.calcit/
       :type-slots $ {}
-    :test $ {} (:description |)
-      :init-fn 'lilac-parser.test/main!
-      :mode :native
-      :reload-fn 'lilac-parser.test/reload!
+    :test $ {} (:description |) (:init-fn 'lilac-parser.test/main!) (:mode :native) (:reload-fn 'lilac-parser.test/reload!)
       :feature-policy $ {}
       :modules $ [] |respo.calcit/
       :type-slots $ {}
@@ -27,13 +21,9 @@
                 states $ &map:get store :states
                 cursor $ []
                 state $ either (&map:get states :data)
-                  {}
-                    :code "|(def a (add 1 2))"
-                    :result nil
-                    :gui? false
+                  {} (:code "|(def a (add 1 2))") (:result nil) (:gui? false)
                 load-plugin $ use-prompt (>> states :load)
-                  {} (:text "|Load EDN") (:multiline? true)
-                    :placeholder "|lilac-parser parsing rule..."
+                  {} (:text "|Load EDN") (:multiline? true) (:placeholder "|lilac-parser parsing rule...")
                     :input-style $ {} (:font-family ui/font-code) (:height 400) (:white-space :pre) (:font-size 12) (:line-height |18px)
                     :initial $ format-cirru-edn $ &map:get state :result
                     :validator $ fn (x)
@@ -197,9 +187,7 @@
                     list->
                       {} $ :style $ {} (:padding-left 16) (:margin-top 8)
                       ->
-                        or (&map:get node :results)
-                          &map:get node :previous-results
-                          []
+                        or (&map:get node :results) (&map:get node :previous-results) ([])
                         lilac-parser.util/map-indexed-dynamic $ fn (idx child)
                           [] idx $ comp-node (>> states idx) child
                     if
@@ -297,8 +285,7 @@
             :features $ #{} :js-ffi
         'core-methods $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def core-methods
-            {} (:is parse-is) (:or parse-or) (:many parse-many) (:some parse-some) (:optional parse-optional) (:component parse-component) (:combine parse-combine) (:one-of parse-one-of) (:interleave parse-interleave) (:other-than parse-other-than) (:label parse-label)
-              :unicode-range parse-unicode-range
+            {} (:is parse-is) (:or parse-or) (:many parse-many) (:some parse-some) (:optional parse-optional) (:component parse-component) (:combine parse-combine) (:one-of parse-one-of) (:interleave parse-interleave) (:other-than parse-other-than) (:label parse-label) (:unicode-range parse-unicode-range)
           :examples $ []
           :schema $ :: 'Dynamic
         'defparser $ %{} 'CodeEntry (:doc |)
@@ -473,11 +460,7 @@
                       result $ parse-lilac xs $ &list:first ys
                     if (&map:get result :ok?)
                       recur (&list:append acc result) (&map:get result :rest) (&list:rest ys)
-                      {} (:ok? false) (:parser-node :combine)
-                        :message "|failed to combine"
-                        :result result
-                        :previous-results acc
-                        :rest xs
+                      {} (:ok? false) (:parser-node :combine) (:message "|failed to combine") (:result result) (:previous-results acc) (:rest xs)
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'Dynamic)
             :args $ [] (:: 'List 'Dynamic) 'Dynamic
@@ -815,8 +798,7 @@
             :features $ #{} :js-ffi
         'some+ $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn some+ (x & args)
-            if (nil? x)
-              raise "|expected non-empty rule"
+            if (nil? x) (raise "|expected non-empty rule")
             let
                 transform $ either (&list:first args) identity
               {} (:parser-node :some) (:item x) (:transform transform)
@@ -1164,27 +1146,12 @@
             :args $ [] 'Dynamic
             :features $ #{} :js-ffi
         'is $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn is (x)
-            assert x "|assertion failed"
+          :code $ quote $ defn is (x) (assert x "|assertion failed")
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'Unit)
             :args $ [] 'Dynamic
         'main! $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn main! ()
-            reset! *quit-on-failure? true
-            test-combine
-            test-find
-            test-interleave
-            test-is
-            test-many
-            test-oneof
-            test-optional
-            test-or
-            test-other-than
-            test-preset
-            test-replace
-            test-some
-            test-unicode-range
+          :code $ quote $ defn main! () (reset! *quit-on-failure? true) (test-combine) (test-find) (test-interleave) (test-is) (test-many) (test-oneof) (test-optional) (test-or) (test-other-than) (test-preset) (test-replace) (test-some) (test-unicode-range)
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'Dynamic)
             :args $ []
