@@ -11,28 +11,24 @@ Try with `(def a (add 1 2))` or `{"json": [1, 2]}`.
 ### Usage
 
 ```cirru
-ns app
-  :require
-    lilac-parser.core :refer
-      parse-lilac defparser is+ many+ one-of+ other-than+
-        , some+ combine+ interleave+ label+ replace-lilac find-lilac
+ns app $ :require $ lilac-parser.core :refer
+  parse-lilac defparser is+ many+ one-of+ other-than+ some+ combine+ interleave+ label+ replace-lilac find-lilac
 
-parse-lilac (string/split |aaaa |) (many+ (is+ |a))
+parse-lilac (string/split |aaaa |)
+  many+ $ is+ |a
 ```
 
 Demo of a stupid S-expression parser:
 
 ```cirru
-def number-parser $ many+ (one-of+ |1234567890)
+def number-parser $ many+ $ one-of+ |1234567890
 
-def space-parser (is+ "| ")
+def space-parser $ is+ "| "
 
-def word-parser $ many+ (one-of+ |qwertyuiopasdfghjklzxcvbnm)
+def word-parser $ many+ $ one-of+ |qwertyuiopasdfghjklzxcvbnm
 
-defparser s-expr-parser+ ()
-  identity
-  combine+ $ []
-    is+ "|("
+defparser s-expr-parser+ () (identity)
+  combine+ $ [] (is+ "|(")
     some+ $ or+ $ [] number-parser word-parser space-parser (s-expr-parser+)
     is+ "|)"
 
@@ -124,12 +120,9 @@ Under `lilac-parser.preset`:
 Parser rules can be expected by injecting functions. It could be quite tricky and is not recommended:
 
 ```cirru
-lilac-parser.core/resigter-custom-rule! :xyz
-  fn (xs rule)
-    ; TODO
+lilac-parser.core/resigter-custom-rule! :xyz $ fn (xs rule) (; TODO)
 
-defn xyz+ (xs transform)
-  ; TODO
+defn xyz+ (xs transform) (; TODO)
 ```
 
 ### Replacer
@@ -143,10 +136,8 @@ replace-lilac content rule $ fn (x) (str |<<< x |>>>)
 which returns `:result` as well as parsing details in `:attempts`:
 
 ```cirru
-{}
-  :result |<<<MATCHED>>>
-  :attempts $ []
-    ; parsing summaries in vector
+{} (:result |<<<MATCHED>>>)
+  :attempts $ [] $ ; parsing summaries in vector
 ```
 
 This is an experimental API serving jobs as a custom regular expression replacer.
