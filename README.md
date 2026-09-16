@@ -158,7 +158,7 @@ MIT
 
 ### Development
 
-Requires the Calcit 0.15.1 toolchain and `@calcit/procs` 0.15.1.
+Requires the Calcit 0.15.2 toolchain and `@calcit/procs` 0.15.2.
 
 - `caps --strict` — resolve immutable dependencies
 - `calcit calcit.cirru --check-only` — strict snapshot check

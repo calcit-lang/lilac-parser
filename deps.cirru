@@ -1,5 +1,5 @@
 
-{} (:calcit-version |0.15.1)
+{} (:calcit-version |0.15.2)
   :version |0.0.3
   :dependencies $ {} (|Respo/alerts.calcit |0.10.37)
     |Respo/reel.calcit |0.6.24
