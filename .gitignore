@@ -7,3 +7,6 @@ js-out/
 node_modules
 
 .yarn/
+dist
+.pnp.cjs
+.pnp.loader.mjs
