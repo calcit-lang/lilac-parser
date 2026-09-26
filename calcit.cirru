@@ -107,7 +107,9 @@
                 when dev? $ comp-reel (>> states :reel) reel $ {}
                 assert-type (.render load-plugin) Struct
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'Dynamic)
+            :args $ [] 'Dynamic
+            :features $ #{} :js-ffi
         'comp-node $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-node (states node)
             let
@@ -201,7 +203,9 @@
                         {} $ :style $ {} (:padding-left 16) (:margin-top 8)
                         comp-node (>> states :peek-result) (&map:get node :peek-result)
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'Dynamic)
+            :args $ [] 'Dynamic 'Dynamic
+            :features $ #{} :js-ffi
         'css-gui-toggler $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle css-gui-toggler
             {} $ |& $ {} (:font-family ui/font-fancy) (:font-weight 300) (:font-size 20) (:cursor :pointer) (:line-height |24px)
@@ -828,7 +832,9 @@
               some+ $ interleave+ (value-parser+) comma-parser $ fn (xs) (take-nth xs 2)
               is+ |]
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'Dynamic)
+            :args $ []
+            :features $ #{} :js-ffi
         'boolean-parser $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def boolean-parser
             label+ |boolean $ or+
@@ -881,7 +887,9 @@
                   assert-type xs $ :: 'List 'Dynamic
                   , |
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'Dynamic)
+            :args $ []
+            :features $ #{} :js-ffi
         'object-parser+ $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defparser object-parser+ () identity
             combine+
@@ -896,7 +904,9 @@
               fn (xs)
                 pairs-map $ &list:nth xs 1
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'Dynamic)
+            :args $ []
+            :features $ #{} :js-ffi
         'space-parser $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def space-parser
             label+ |space $ some+ (is+ "| ")
@@ -937,7 +947,9 @@
           :code $ quote $ defparser value-parser+ () identity
             or+ $ [] number-parser string-parser nil-parser boolean-parser (array-parser+) (object-parser+)
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'Dynamic)
+            :args $ []
+            :features $ #{} :js-ffi
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns lilac-parser.demo.json
           :require
@@ -956,7 +968,9 @@
               some+ $ or+ $ [] number-parser word-parser space-parser (s-expr-parser+)
               is+ "|)"
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'Dynamic)
+            :args $ []
+            :features $ #{} :js-ffi
         'space-parser $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def space-parser (is+ "| ")
           :examples $ []
@@ -1007,7 +1021,9 @@
         'mount-target $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def mount-target (.querySelector js/document |.app)
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'Dynamic)
+            :args $ []
+            :features $ #{} :js-ffi
         'next-reel $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn next-reel (op)
             typed/record-op updater
@@ -1051,7 +1067,9 @@
             :return $ :: 'reel.typed/State 'Enum $ :: 'Map 'Dynamic 'Dynamic
         'render-app! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn render-app! ()
-            render! mount-target (comp-container @*reel) dispatch!
+            render! mount-target
+              assert-type (comp-container @*reel) 'respo.schema/Component
+              , dispatch!
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'Dynamic)
             :args $ []
