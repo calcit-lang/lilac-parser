@@ -223,7 +223,7 @@
           :schema $ :: 'Dynamic
         'css-node $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle css-node
-            {} $ |& $ merge-dynamic ui/expand
+            {} $ |& $ merge ui/expand
               {} (:padding 4)
                 :border-left $ str "|1px solid " $ hsl 0 0 90
                 :border-top $ str "|1px solid " $ hsl 0 0 90
@@ -994,7 +994,7 @@
             add-watch *reel :changes $ fn (reel prev) (render-app!)
             listen-devtools! |k dispatch!
             js/window.addEventListener |beforeunload $ fn (event) (persist-storage!)
-            flipped js/setInterval 60000 persist-storage!
+            js/setInterval persist-storage! 60000
             ; let
               (raw (js/localStorage.getItem (&map:get config/site :storage-key)))
               when (some? raw)
