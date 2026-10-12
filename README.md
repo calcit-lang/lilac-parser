@@ -158,10 +158,16 @@ MIT
 
 ### Development
 
-Requires the Calcit 0.18.1 toolchain and `@calcit/procs` 0.18.1.
+Requires the Calcit 0.29.0 toolchain and `@calcit/procs` 0.29.0, Node.js 24 and Yarn 4.18.0.
 
 - `caps --strict` — resolve immutable dependencies
 - `calcit calcit.cirru --check-only` — strict snapshot check
 - `calcit --entry test` — native parser tests
 - `calcit --entry test --emit-path js-out js && node test.mjs` — JavaScript parser tests
 - `calcit calcit.cirru js && yarn vite build --base=./` — production build
+
+CI builds frontend assets with the COS CDN base URL and uses the upload action's
+built-in public checksum verification. Configure `COS_BUCKET`, `COS_SECRET_ID`
+and `COS_SECRET_KEY` in repository secrets. Production assets keep the existing
+`calcit-lang/lilac-parser/` prefix; PR previews use isolated paths. The original
+server deployment directory is unchanged. Generated `js-out/` is not committed.
