@@ -1003,7 +1003,9 @@
                 some+ $ or+ $ [] (other-than+ "|\"\\") (is+ "|\\\"") (is+ |\\) (is+ |\n)
                 is+ "|\""
               fn (xs)
-                join-string (&list:nth xs 1) |
+                join-string
+                  require-list $ &list:nth xs 1
+                  , |
           :examples $ []
           :schema $ :: 'Dynamic
         'take-nth $ %{} 'CodeEntry (:doc |)
