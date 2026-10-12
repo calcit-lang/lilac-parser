@@ -3,33 +3,43 @@
   :about "|Machine-generated snapshot. Do not edit directly — changes will be overwritten. Use `calcit query` to inspect and `calcit edit`/`calcit tree` to modify. Run `calcit docs agents --contract` before mutations; use `--full` for first orientation or changed contract digest. Manual edits must follow format and schema conventions, then run `calcit edit format`."
   :package |lilac-parser
   :entries $ {}
-    :default $ {} (:description |) (:init-fn 'lilac-parser.main/main!) (:mode :native) (:reload-fn 'lilac-parser.main/reload!)
+    :default $ {} (:description |) (:init-fn 'lilac-parser.main/main!) (:mode :js) (:reload-fn 'lilac-parser.main/reload!) (:target :browser)
       :feature-policy $ {}
       :modules $ [] |respo.calcit/ |respo-ui.calcit/ |respo-markdown.calcit/ |reel.calcit/ |alerts.calcit/ |respo-feather.calcit/
       :type-slots $ {}
-    :test $ {} (:description |) (:init-fn 'lilac-parser.test/main!) (:mode :native) (:reload-fn 'lilac-parser.test/reload!)
+    :test $ {} (:description |) (:init-fn 'lilac-parser.test/main!) (:mode :native) (:reload-fn 'lilac-parser.test/reload!) (:target :native)
       :feature-policy $ {}
-      :modules $ [] |respo.calcit/
+      :modules $ []
       :type-slots $ {}
   :files $ {}
     'lilac-parser.comp.container $ %{} 'FileEntry
       :defs $ {}
+        'ContainerState $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defstruct ContainerState (:code 'String) (:result 'Dynamic) (:gui? 'Bool)
+          :examples $ []
+          :schema $ :: 'StructDef
+        'NodeState $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defstruct NodeState (:folded? 'Bool)
+          :examples $ []
+          :schema $ :: 'StructDef
         'comp-container $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-container (reel)
             let
-                store $ &map:get reel :store
-                states $ &map:get store :states
+                store $ :store reel
+                states $ :states store
                 cursor $ []
-                state $ either (&map:get states :data)
-                  {} (:code "|(def a (add 1 2))") (:result nil) (:gui? false)
+                state $ read-container-state $ &map:get states :data
                 load-plugin $ use-prompt (>> states :load)
                   {} (:text "|Load EDN") (:multiline? true) (:placeholder "|lilac-parser parsing rule...")
                     :input-style $ {} (:font-family ui/font-code) (:height 400) (:white-space :pre) (:font-size 12) (:line-height |18px)
-                    :initial $ format-cirru-edn $ &map:get state :result
-                    :validator $ fn (x)
+                    :initial $ format-cirru-edn $ :result state
+                    :validator $ fn (text)
+                      hint-fn $ {}
+                        :args $ [] 'String
+                        :return 'String
                       try
-                        do (parse-cirru-edn x) nil
-                        fn (e) (js/console.log "|Failed to parse") e
+                        do (parse-cirru-edn text) |
+                        fn (error) "|Invalid Cirru EDN"
               div
                 {} $ :class-name $ str-spaced css/global css/fullscreen css/column
                 div
@@ -39,104 +49,111 @@
                     :on-click $ fn (e d!)
                       let
                           result $ parse-lilac
-                            split (&map:get state :code) |
+                            split (:code state) |
                             s-expr-parser+
-                          r1 $ parse-lilac
-                            split (&map:get state :code) |
-                            value-parser+
-                          r2 $ parse-lilac (&map:get state :code) (unicode-range+ 97 122)
-                        d! cursor $ &map:assoc state :result result
+                        d! cursor $ struct-with state $ :result result
                   =< 16 nil
                   span $ {} (:inner-text |GUI) (:class-name css-gui-toggler)
                     :style $ {} $ :color
-                      if (&map:get state :gui?) (hsl 200 80 40) (hsl 200 80 80)
+                      if (:gui? state) (hsl 200 80 40) (hsl 200 80 80)
                     :on-click $ fn (e d!)
-                      d! cursor $ &map:assoc state :gui? $ not (&map:get state :gui?)
+                      d! cursor $ struct-with state $ :gui?
+                        not $ :gui? state
                   =< 16 nil
                   a $ {} (:inner-text "|Load EDN") (:class-name css/link)
                     :on-click $ fn (e d!)
                       .show load-plugin d! $ fn (text)
+                        hint-fn $ {}
+                          :args $ [] 'String
+                          :return 'Unit
                         let
                             snapshot $ parse-cirru-edn text
                           ; println |text snapshot
-                          if (list? snapshot)
-                            d! cursor $ &map:assoc state :result snapshot
-                            d! cursor $ &map:assoc state :result snapshot
+                          d! cursor $ struct-with state $ :result snapshot
+                        , &unit
                   =< 16 nil
                   a $ {} (:inner-text |Replacer) (:class-name css/link)
                     :on-click $ fn (e d!)
                       let
                           result $ replace-lilac
-                            split (&map:get state :code) |
+                            split (:code state) |
                             s-expr-parser+
                             fn (result) (println |replacing result)
                               str |<<< (to-lispy-string result) |>>>
                           find-result $ find-lilac
-                            split (&map:get state :code) |
+                            split (:code state) |
                             s-expr-parser+
                         println $ &map:get result :result
-                        d! cursor $ &map:assoc state :result $ &map:get result :attempts
+                        d! cursor $ struct-with state $ :result (&map:get result :attempts)
                         println "|Find results:" $ to-lispy-string $ &map:get find-result :result
                 div
                   {} $ :class-name $ str-spaced css/expand css/row
                   textarea $ {} (:class-name |codearea) (:placeholder |Content)
-                    :value $ &map:get state :code
+                    :value $ :code state
                     :class-name $ str-spaced css/textarea css/font-code
                     :style $ {} $ :width 300
                     :on-input $ fn (e d!)
-                      d! cursor $ &map:assoc state :code $ &map:get e :value
-                  if (&map:get state :gui?)
+                      d! cursor $ struct-with state $ :code (input-text e)
+                  if (:gui? state)
                     div
                       {} (:class-name css/expand)
                         :style $ {} $ :padding-bottom 400
                       if
-                        list? $ &map:get state :result
+                        list? $ :result state
                         list-> ({})
-                          -> (&map:get state :result)
-                            lilac-parser.util/map-indexed-dynamic $ fn (idx value)
+                          ->
+                            require-list $ :result state
+                            map-indexed $ fn (idx value)
                               [] idx $ comp-node
                                 >> states $ str :tree-viewer idx
-                                , value
-                        comp-node (>> states :tree-viewer) (&map:get state :result)
+                                read-node value
+                        if
+                          nil? $ :result state
+                          span $ {}
+                          comp-node (>> states :tree-viewer)
+                            read-node $ :result state
                     textarea $ {}
                       :class-name $ str-spaced css/expand css/textarea css/font-code
                       :style $ {} (:font-size 12) (:white-space :pre) (:font-family ui/font-code)
                       :disabled true
                       :spellcheck false
-                      :value $ format-cirru-edn $ &map:get state :result
-                when dev? $ comp-reel (>> states :reel) reel $ {}
-                assert-type (.render load-plugin) Struct
+                      :value $ format-cirru-edn $ :result state
+                when dev? $ comp-reel (>> states :reel) (reel-view/view-data reel) ({})
+                .render load-plugin
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'respo.schema/Component)
+            :args $ [] $ :: 'reel.typed/State 'lilac-parser.schema/Op 'lilac-parser.schema/Store
+            :features $ #{} :js-ffi
         'comp-node $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-node (states node)
             let
                 cursor $ &map:get states :cursor
-                state $ or (&map:get states :data)
-                  {} $ :folded? false
+                state $ read-node-state $ &map:get states :data
+                children $ require-list $ or (&map:get node :results) (&map:get node :previous-results) ([])
                 has-children? $ or
-                  some? $ &map:get node :result
-                  some? $ &map:get node :peek-result
-                  not $ empty? $ &map:get node :results
+                  non-nil? $ &map:get node :result
+                  non-nil? $ &map:get node :peek-result
+                  not $ empty? children
               div
                 {} $ :class-name css-node
                 div
                   {} $ :class-name css/row-middle
                   if has-children?
                     comp-icon
-                      if (&map:get state :folded?) :play :chevron-down
+                      if (:folded? state) :play :chevron-down
                       {} (:font-size 14)
-                        :color $ if (&map:get state :folded?) (hsl 200 80 40) (hsl 200 80 80)
+                        :color $ if (:folded? state) (hsl 200 80 40) (hsl 200 80 80)
                         :margin 8
                         :cursor :pointer
                       fn (e d!)
-                        d! cursor $ &map:assoc state :folded? $ not (&map:get state :folded?)
+                        d! cursor $ struct-with state $ :folded?
+                          not $ :folded? state
                     comp-icon :minus
                       {} (:font-size 14)
                         :color $ hsl 200 80 90
                         :margin 8
                         :cursor :pointer
-                      fn $ e d!
+                      fn (e d!) &unit
                   if (&map:get node :ok?)
                     span $ {}
                       :class-name $ str-spaced css-label css/font-fancy
@@ -174,34 +191,38 @@
                         :background-color $ hsl 200 80 80
                         :font-size 10
                   span $ {} (:class-name css-label)
-                    :inner-text $ join-str
-                      &list:slice (&map:get node :rest) 0 10
+                    :inner-text $ join-string
+                      take
+                        require-list $ &map:get node :rest
+                        , 10
                       , |
                     :style $ {}
                       :background-color $ hsl 100 10 70
                       :font-size 10
                       :min-height 16
                 if
-                  and has-children? $ not $ &map:get state :folded?
+                  and has-children? $ not $ :folded? state
                   div ({})
                     list->
                       {} $ :style $ {} (:padding-left 16) (:margin-top 8)
-                      ->
-                        or (&map:get node :results) (&map:get node :previous-results) ([])
-                        lilac-parser.util/map-indexed-dynamic $ fn (idx child)
-                          [] idx $ comp-node (>> states idx) child
+                      -> children $ map-indexed $ fn (idx child)
+                        [] idx $ comp-node (>> states idx) (read-node child)
                     if
-                      some? $ &map:get node :result
+                      non-nil? $ &map:get node :result
                       div
                         {} $ :style $ {} (:padding-left 16) (:margin-top 8)
-                        comp-node (>> states :result) (&map:get node :result)
+                        comp-node (>> states :result)
+                          read-node $ &map:get node :result
                     if
-                      some? $ &map:get node :peek-result
+                      non-nil? $ &map:get node :peek-result
                       div
                         {} $ :style $ {} (:padding-left 16) (:margin-top 8)
-                        comp-node (>> states :peek-result) (&map:get node :peek-result)
+                        comp-node (>> states :peek-result)
+                          read-node $ &map:get node :peek-result
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'respo.schema/Component)
+            :args $ [] (:: 'Map 'Dynamic 'Dynamic) (:: 'Map 'Tag 'Dynamic)
+            :features $ #{} :js-ffi
         'css-gui-toggler $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle css-gui-toggler
             {} $ |& $ {} (:font-family ui/font-fancy) (:font-weight 300) (:font-size 20) (:cursor :pointer) (:line-height |24px)
@@ -229,43 +250,84 @@
                 :border-top $ str "|1px solid " $ hsl 0 0 90
           :examples $ []
           :schema $ :: 'Dynamic
-        'effect-codearea $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defeffect effect-codearea () (action el)
-            when (&= action :mount)
-              let
-                  target $ .querySelector el |.codearea
-                codearea target
+        'input-text $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn input-text (event)
+            match
+              try-decode-map-as (&map:get event :value) 'String
+              (:ok text) text
+              (:err message) (raise message)
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'String)
+            :args $ [] $ :: 'Map 'Tag 'Dynamic
+        'read-container-state $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn read-container-state (value)
+            cond
+                nil? value
+                ContainerState :code "|(def a (add 1 2))" :result nil :gui? false
+              (struct? value)
+                struct-match value (ContainerState state state)
+                  _ _ $ raise "|Expected ContainerState"
+              true $ match (try-decode-map-as value 'lilac-parser.comp.container/ContainerState)
+                (:ok state) state
+                (:err message) (raise message)
+          :examples $ []
+          :schema $ :: 'Fn $ {} (:return 'lilac-parser.comp.container/ContainerState)
+            :args $ [] 'Dynamic
+        'read-node $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn read-node (value)
+            match
+              try-decode-map-as value $ :: 'Map 'Tag 'Dynamic
+              (:ok node) node
+              (:err message) (raise message)
+          :examples $ []
+          :schema $ :: 'Fn $ {}
+            :args $ [] 'Dynamic
+            :return $ :: 'Map 'Tag 'Dynamic
+        'read-node-state $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn read-node-state (value)
+            cond
+                nil? value
+                NodeState :folded? false
+              (struct? value)
+                struct-match value (NodeState state state)
+                  _ _ $ raise "|Expected NodeState"
+              true $ match (try-decode-map-as value 'lilac-parser.comp.container/NodeState)
+                (:ok state) state
+                (:err message) (raise message)
+          :examples $ []
+          :schema $ :: 'Fn $ {} (:return 'lilac-parser.comp.container/NodeState)
+            :args $ [] 'Dynamic
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns lilac-parser.comp.container
           :require (respo-ui.core :as ui)
             respo-ui.core :refer $ hsl
-            respo.core :refer $ defcomp defeffect >> list-> <> div button textarea span input a
+            respo.core :refer $ defcomp >> list-> div button textarea span a
             respo.comp.space :refer $ =<
             reel.comp.reel :refer $ comp-reel
-            respo-md.comp.md :refer $ comp-md
+            reel.typed-compat :as reel-view
             lilac-parser.config :refer $ dev?
-            lilac-parser.core :refer $ parse-lilac replace-lilac find-lilac defparser is+ combine+ some+ many+ optional+ or+ one-of+ unicode-range+
-            |@mvc-works/codearea :refer $ codearea
+            lilac-parser.core :refer $ parse-lilac replace-lilac find-lilac
+            lilac-parser.util :refer $ require-list
             feather.core :refer $ comp-icon
             lilac-parser.demo.s-expr :refer $ s-expr-parser+
-            lilac-parser.demo.json :refer $ demo-parser number-parser string-parser array-parser+ value-parser+ boolean-parser
             respo-alerts.core :refer $ use-prompt
             respo-ui.css :as css
             respo.css :refer $ defstyle
     'lilac-parser.config $ %{} 'FileEntry
       :defs $ {}
+        'Site $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defstruct Site (:storage-key 'String)
+          :examples $ []
+          :schema $ :: 'StructDef
         'dev? $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def dev?
-            &= |dev $ &get-env |mode |release
+            = |dev $ .unwrap-or (get-env |mode) |release
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Bool
         'site $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ def site
-            {} $ :storage-key |lilac-parser
+          :code $ quote $ def site (Site :storage-key |lilac-parser)
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'lilac-parser.config/Site
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns lilac-parser.config
     'lilac-parser.core $ %{} 'FileEntry
@@ -329,9 +391,7 @@
             :required $ []
         'find-lilac $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn find-lilac (content rule)
-            find-lilac-iter ([]) ([])
-              if (string? content) (split content |) content
-              , rule
+            find-lilac-iter ([]) ([]) (lilac-parser.util/input-list content) rule
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'Dynamic)
             :args $ [] 'Dynamic 'Dynamic
@@ -346,13 +406,13 @@
                 if (&map:get attempt :ok?)
                   recur
                     &list:append acc $ {}
-                      :content $ join-str
+                      :content $ join-string
                         &list:slice content 0 $ - (count content)
-                          count $ &map:get attempt :rest
+                          count $ lilac-parser.util/require-list $ &map:get attempt :rest
                         , |
                       :value $ &map:get attempt :value
                     &list:append attempts attempt
-                    &map:get attempt :rest
+                    lilac-parser.util/require-list $ &map:get attempt :rest
                     , rule
                   recur acc (&list:append attempts attempt) (&list:rest content) rule
           :examples $ []
@@ -452,14 +512,16 @@
                     {} (:ok? true)
                       :value $ let
                           v $ map acc $ fn (x) (&map:get x :value)
-                        if (some? transform) (transform v) v
+                        if (non-nil? transform) (transform v) v
                       :rest xs
                       :parser-node :combine
                       :results acc
                   true $ let
                       result $ parse-lilac xs $ &list:first ys
                     if (&map:get result :ok?)
-                      recur (&list:append acc result) (&map:get result :rest) (&list:rest ys)
+                      recur (&list:append acc result)
+                        lilac-parser.util/require-list $ &map:get result :rest
+                        &list:rest ys
                       {} (:ok? false) (:parser-node :combine) (:message "|failed to combine") (:result result) (:previous-results acc) (:rest xs)
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'Dynamic)
@@ -469,8 +531,14 @@
           :code $ quote $ defn parse-component (xs rule)
             let
                 rule-name $ &map:get rule :name
-                item $ apply (&map:get rule :fn)
-                  unsafe-coerce (&map:get rule :args) (:: 'List 'Dynamic)
+                item $ let
+                    maker $ &map:get rule :fn
+                  if (fn? maker)
+                    match
+                      try-decode-map-as (&map:get rule :args) (:: 'List 'Dynamic)
+                      (:ok args) (apply maker args)
+                      (:err message) (raise message)
+                    raise "|component rule expects a parser function"
                 result $ parse-lilac xs item
                 value-fn $ &map:get rule :value-fn
                 blackbox? $ &map:get rule :blackbox?
@@ -502,13 +570,15 @@
                 let
                     result $ parse-lilac xs x
                   if (&map:get result :ok?)
-                    recur (&list:append acc result) (&map:get result :rest) y x
+                    recur (&list:append acc result)
+                      lilac-parser.util/require-list $ &map:get result :rest
+                      , y x
                     if (empty? acc)
                       {} (:ok? false) (:message "|no match") (:parser-node :interleave) (:peek-result result) (:rest xs)
                       {} (:ok? true)
                         :value $ let
                             v $ map acc $ fn (x) (&map:get x :value)
-                          if (some? transform) (transform v) v
+                          if (non-nil? transform) (transform v) v
                         :rest xs
                         :parser-node :interleave
                         :results acc
@@ -527,17 +597,20 @@
                 :parser-node :is
                 :rest xs
               let
-                  item $ &map:get rule :item
+                  item $ match
+                    data-view $ &map:get rule :item
+                    (:string text) text
+                    _ $ raise "|is rule expects a string"
                   transform $ &map:get rule :transform
                   strip-result $ seq-strip-beginning xs $ split item |
                 if (&map:get strip-result :ok?)
                   {} (:ok? true)
-                    :value $ if (some? transform) (transform item) item
-                    :rest $ &map:get strip-result :rest
+                    :value $ if (non-nil? transform) (transform item) item
+                    :rest $ lilac-parser.util/require-list $ &map:get strip-result :rest
                     :parser-node :is
                   {} (:ok? false)
                     :message $ str "|expects " (to-lispy-string item) "| but got " $ to-lispy-string
-                      join-str
+                      join-string
                         &list:slice xs 0 $ &min (count item) (count xs)
                         , |
                     :parser-node :is
@@ -571,7 +644,7 @@
                 node $ &map:get rule :parser-node
                 method $ &map:get core-methods node
                 user-method $ &map:get (deref *custom-methods) node
-                xs $ if (string? x) (split x |) x
+                xs $ lilac-parser.util/input-list x
               cond
                   fn? method
                   method xs rule
@@ -592,13 +665,14 @@
                 let
                     result $ parse-lilac xs item
                   if (&map:get result :ok?)
-                    recur (&list:append acc result) (&map:get result :rest)
+                    recur (&list:append acc result)
+                      lilac-parser.util/require-list $ &map:get result :rest
                     if (empty? acc)
                       {} (:ok? false) (:message "|no match") (:parser-node :many) (:peek-result result) (:rest xs)
                       {} (:ok? true)
                         :value $ let
                             v $ map acc $ fn (x) (&map:get x :value)
-                          if (some? transform) (transform v) v
+                          if (non-nil? transform) (transform v) v
                         :rest xs
                         :parser-node :many
                         :results acc
@@ -609,21 +683,22 @@
             :features $ #{} :js-ffi
         'parse-one-of $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn parse-one-of (xs rule)
-            list-match xs
-              () $ {} (:ok? false) (:message "|unexpected EOF") (:parser-node :one-of) (:rest xs)
-              (x0 xss)
+            match (destruct-list xs)
+              (:none)
+                {} (:ok? false) (:message "|unexpected EOF") (:parser-node :one-of) (:rest xs)
+              (:some x0 xss)
                 let
                     items $ &map:get rule :items
                     transform $ &map:get rule :transform
                   if
                     if (string? items) (includes? items x0) (includes? items x0)
                     {} (:ok? true)
-                      :value $ if (some? transform) (transform x0) x0
+                      :value $ if (non-nil? transform) (transform x0) x0
                       :rest xss
                       :parser-node :one-of
                     {} (:ok? false)
                       :message $ str (to-lispy-string x0) "| is not in " $ to-lispy-string
-                        if (string? items) items $ join-str
+                        if (string? items) items $ join-string
                           unsafe-coerce items $ :: 'List 'Dynamic
                           , |
                       :parser-node :one-of
@@ -642,7 +717,7 @@
                 {} (:ok? true)
                   :value $ let
                       v $ &map:get result :value
-                    if (some? transform) (transform v) v
+                    if (non-nil? transform) (transform v) v
                   :rest $ &map:get result :rest
                   :parser-node :optional
                   :result result
@@ -654,7 +729,7 @@
         'parse-or $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn parse-or (xs rule)
             let
-                items $ &map:get rule :items
+                items $ lilac-parser.util/require-list $ &map:get rule :items
                 transform $ &map:get rule :transform
               loop
                   rules items
@@ -671,8 +746,8 @@
                       {} (:ok? true)
                         :value $ let
                             v $ &map:get result :value
-                          if (some? transform) (transform v) v
-                        :rest $ &map:get result :rest
+                          if (non-nil? transform) (transform v) v
+                        :rest $ lilac-parser.util/require-list $ &map:get result :rest
                         :parser-node :or
                         :results failures
                         :result result
@@ -683,9 +758,10 @@
             :features $ #{} :js-ffi
         'parse-other-than $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn parse-other-than (xs rule)
-            list-match xs
-              () $ {} (:ok? false) (:message "|Unexpected EOF") (:parser-node :other-than) (:rest xs)
-              (x0 xss)
+            match (destruct-list xs)
+              (:none)
+                {} (:ok? false) (:message "|Unexpected EOF") (:parser-node :other-than) (:rest xs)
+              (:some x0 xss)
                 let
                     items $ &map:get rule :items
                     transform $ &map:get rule :transform
@@ -693,14 +769,14 @@
                     if (string? items) (includes? items x0) (includes? items x0)
                     {} (:ok? false)
                       :message $ str (to-lispy-string x0) "| among "
-                        to-lispy-string $ if (string? items) items $ join-str
+                        to-lispy-string $ if (string? items) items $ join-string
                           unsafe-coerce items $ :: 'List 'Dynamic
                           , |
                         , "| is invalid"
                       :parser-node :other-than
                       :rest xs
                     {} (:ok? true)
-                      :value $ if (some? transform) (transform x0) x0
+                      :value $ if (non-nil? transform) (transform x0) x0
                       :rest xss
                       :parser-node :other-than
           :examples $ []
@@ -721,11 +797,12 @@
                     &map:get
                       either result $ {}
                       , :ok?
-                    recur (&list:append acc result) (&map:get result :rest)
+                    recur (&list:append acc result)
+                      lilac-parser.util/require-list $ &map:get result :rest
                     {} (:ok? true)
                       :value $ let
                           v $ map acc $ fn (x) (&map:get x :value)
-                        if (some? transform) (transform v) v
+                        if (non-nil? transform) (transform v) v
                       :rest xs
                       :parser-node :some
                       :results acc
@@ -736,18 +813,27 @@
             :features $ #{} :js-ffi
         'parse-unicode-range $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn parse-unicode-range (xs rule)
-            list-match xs
-              () $ {} (:ok? false) (:message "|unexpected EOF") (:parser-node :unicode-range) (:rest xs)
-              (x0 xss)
+            match (destruct-list xs)
+              (:none)
+                {} (:ok? false) (:message "|unexpected EOF") (:parser-node :unicode-range) (:rest xs)
+              (:some x0 xss)
                 let
-                    min-code $ &map:get rule :min-code
-                    max-code $ &map:get rule :max-code
+                    min-code $ match
+                      data-view $ &map:get rule :min-code
+                      (:number code) code
+                      _ $ raise "|unicode-range expects numeric :min-code"
+                    max-code $ match
+                      data-view $ &map:get rule :max-code
+                      (:number code) code
+                      _ $ raise "|unicode-range expects numeric :max-code"
                     transform $ &map:get rule :transform
-                    head-code $ get-char-code $ assert-type x0 String
+                    head-code $ match (data-view x0)
+                      (:string char) (get-char-code char)
+                      _ $ raise "|unicode-range expects a character string"
                   if
                     and (>= head-code min-code) (<= head-code max-code)
                     {} (:ok? true)
-                      :value $ if (some? transform) (transform x0) x0
+                      :value $ if (non-nil? transform) (transform x0) x0
                       :rest xss
                       :parser-node :unicode-range
                     {} (:ok? false)
@@ -771,16 +857,17 @@
         'replace-iter $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn replace-iter (acc attempts content rule replacer) (; echo "|replace iter...")
             assert "|expects content in list" $ list? content
-            list-match content
-              () $ {} (:result acc) (:attempts attempts)
-              (c0 cs)
+            match (destruct-list content)
+              (:none)
+                {} (:result acc) (:attempts attempts)
+              (:some c0 cs)
                 let
                     attempt $ parse-lilac content rule
                   if (&map:get attempt :ok?)
                     recur
                       str acc $ replacer $ &map:get attempt :value
                       append attempts attempt
-                      &map:get attempt :rest
+                      lilac-parser.util/require-list $ &map:get attempt :rest
                       , rule replacer
                     recur (str acc c0) (append attempts attempt) cs rule replacer
           :examples $ []
@@ -789,9 +876,7 @@
             :features $ #{} :js-ffi
         'replace-lilac $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn replace-lilac (content rule replacer) (echo |calling)
-            replace-iter | ([])
-              if (string? content) (split content |) content
-              , rule replacer
+            replace-iter | ([]) (lilac-parser.util/input-list content) rule replacer
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'Dynamic)
             :args $ [] 'Dynamic 'Dynamic 'Dynamic
@@ -812,9 +897,9 @@
                 transform $ either (&list:first args) identity
               {} (:parser-node :unicode-range) (:min-code min-code) (:max-code max-code) (:transform transform)
           :examples $ []
-          :schema $ :: 'Fn $ {} (:rest 'Dynamic) (:return 'Dynamic)
-            :args $ [] 'Dynamic 'Dynamic
-            :features $ #{} :js-ffi
+          :schema $ :: 'Fn $ {} (:rest 'Dynamic)
+            :args $ [] 'Number 'Number
+            :return $ :: 'Map 'Tag 'Dynamic
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns lilac-parser.core
           :require $ [] lilac-parser.util :refer $ [] seq-strip-beginning
@@ -825,10 +910,14 @@
             fn (x)
               &list:first $ &list:nth x 1
             combine+ $ [] (is+ |[)
-              some+ $ interleave+ (value-parser+) comma-parser $ fn (xs) (take-nth xs 2)
+              some+ $ interleave+ (value-parser+) comma-parser $ fn (xs)
+                take-nth (require-list xs) 2
               is+ |]
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {}
+            :args $ []
+            :features $ #{} :js-ffi
+            :return $ :: 'Map 'Tag 'Dynamic
         'boolean-parser $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def boolean-parser
             label+ |boolean $ or+
@@ -853,7 +942,7 @@
           :code $ quote $ def digits-parser
             many+ (one-of+ |0123456789)
               fn (xs)
-                join-str
+                join-string
                   assert-type xs $ :: 'List 'Dynamic
                   , |
           :examples $ []
@@ -873,13 +962,13 @@
                 , digits-parser $ optional+ $ combine+
                   [] (is+ |.) digits-parser
                   fn (xs)
-                    join-str
-                      assert-type xs $ :: 'List 'Dynamic
-                      , |
+                    join-string (lilac-parser.util/require-list xs) |
               fn (xs)
-                js/Number $ join-str
-                  assert-type xs $ :: 'List 'Dynamic
-                  , |
+                match
+                  parse-float $ join-string (lilac-parser.util/require-list xs) |
+                  (:ok number) number
+                  (:err source)
+                    raise $ str "|Invalid parsed number: " source
           :examples $ []
           :schema $ :: 'Dynamic
         'object-parser+ $ %{} 'CodeEntry (:doc |)
@@ -891,12 +980,16 @@
                     [] string-parser space-parser (is+ |:) space-parser $ value-parser+
                     fn (xs)
                       [] (&list:nth xs 0) (&list:nth xs 4)
-                  , comma-parser $ fn (xs) (take-nth xs 2)
+                  , comma-parser $ fn (xs)
+                    take-nth (require-list xs) 2
                 is+ |}
               fn (xs)
                 pairs-map $ &list:nth xs 1
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {}
+            :args $ []
+            :features $ #{} :js-ffi
+            :return $ :: 'Map 'Tag 'Dynamic
         'space-parser $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def space-parser
             label+ |space $ some+ (is+ "| ")
@@ -910,39 +1003,49 @@
                 some+ $ or+ $ [] (other-than+ "|\"\\") (is+ "|\\\"") (is+ |\\) (is+ |\n)
                 is+ "|\""
               fn (xs)
-                join-str (&list:nth xs 1) |
+                join-string
+                  require-list $ &list:nth xs 1
+                  , |
           :examples $ []
           :schema $ :: 'Dynamic
         'take-nth $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn take-nth (xs n)
             take-nth-iter ([]) 0 xs n
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'Dynamic)
-            :args $ [] (:: 'List 'Dynamic) 'Dynamic
-            :features $ #{} :js-ffi
+          :schema $ :: 'Fn $ {}
+            :args $ [] (:: 'List 'T) 'Number
+            :generics $ [] 'T
+            :return $ :: 'List 'T
         'take-nth-iter $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn take-nth-iter (acc i xs step)
-            list-match xs
-              () acc
-              (x0 xss)
-                case-default i
-                  recur acc (inc i) xss step
-                  0 $ recur (&list:append acc x0) (inc i) xss step
-                  (dec step) (recur acc 0 xss step)
+            match (destruct-list xs)
+              (:none) acc
+              (:some x0 xss)
+                cond
+                    = i 0
+                    recur (append acc x0) (inc i) xss step
+                  (= i (dec step))
+                    recur acc 0 xss step
+                  true $ recur acc (inc i) xss step
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'Dynamic)
-            :args $ [] 'Dynamic 'Dynamic (:: 'List 'Dynamic) 'Dynamic
-            :features $ #{} :js-ffi
+          :schema $ :: 'Fn $ {}
+            :args $ [] (:: 'List 'T) 'Number (:: 'List 'T) 'Number
+            :generics $ [] 'T
+            :return $ :: 'List 'T
         'value-parser+ $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defparser value-parser+ () identity
             or+ $ [] number-parser string-parser nil-parser boolean-parser (array-parser+) (object-parser+)
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {}
+            :args $ []
+            :features $ #{} :js-ffi
+            :return $ :: 'Map 'Tag 'Dynamic
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns lilac-parser.demo.json
           :require
             [] lilac-parser.core :refer $ [] interleave+ is+ other-than+ many+ combine+ optional+ one-of+ some+ or+ defparser label+
             [] clojure.string :as string
+            lilac-parser.util :refer $ require-list
     'lilac-parser.demo.s-expr $ %{} 'FileEntry
       :defs $ {}
         'number-parser $ %{} 'CodeEntry (:doc |)
@@ -956,7 +1059,10 @@
               some+ $ or+ $ [] number-parser word-parser space-parser (s-expr-parser+)
               is+ "|)"
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {}
+            :args $ []
+            :features $ #{} :js-ffi
+            :return $ :: 'Map 'Tag 'Dynamic
         'space-parser $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def space-parser (is+ "| ")
           :examples $ []
@@ -971,19 +1077,37 @@
           :require $ [] lilac-parser.core :refer $ [] parse-lilac defparser is+ combine+ some+ many+ optional+ or+ one-of+
     'lilac-parser.main $ %{} 'FileEntry
       :defs $ {}
-        '*reel $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defatom *reel
-            -> reel-schema/reel (assoc :base schema/store) (assoc :store schema/store)
+        '*persist-timer $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defref *persist-timer (Option :none)
           :examples $ []
-          :schema $ :: 'Ref $ :: 'reel.typed/State 'Enum (:: 'Map 'Dynamic 'Dynamic)
+          :schema $ :: 'Ref $ :: 'Option 'Number
+        '*reel $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defref *reel (typed/new-reel schema/store)
+          :examples $ []
+          :schema $ :: 'Ref $ :: 'reel.typed/State 'lilac-parser.schema/Op 'lilac-parser.schema/Store
+        'apply-op $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn apply-op (raw)
+            match (typed/decode-control raw)
+              (:some control) (typed/apply-control updater @*reel control)
+              (:none)
+                match (schema/decode-op raw)
+                  (:ok operation) (next-reel operation)
+                  (:err message)
+                    do (eprintln "|Invalid operation:" message) @*reel
+          :examples $ []
+          :schema $ :: 'Fn $ {}
+            :args $ [] 'Enum
+            :features $ #{} :js-ffi
+            :return $ :: 'reel.typed/State 'lilac-parser.schema/Op 'lilac-parser.schema/Store
         'dispatch! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn dispatch! (op)
-            when
-              and config/dev? $ not $ &= (&enum:nth op 0) :states
-              println |Dispatch: op
-            reset! *reel $ next-reel op
+            when config/dev? $ println |Dispatch: op
+            if (enum? op)
+              reset! *reel $ apply-op op
+              eprintln "|Expected an operation enum:" op
+            , &unit
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'Dynamic)
+          :schema $ :: 'Fn $ {} (:return 'Unit)
             :args $ [] 'Dynamic
             :features $ #{} :js-ffi
         'main! $ %{} 'CodeEntry (:doc |)
@@ -991,96 +1115,108 @@
             println "|Running mode:" $ if config/dev? |dev |release
             if config/dev? $ load-console-formatter!
             render-app!
-            add-watch *reel :changes $ fn (reel prev) (render-app!)
-            listen-devtools! |k dispatch!
-            js/window.addEventListener |beforeunload $ fn (event) (persist-storage!)
-            js/setInterval persist-storage! 60000
-            ; let
-              (raw (js/localStorage.getItem (&map:get config/site :storage-key)))
-              when (some? raw)
-                dispatch! :hydrate-storage $ parse-cirru-edn raw
+            add-watch! *reel :changes $ fn (reel prev)
+              hint-fn $ {}
+                :args $ [] (:: 'reel.typed/State 'lilac-parser.schema/Op 'lilac-parser.schema/Store) (:: 'reel.typed/State 'lilac-parser.schema/Op 'lilac-parser.schema/Store)
+                :return 'Unit
+                :features $ #{} :js-ffi
+              render-app!
+            listen-devtools! |k $ fn (op)
+              hint-fn $ {}
+                :args $ [] 'Enum
+                :return 'Unit
+              dispatch! op
+            js-ffi.browser/add-event-listener! |beforeunload $ fn (event)
+              hint-fn $ {}
+                :args $ [] 'js-ffi.browser/EventHost
+                :return 'Unit
+                :features $ #{} :js-ffi
+              persist-storage!
+            restart-persistence!
             println "|App started."
+            , &unit
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'Dynamic)
+          :schema $ :: 'Fn $ {} (:return 'Unit)
             :args $ []
             :features $ #{} :js-ffi
         'mount-target $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ def mount-target (.querySelector js/document |.app)
+          :code $ quote $ defn mount-target ()
+            respo.ffi.browser/narrow-element $ .unwrap $ js-ffi.browser/query-selector |.app
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'respo.dom/DomElement)
+            :args $ []
+            :features $ #{} :js-ffi
         'next-reel $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn next-reel (op)
-            typed/record-op updater
-              assert-type @*reel $ :: 'reel.typed/State 'Enum $ :: 'Map 'Dynamic 'Dynamic
-              assert-type op 'Enum
-              generate-id!
-              unsafe-coerce js/Date.now 'Number
+            typed/record-op updater @*reel op (generate-id!) (js-ffi.shared/now-ms)
           :examples $ []
           :schema $ :: 'Fn $ {}
-            :args $ [] 'Enum
+            :args $ [] 'lilac-parser.schema/Op
             :features $ #{} :js-ffi
-            :return $ :: 'reel.typed/State 'Enum $ :: 'Map 'Dynamic 'Dynamic
+            :return $ :: 'reel.typed/State 'lilac-parser.schema/Op 'lilac-parser.schema/Store
         'persist-storage! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn persist-storage! ()
-            js/localStorage.setItem (&map:get config/site :storage-key)
+            js-ffi.browser/storage-set! (:storage-key config/site)
               format-cirru-edn $ :store @*reel
+            , &unit
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'Dynamic)
+          :schema $ :: 'Fn $ {} (:return 'Unit)
             :args $ []
             :features $ #{} :js-ffi
         'reload! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn reload! ()
             if (nil? build-errors)
-              do (remove-watch *reel :changes) (clear-cache!)
-                add-watch *reel :changes $ fn (reel prev) (render-app!)
+              do (remove-watch! *reel :changes) (clear-cache!)
+                add-watch! *reel :changes $ fn (reel prev)
+                  hint-fn $ {}
+                    :args $ [] (:: 'reel.typed/State 'lilac-parser.schema/Op 'lilac-parser.schema/Store) (:: 'reel.typed/State 'lilac-parser.schema/Op 'lilac-parser.schema/Store)
+                    :return 'Unit
+                    :features $ #{} :js-ffi
+                  render-app!
                 reset! *reel $ reloaded-reel
+                restart-persistence!
                 hud! |ok~ |Ok
               hud! |error build-errors
+            , &unit
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'Dynamic)
+          :schema $ :: 'Fn $ {} (:return 'Unit)
             :args $ []
             :features $ #{} :js-ffi
         'reloaded-reel $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn reloaded-reel ()
-            typed/refresh updater
-              assert-type @*reel $ :: 'reel.typed/State 'Enum $ :: 'Map 'Dynamic 'Dynamic
-              assert-type schema/store $ :: 'Map 'Dynamic 'Dynamic
+          :code $ quote $ defn reloaded-reel () (typed/refresh updater @*reel schema/store)
           :examples $ []
           :schema $ :: 'Fn $ {}
             :args $ []
-            :return $ :: 'reel.typed/State 'Enum $ :: 'Map 'Dynamic 'Dynamic
+            :features $ #{} :js-ffi
+            :return $ :: 'reel.typed/State 'lilac-parser.schema/Op 'lilac-parser.schema/Store
         'render-app! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn render-app! ()
-            render! mount-target (comp-container @*reel) dispatch!
+            render! (mount-target) (comp-container @*reel) dispatch!
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'Dynamic)
+          :schema $ :: 'Fn $ {} (:return 'Unit)
             :args $ []
             :features $ #{} :js-ffi
-        'snippets $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn snippets () (println config/cdn?)
+        'restart-persistence! $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn restart-persistence! ()
+            match @*persist-timer
+              (:some id) (js-ffi.browser/clear-interval! id)
+              (:none) &unit
+            reset! *persist-timer $ Option :some $ js-ffi.browser/set-interval! persist-storage! 60000
+            , &unit
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'Dynamic)
+          :schema $ :: 'Fn $ {} (:return 'Unit)
             :args $ []
             :features $ #{} :js-ffi
-        'ssr? $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ def ssr?
-            some? $ js/document.querySelector |meta.respo-ssr
-          :examples $ []
-          :schema $ :: 'Dynamic
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns lilac-parser.main
           :require
-            [] respo.core :refer $ [] render! clear-cache! realize-ssr!
-            [] lilac-parser.comp.container :refer $ [] comp-container
-            [] lilac-parser.updater :refer $ [] updater
-            [] lilac-parser.schema :as schema
-            [] reel.util :refer $ [] listen-devtools! generate-id!
-            [] reel.core :refer $ [] reel-updater refresh-reel
-            [] reel.schema :as reel-schema
-            [] reel.typed :as typed
-            [] cljs.reader :refer $ [] read-string
-            [] lilac-parser.config :as config
-            [] cumulo-util.core :refer $ [] repeat!
+            respo.core :refer $ render! clear-cache!
+            lilac-parser.comp.container :refer $ comp-container
+            lilac-parser.updater :refer $ updater
+            lilac-parser.schema :as schema
+            reel.util :refer $ listen-devtools! generate-id!
+            reel.typed :as typed
+            lilac-parser.config :as config
             |./calcit.build-errors :default build-errors
             |bottom-tip :default hud!
     'lilac-parser.preset $ %{} 'FileEntry
@@ -1115,12 +1251,53 @@
         :code $ quote $ ns lilac-parser.preset
           :require $ [] lilac-parser.core :refer $ [] parse-lilac defparser many+ is+ interleave+ some+ one-of+ combine+ optional+ other-than+ or+ unicode-range+ label+
     'lilac-parser.schema $ %{} 'FileEntry
-      :defs $ {} $ 'store
-        %{} 'CodeEntry (:doc |)
-          :code $ quote $ def store
-            {} $ :states $ {}
+      :defs $ {}
+        'Op $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defenum Op
+            :states (:: 'List 'Dynamic) 'Dynamic
+            :content 'String
+            :hydrate-storage 'lilac-parser.schema/Store
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'EnumDef
+        'Store $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defstruct Store
+            :states $ :: 'Map 'Dynamic 'Dynamic
+            :content 'String
+          :examples $ []
+          :schema $ :: 'StructDef
+        'decode-op $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn decode-op (raw)
+            match raw
+              (:states cursor value)
+                match
+                  try-decode-map-as cursor $ :: 'List 'Dynamic
+                  (:ok path)
+                    Result :ok $ Op :states path value
+                  (:err message) (Result :err message)
+              (:content content)
+                match (data-view content)
+                  (:string text)
+                    Result :ok $ Op :content text
+                  _ $ Result :err "|content operation expects a string"
+              (:hydrate-storage value)
+                let
+                    normalized $ if (map? value)
+                      if (&map:contains? value :content) value $ &map:assoc value :content |
+                      , value
+                  match (try-decode-map-as normalized 'lilac-parser.schema/Store)
+                    (:ok data)
+                      Result :ok $ Op :hydrate-storage data
+                    (:err message) (Result :err message)
+              _ $ Result :err "|unknown application operation"
+          :examples $ []
+          :schema $ :: 'Fn $ {}
+            :args $ [] 'Enum
+            :return $ :: 'Result 'lilac-parser.schema/Op 'String
+        'store $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ def store
+            Store :states ({}) :content |
+          :examples $ []
+          :schema $ :: 'lilac-parser.schema/Store
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns lilac-parser.schema
     'lilac-parser.test $ %{} 'FileEntry
@@ -1131,11 +1308,19 @@
           :schema $ :: 'Ref 'Bool
         'deftest $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defmacro deftest (name & body)
-            quasiquote $ defn (~ name) () $ do (~@ body)
+            quasiquote $ defn (~ name) ()
+              hint-fn $ {}
+                :args $ []
+                :return 'Unit
+                :features $ #{} :js-ffi
+              do (~@ body) &unit
           :examples $ []
           :schema $ :: 'Macro $ {} (:rest 'Syntax)
             :capabilities $ #{}
-            :expansion $ :: 'Definition 'Dynamic
+            :expansion $ :: 'Definition $ :: 'Fn
+              {} (:return 'Unit)
+                :args $ []
+                :features $ #{} :js-ffi
             :required $ [] 'SyntaxSymbol
         'exactly-ok? $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn exactly-ok? (x)
@@ -1191,15 +1376,15 @@
           :code $ quote $ deftest test-find
             testing
               is $ &= 2 $ count
-                &map:get
+                lilac-parser.util/require-list $ &map:get
                   find-lilac "|write cumulo and respo" $ or+ $ [] (is+ |cumulo) (is+ |respo)
                   , :result
               is $ &= 1 $ count
-                &map:get
+                lilac-parser.util/require-list $ &map:get
                   find-lilac "|write cumulo and phlox" $ or+ $ [] (is+ |cumulo) (is+ |respo)
                   , :result
               is $ &= 0 $ count
-                &map:get
+                lilac-parser.util/require-list $ &map:get
                   find-lilac "|write cumulo and phlox" $ or+ $ [] (is+ |cirru) (is+ |respo)
                   , :result
           :examples $ []
@@ -1360,40 +1545,54 @@
             [] lilac-parser.core :refer $ [] parse-lilac defparser many+ is+ interleave+ some+ one-of+ combine+ optional+ other-than+ or+ unicode-range+ replace-lilac find-lilac
             [] lilac-parser.preset :refer $ [] lilac-digit lilac-alphabet lilac-comma-space lilac-chinese-char
     'lilac-parser.updater $ %{} 'FileEntry
-      :defs $ {} $ 'updater
-        %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn updater (store op op-id op-time)
-            match op
-              (:states cursor s) (update-states store cursor s)
-              (:content c) (&map:assoc store :content c)
-              (:hydrate-storage d)
-                assert-type d $ :: 'Map 'Dynamic 'Dynamic
-              _ $ do (eprintln "|Unknown op:" op) store
+      :defs $ {}
+        'checked-state-tree $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn checked-state-tree (raw)
+            match
+              try-decode-map-as raw $ :: 'Map 'Dynamic 'Dynamic
+              (:ok states) states
+              (:err message) (raise message)
           :examples $ []
           :schema $ :: 'Fn $ {}
-            :args $ [] (:: 'Map 'Dynamic 'Dynamic) 'Enum 'String 'Number
-            :features $ #{} :js-ffi
+            :args $ [] 'Dynamic
             :return $ :: 'Map 'Dynamic 'Dynamic
+        'updater $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn updater (store op op-id op-time)
+            match op
+              (:states cursor s)
+                struct-with store $ :states $ checked-state-tree
+                  respo.cursor/update-state-tree (:states store) cursor s
+              (:content c)
+                struct-with store $ :content c
+              (:hydrate-storage d) d
+          :examples $ []
+          :schema $ :: 'Fn $ {} (:return 'lilac-parser.schema/Store)
+            :args $ [] 'lilac-parser.schema/Store 'lilac-parser.schema/Op 'String 'Number
+            :features $ #{} :js-ffi
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns lilac-parser.updater
           :require $ [] respo.cursor :refer $ [] update-states
     'lilac-parser.util $ %{} 'FileEntry
       :defs $ {}
-        'map-indexed-dynamic $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn map-indexed-dynamic (xs f)
-            loop
-                i 0
-                acc $ []
-              if
-                >= i $ &list:count xs
-                acc
-                recur (inc i)
-                  &list:append acc $ f i $ &list:nth xs i
+        'input-list $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn input-list (content)
+            match (data-view content)
+              (:string text) (split text |)
+              (:list xs) xs
+              _ $ raise "|expects content in list or string"
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'Dynamic)
-            :args $ [] 'Dynamic $ :: 'Fn
-              {} (:return 'Dynamic)
-                :args $ [] 'Number 'Dynamic
+          :schema $ :: 'Fn $ {}
+            :args $ [] 'Dynamic
+            :return $ :: 'List 'Dynamic
+        'require-list $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn require-list (value)
+            match (data-view value)
+              (:list xs) xs
+              _ $ raise "|parser expects a list"
+          :examples $ []
+          :schema $ :: 'Fn $ {}
+            :args $ [] 'Dynamic
+            :return $ :: 'List 'Dynamic
         'seq-strip-beginning $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn seq-strip-beginning (xs ys)
             cond
@@ -1406,7 +1605,9 @@
                 recur (&list:rest xs) (&list:rest ys)
               true $ {} (:ok? false) (:message "|not matching") (:xs xs) (:ys ys)
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'Dynamic)
-            :args $ [] (:: 'List 'Dynamic) (:: 'List 'Dynamic)
+          :schema $ :: 'Fn $ {}
+            :args $ [] (:: 'List 'T) (:: 'List 'T)
+            :generics $ [] 'T
+            :return $ :: 'Map 'Tag 'Dynamic
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns lilac-parser.util
