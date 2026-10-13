@@ -333,9 +333,11 @@
     'lilac-parser.core $ %{} 'FileEntry
       :defs $ {}
         '*custom-methods $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defatom *custom-methods ({})
+          :code $ quote $ defref *custom-methods ({})
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Ref $ :: 'Map 'Tag
+            :: 'Fn $ {} (:return 'Dynamic)
+              :args $ [] (:: 'List 'Dynamic) 'Dynamic
         'combine+ $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn combine+ (xs & args)
             let
@@ -642,14 +644,17 @@
             assert "|expects content in list or string" $ or (list? x) (string? x)
             let
                 node $ &map:get rule :parser-node
-                method $ &map:get core-methods node
-                user-method $ &map:get (deref *custom-methods) node
                 xs $ lilac-parser.util/input-list x
-              cond
-                  fn? method
-                  method xs rule
-                (fn? user-method) (user-method xs rule)
-                true $ do (echo "|Unknown node" rule) nil
+              if (tag? node)
+                match (get core-methods node)
+                  (:some method) (method xs rule)
+                  (:none)
+                    match
+                      get (deref *custom-methods) node
+                      (:some user-method) (user-method xs rule)
+                      (:none)
+                        do (echo "|Unknown node" rule) nil
+                do (echo "|Unknown node" rule) nil
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'Dynamic)
             :args $ [] 'Dynamic 'Dynamic
@@ -855,9 +860,14 @@
             println "|registering parser rule" kind
             swap! *custom-methods &map:assoc kind f
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'Dynamic)
-            :args $ [] 'Dynamic 'Dynamic
+          :schema $ :: 'Fn $ {}
+            :args $ [] 'Tag $ :: 'Fn
+              {} (:return 'Dynamic)
+                :args $ [] (:: 'List 'Dynamic) 'Dynamic
             :features $ #{} :js-ffi
+            :return $ :: 'Map 'Tag $ :: 'Fn
+              {} (:return 'Dynamic)
+                :args $ [] (:: 'List 'Dynamic) 'Dynamic
         'replace-iter $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn replace-iter (acc attempts content rule replacer) (; echo "|replace iter...")
             assert "|expects content in list" $ list? content
@@ -1307,7 +1317,7 @@
     'lilac-parser.test $ %{} 'FileEntry
       :defs $ {}
         '*quit-on-failure? $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defatom *quit-on-failure? false
+          :code $ quote $ defref *quit-on-failure? false
           :examples $ []
           :schema $ :: 'Ref 'Bool
         'deftest $ %{} 'CodeEntry (:doc |)
