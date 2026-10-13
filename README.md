@@ -158,15 +158,15 @@ MIT
 
 ### Development
 
-Requires the Calcit 0.29.1 toolchain and `@calcit/procs` 0.29.1, Node.js 24 and Yarn 4.18.0.
+Requires the Calcit 0.29.2 toolchain and `@calcit/procs` 0.29.2, Node.js 24 and Yarn 4.18.0.
 
 Set 形式的 `one-of+` / `other-than+` 不匹配时，错误消息先将 Set 实际转换为
 List；历史 List 输入经过解码后保留，不再用 `unsafe-coerce` 冒充集合转换。
 自定义规则注册表使用 `Ref<Map<Tag, Fn>>`，回调接收原有输入 List 和开放规则数据；
 `parse-lilac` 通过 `Option` 查询区分内置规则、自定义规则和未知规则，未知规则仍提示并返回 nil。
 命名空间状态使用 `defref`；注册函数仍返回更新后的注册表，不改为 Unit。
-原 native/JS 解析测试已通过。此分支的前端依赖升级仍需 Alerts 发布兼容的
-正式依赖图；严格 Caps 门禁不会降级，完整前端和部署验收尚未完成。
+Alerts 0.10.51 的正式依赖图现已发布，此候选消费该正式版本。
+严格 Caps 门禁不会降级；完整前端和部署验收通过后才能视为完成迁移。
 
 - `caps --strict` — resolve immutable dependencies
 - `calcit calcit.cirru --check-only` — strict snapshot check
