@@ -158,7 +158,12 @@ MIT
 
 ### Development
 
-Requires the Calcit 0.29.0 toolchain and `@calcit/procs` 0.29.0, Node.js 24 and Yarn 4.18.0.
+Requires the Calcit 0.29.1 toolchain and `@calcit/procs` 0.29.1, Node.js 24 and Yarn 4.18.0.
+
+Set 形式的 `one-of+` / `other-than+` 不匹配时，错误消息先将 Set 实际转换为
+List；历史 List 输入经过解码后保留，不再用 `unsafe-coerce` 冒充集合转换。
+原 native/JS 解析测试已通过。此分支的前端依赖升级仍需 Alerts 发布兼容的
+正式依赖图；严格 Caps 门禁不会降级，完整前端和部署验收尚未完成。
 
 - `caps --strict` — resolve immutable dependencies
 - `calcit calcit.cirru --check-only` — strict snapshot check

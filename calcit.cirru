@@ -699,7 +699,9 @@
                     {} (:ok? false)
                       :message $ str (to-lispy-string x0) "| is not in " $ to-lispy-string
                         if (string? items) items $ join-string
-                          unsafe-coerce items $ :: 'List 'Dynamic
+                          if (set? items)
+                            .to-list $ decode-map-as items $ :: 'Set 'Dynamic
+                            decode-map-as items $ :: 'List 'Dynamic
                           , |
                       :parser-node :one-of
                       :rest xs
@@ -770,7 +772,9 @@
                     {} (:ok? false)
                       :message $ str (to-lispy-string x0) "| among "
                         to-lispy-string $ if (string? items) items $ join-string
-                          unsafe-coerce items $ :: 'List 'Dynamic
+                          if (set? items)
+                            .to-list $ decode-map-as items $ :: 'Set 'Dynamic
+                            decode-map-as items $ :: 'List 'Dynamic
                           , |
                         , "| is invalid"
                       :parser-node :other-than
