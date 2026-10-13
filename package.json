@@ -10,7 +10,7 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@calcit/procs": "0.29.0"
+    "@calcit/procs": "0.29.2"
   },
   "dependenciesMeta": {
     "esbuild": {
