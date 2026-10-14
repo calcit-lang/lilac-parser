@@ -344,9 +344,10 @@
                 transform $ either (&list:first args) identity
               {} (:parser-node :combine) (:items xs) (:transform transform)
           :examples $ []
-          :schema $ :: 'Fn $ {} (:rest 'Dynamic) (:return 'Dynamic)
+          :schema $ :: 'Fn $ {} (:rest 'Dynamic)
             :args $ [] 'Dynamic
             :features $ #{} :js-ffi
+            :return $ :: 'Map 'Tag 'Dynamic
         'core-methods $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def core-methods
             {} (:is parse-is) (:or parse-or) (:many parse-many) (:some parse-some) (:optional parse-optional) (:component parse-component) (:combine parse-combine) (:one-of parse-one-of) (:interleave parse-interleave) (:other-than parse-other-than) (:label parse-label) (:unicode-range parse-unicode-range)
@@ -427,34 +428,38 @@
                 transform $ either (&list:first args) identity
               {} (:parser-node :interleave) (:x x) (:y y) (:transform transform)
           :examples $ []
-          :schema $ :: 'Fn $ {} (:rest 'Dynamic) (:return 'Dynamic)
+          :schema $ :: 'Fn $ {} (:rest 'Dynamic)
             :args $ [] 'Dynamic 'Dynamic
             :features $ #{} :js-ffi
+            :return $ :: 'Map 'Tag 'Dynamic
         'is+ $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn is+ (x & args)
             let
                 transform $ either (&list:first args) identity
               {} (:parser-node :is) (:item x) (:transform transform)
           :examples $ []
-          :schema $ :: 'Fn $ {} (:rest 'Dynamic) (:return 'Dynamic)
+          :schema $ :: 'Fn $ {} (:rest 'Dynamic)
             :args $ [] 'Dynamic
             :features $ #{} :js-ffi
+            :return $ :: 'Map 'Tag 'Dynamic
         'label+ $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn label+ (label item)
             {} (:parser-node :label) (:label label) (:item item)
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'Dynamic)
+          :schema $ :: 'Fn $ {}
             :args $ [] 'Dynamic 'Dynamic
             :features $ #{} :js-ffi
+            :return $ :: 'Map 'Tag 'Dynamic
         'many+ $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn many+ (item & args)
             let
                 transform $ either (&list:first args) identity
               {} (:parser-node :many) (:item item) (:transform transform)
           :examples $ []
-          :schema $ :: 'Fn $ {} (:rest 'Dynamic) (:return 'Dynamic)
+          :schema $ :: 'Fn $ {} (:rest 'Dynamic)
             :args $ [] 'Dynamic
             :features $ #{} :js-ffi
+            :return $ :: 'Map 'Tag 'Dynamic
         'one-of+ $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn one-of+ (xs & args)
             let
@@ -464,18 +469,20 @@
                 println "|Unexpected argument passed to one-of+ :" xs
               {} (:parser-node :one-of) (:items xs) (:transform transform)
           :examples $ []
-          :schema $ :: 'Fn $ {} (:rest 'Dynamic) (:return 'Dynamic)
+          :schema $ :: 'Fn $ {} (:rest 'Dynamic)
             :args $ [] 'Dynamic
             :features $ #{} :js-ffi
+            :return $ :: 'Map 'Tag 'Dynamic
         'optional+ $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn optional+ (x & args)
             let
                 transform $ either (&list:first args) identity
               {} (:parser-node :optional) (:item x) (:transform transform)
           :examples $ []
-          :schema $ :: 'Fn $ {} (:rest 'Dynamic) (:return 'Dynamic)
+          :schema $ :: 'Fn $ {} (:rest 'Dynamic)
             :args $ [] 'Dynamic
             :features $ #{} :js-ffi
+            :return $ :: 'Map 'Tag 'Dynamic
         'or+ $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn or+ (xs & args)
             when
@@ -485,9 +492,10 @@
                 transform $ either (&list:first args) identity
               {} (:parser-node :or) (:items xs) (:transform transform)
           :examples $ []
-          :schema $ :: 'Fn $ {} (:rest 'Dynamic) (:return 'Dynamic)
+          :schema $ :: 'Fn $ {} (:rest 'Dynamic)
             :args $ [] 'Dynamic
             :features $ #{} :js-ffi
+            :return $ :: 'Map 'Tag 'Dynamic
         'other-than+ $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn other-than+ (items & args)
             let
@@ -497,9 +505,10 @@
                 println "|Unexpected parameter passed to other-than+ :" items
               {} (:parser-node :other-than) (:items items) (:transform transform)
           :examples $ []
-          :schema $ :: 'Fn $ {} (:rest 'Dynamic) (:return 'Dynamic)
+          :schema $ :: 'Fn $ {} (:rest 'Dynamic)
             :args $ [] 'Dynamic
             :features $ #{} :js-ffi
+            :return $ :: 'Map 'Tag 'Dynamic
         'parse-combine $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn parse-combine (xs0 rule)
             let
@@ -902,9 +911,10 @@
                 transform $ either (&list:first args) identity
               {} (:parser-node :some) (:item x) (:transform transform)
           :examples $ []
-          :schema $ :: 'Fn $ {} (:rest 'Dynamic) (:return 'Dynamic)
+          :schema $ :: 'Fn $ {} (:rest 'Dynamic)
             :args $ [] 'Dynamic
             :features $ #{} :js-ffi
+            :return $ :: 'Map 'Tag 'Dynamic
         'unicode-range+ $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn unicode-range+ (min-code max-code & args)
             let
