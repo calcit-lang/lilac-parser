@@ -253,12 +253,14 @@
         'input-text $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn input-text (event)
             match
-              try-decode-map-as (&map:get event :value) 'String
+              try-decode-map-as
+                &map:get (lilac-parser.util/require-map event) :value
+                , 'String
               (:ok text) text
               (:err message) (raise message)
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'String)
-            :args $ [] $ :: 'Map 'Tag 'Dynamic
+            :args $ [] 'Dynamic
         'read-container-state $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn read-container-state (value)
             cond
@@ -396,16 +398,17 @@
           :code $ quote $ defn find-lilac (content rule)
             find-lilac-iter ([]) ([]) (lilac-parser.util/input-list content) rule
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'Dynamic)
+          :schema $ :: 'Fn $ {}
             :args $ [] 'Dynamic 'Dynamic
             :features $ #{} :js-ffi
+            :return $ :: 'Map 'Tag 'Dynamic
         'find-lilac-iter $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn find-lilac-iter (acc attempts content rule)
             assert "|expects content in sequence" $ list? content
             if (empty? content)
               {} (:result acc) (:attempts attempts)
               let
-                  attempt $ parse-lilac content rule
+                  attempt $ lilac-parser.util/require-map $ parse-lilac content rule
                 if (&map:get attempt :ok?)
                   recur
                     &list:append acc $ {}
@@ -419,9 +422,10 @@
                     , rule
                   recur acc (&list:append attempts attempt) (&list:rest content) rule
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'Dynamic)
-            :args $ [] 'Dynamic 'Dynamic (:: 'List 'Dynamic) 'Dynamic
+          :schema $ :: 'Fn $ {}
+            :args $ [] (:: 'List 'Dynamic) (:: 'List 'Dynamic) (:: 'List 'Dynamic) 'Dynamic
             :features $ #{} :js-ffi
+            :return $ :: 'Map 'Tag 'Dynamic
         'interleave+ $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn interleave+ (x y & args)
             let
@@ -512,10 +516,11 @@
         'parse-combine $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn parse-combine (xs0 rule)
             let
-                items $ &map:get rule :items
+                items $ lilac-parser.util/require-list $ &map:get rule :items
                 transform $ &map:get rule :transform
               loop
-                  acc $ []
+                  acc $ assert-type ([])
+                    :: 'List $ :: 'Map 'Dynamic 'Dynamic
                   xs xs0
                   ys items
                 cond
@@ -528,7 +533,7 @@
                       :parser-node :combine
                       :results acc
                   true $ let
-                      result $ parse-lilac xs $ &list:first ys
+                      result $ lilac-parser.util/require-map $ parse-lilac xs (&list:first ys)
                     if (&map:get result :ok?)
                       recur (&list:append acc result)
                         lilac-parser.util/require-list $ &map:get result :rest
@@ -550,7 +555,7 @@
                       (:ok args) (apply maker args)
                       (:err message) (raise message)
                     raise "|component rule expects a parser function"
-                result $ parse-lilac xs item
+                result $ lilac-parser.util/require-map $ parse-lilac xs item
                 value-fn $ &map:get rule :value-fn
                 blackbox? $ &map:get rule :blackbox?
               if (&map:get result :ok?)
@@ -574,12 +579,13 @@
                 y0 $ &map:get rule :y
                 transform $ &map:get rule :transform
               loop
-                  acc $ []
+                  acc $ assert-type ([])
+                    :: 'List $ :: 'Map 'Dynamic 'Dynamic
                   xs xs0
                   x x0
                   y y0
                 let
-                    result $ parse-lilac xs x
+                    result $ lilac-parser.util/require-map $ parse-lilac xs x
                   if (&map:get result :ok?)
                     recur (&list:append acc result)
                       lilac-parser.util/require-list $ &map:get result :rest
@@ -633,7 +639,7 @@
         'parse-label $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn parse-label (xs rule)
             let
-                result $ parse-lilac xs $ &map:get rule :item
+                result $ lilac-parser.util/require-map $ parse-lilac xs (&map:get rule :item)
               if (&map:get result :ok?)
                 {} (:ok? true) (:parser-node :label)
                   :label $ &map:get rule :label
@@ -733,7 +739,7 @@
             let
                 item $ &map:get rule :item
                 transform $ &map:get rule :transform
-                result $ parse-lilac xs item
+                result $ lilac-parser.util/require-map $ parse-lilac xs item
               if (&map:get result :ok?)
                 {} (:ok? true)
                   :value $ let
@@ -814,16 +820,15 @@
                 item $ &map:get rule :item
                 transform $ &map:get rule :transform
               loop
-                  acc $ []
+                  acc $ assert-type ([])
+                    :: 'List $ :: 'Map 'Dynamic 'Dynamic
                   xs xs0
                 let
                     result $ parse-lilac xs item
-                  if
-                    &map:get
-                      either result $ {}
-                      , :ok?
-                    recur (&list:append acc result)
-                      lilac-parser.util/require-list $ &map:get result :rest
+                    result-map $ lilac-parser.util/require-map $ either result ({})
+                  if (&map:get result-map :ok?)
+                    recur (&list:append acc result-map)
+                      lilac-parser.util/require-list $ &map:get result-map :rest
                     {} (:ok? true)
                       :value $ let
                           v $ map acc $ fn (x) (&map:get x :value)
@@ -892,7 +897,7 @@
                 {} (:result acc) (:attempts attempts)
               (:some c0 cs)
                 let
-                    attempt $ parse-lilac content rule
+                    attempt $ lilac-parser.util/require-map $ parse-lilac content rule
                   if (&map:get attempt :ok?)
                     recur
                       str acc $ replacer $ &map:get attempt :value
@@ -901,16 +906,18 @@
                       , rule replacer
                     recur (str acc c0) (append attempts attempt) cs rule replacer
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'Dynamic)
-            :args $ [] 'Dynamic 'Dynamic (:: 'List 'Dynamic) 'Dynamic 'Dynamic
+          :schema $ :: 'Fn $ {}
+            :args $ [] 'Dynamic (:: 'List 'Dynamic) (:: 'List 'Dynamic) 'Dynamic 'Dynamic
             :features $ #{} :js-ffi
+            :return $ :: 'Map 'Tag 'Dynamic
         'replace-lilac $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn replace-lilac (content rule replacer) (echo |calling)
             replace-iter | ([]) (lilac-parser.util/input-list content) rule replacer
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'Dynamic)
+          :schema $ :: 'Fn $ {}
             :args $ [] 'Dynamic 'Dynamic 'Dynamic
             :features $ #{} :js-ffi
+            :return $ :: 'Map 'Tag 'Dynamic
         'some+ $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn some+ (x & args)
             if (nil? x) (raise "|expected non-empty rule")
@@ -939,7 +946,7 @@
         'array-parser+ $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defparser array-parser+ ()
             fn (x)
-              &list:first $ &list:nth x 1
+              &list:first $ require-list $ &list:nth (require-list x) 1
             combine+ $ [] (is+ |[)
               some+ $ interleave+ (value-parser+) comma-parser $ fn (xs)
                 take-nth (require-list xs) 2
@@ -973,9 +980,7 @@
           :code $ quote $ def digits-parser
             many+ (one-of+ |0123456789)
               fn (xs)
-                join-string
-                  assert-type xs $ :: 'List 'Dynamic
-                  , |
+                join-string (require-list xs) |
           :examples $ []
           :schema $ :: 'Dynamic
         'nil-parser $ %{} 'CodeEntry (:doc |)
@@ -1010,12 +1015,16 @@
                   combine+
                     [] string-parser space-parser (is+ |:) space-parser $ value-parser+
                     fn (xs)
-                      [] (&list:nth xs 0) (&list:nth xs 4)
+                      let
+                          xs $ require-list xs
+                        [] (&list:nth xs 0) (&list:nth xs 4)
                   , comma-parser $ fn (xs)
                     take-nth (require-list xs) 2
                 is+ |}
               fn (xs)
-                pairs-map $ &list:nth xs 1
+                let
+                    xs $ require-list xs
+                  pairs-map $ require-list $ &list:nth xs 1
           :examples $ []
           :schema $ :: 'Fn $ {}
             :args $ []
@@ -1035,7 +1044,7 @@
                 is+ "|\""
               fn (xs)
                 join-string
-                  require-list $ &list:nth xs 1
+                  require-list $ &list:nth (require-list xs) 1
                   , |
           :examples $ []
           :schema $ :: 'Dynamic
@@ -1630,6 +1639,13 @@
           :schema $ :: 'Fn $ {}
             :args $ [] 'Dynamic
             :return $ :: 'List 'Dynamic
+        'require-map $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn require-map (value)
+            if (map? value) value $ raise "|parser expects a map"
+          :examples $ []
+          :schema $ :: 'Fn $ {}
+            :args $ [] 'Dynamic
+            :return $ :: 'Map 'Dynamic 'Dynamic
         'seq-strip-beginning $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn seq-strip-beginning (xs ys)
             cond

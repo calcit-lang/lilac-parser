@@ -158,7 +158,7 @@ MIT
 
 ### Development
 
-Requires the Calcit 0.29.2 toolchain and `@calcit/procs` 0.29.2, Node.js 24 and Yarn 4.18.0.
+Requires the Calcit 0.29.3 toolchain and `@calcit/procs` 0.29.3, Node.js 24 and Yarn 4.18.0.
 
 Set 形式的 `one-of+` / `other-than+` 不匹配时，错误消息先将 Set 实际转换为
 List；历史 List 输入经过解码后保留，不再用 `unsafe-coerce` 冒充集合转换。
