@@ -158,15 +158,19 @@ MIT
 
 ### Development
 
-Requires the Calcit 0.29.3 toolchain and `@calcit/procs` 0.29.3, Node.js 24 and Yarn 4.18.0.
+Requires the Calcit 0.30.0 toolchain and `@calcit/procs` 0.30.0, Node.js 24 and Yarn 4.18.0.
 
 Set 形式的 `one-of+` / `other-than+` 不匹配时，错误消息先将 Set 实际转换为
 List；历史 List 输入经过解码后保留，不再用 `unsafe-coerce` 冒充集合转换。
 自定义规则注册表使用 `Ref<Map<Tag, Fn>>`，回调接收原有输入 List 和开放规则数据；
 `parse-lilac` 通过 `Option` 查询区分内置规则、自定义规则和未知规则，未知规则仍提示并返回 nil。
 命名空间状态使用 `defref`；注册函数仍返回更新后的注册表，不改为 Unit。
-Alerts 0.10.51 的正式依赖图现已发布，此候选消费该正式版本。
+Map/List 读取使用公开的 `Option` 接口；缺失值仍还原为 nil，规则转换函数的默认值和调用顺序不变。
+前端依赖使用正式版本，包括 Alerts 0.10.52、Reel 0.6.36、Feather 0.4.26、Markdown 0.4.54、UI 0.7.39 和 Respo 0.16.120。
 严格 Caps 门禁不会降级；完整前端和部署验收通过后才能视为完成迁移。
+额外的 `calcit fix --workflow strict --verify` 当前仍受已发布依赖的检查阻塞：
+Reel `comp-records` 的 List 输入证明、Respo `style->string` 的 String 返回证明。
+普通检查和原有测试通过不代表这项严格审计已通过，合并前需要跟进依赖。
 
 - `caps --strict` — resolve immutable dependencies
 - `calcit calcit.cirru --check-only` — strict snapshot check
