@@ -1087,7 +1087,8 @@
               fn (xs)
                 let
                     xs $ require-list xs
-                  pairs-map $ require-list $ &list:nth xs 1
+                    entries $ &list:nth xs 1
+                  pairs-map $ if (nil? entries) ([]) (require-list entries)
           :examples $ []
           :schema $ :: 'Fn $ {}
             :args $ []
@@ -1481,6 +1482,22 @@
               parse-lilac |xyz $ combine+ $ [] (is+ |x) (is+ |y)
             testing "|wrong order Of xy" $ is $ not-ok?
               parse-lilac |xy $ combine+ $ [] (is+ |y) (is+ |x)
+            testing "|JSON object optional entries" $ let
+                empty-result $ parse-lilac |{} $ object-parser+
+                nonempty-result $ parse-lilac "|{\"a\":1}" $ object-parser+
+                nested-result $ parse-lilac "|{\"a\":{}}" $ object-parser+
+              is $ exactly-ok? empty-result
+              is $ =
+                .unwrap $ get empty-result :value
+                {}
+              is $ exactly-ok? nonempty-result
+              is $ =
+                .unwrap $ get nonempty-result :value
+                {} $ |a 1
+              is $ exactly-ok? nested-result
+              is $ =
+                .unwrap $ get nested-result :value
+                {} $ |a $ {}
           :examples $ []
           :schema $ :: 'Dynamic
         'test-find $ %{} 'CodeEntry (:doc |)
@@ -1667,6 +1684,7 @@
           :require
             lilac-parser.core :refer $ parse-lilac defparser many+ is+ interleave+ some+ one-of+ combine+ optional+ other-than+ or+ unicode-range+ replace-lilac find-lilac
             lilac-parser.preset :refer $ lilac-digit lilac-alphabet lilac-comma-space lilac-chinese-char
+            lilac-parser.demo.json :refer $ object-parser+
     'lilac-parser.updater $ %{} 'FileEntry
       :defs $ {}
         'checked-state-tree $ %{} 'CodeEntry (:doc |)
