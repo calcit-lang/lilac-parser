@@ -158,7 +158,9 @@ MIT
 
 ### Development
 
-Requires the Calcit 0.30.0 toolchain and `@calcit/procs` 0.30.0, Node.js 24 and Yarn 4.18.0.
+当前 0.0.6 候选配对已发布的 Calcit CLI / `@calcit/procs` `0.30.1-alpha.4`，
+使用 Node.js 24 和 Yarn 4.18.0。这不是稳定 Calcit 0.30.1；不要只升级 runtime 而保留旧 CLI。
+0.0.5 tag 尚未包含此前 main 的 Option 迁移，不能把当前源码的验收当作旧 tag 的兼容性保证。
 
 Set 形式的 `one-of+` / `other-than+` 不匹配时，错误消息先将 Set 实际转换为
 List；历史 List 输入经过解码后保留，不再用 `unsafe-coerce` 冒充集合转换。
@@ -166,11 +168,14 @@ List；历史 List 输入经过解码后保留，不再用 `unsafe-coerce` 冒�
 `parse-lilac` 通过 `Option` 查询区分内置规则、自定义规则和未知规则，未知规则仍提示并返回 nil。
 命名空间状态使用 `defref`；注册函数仍返回更新后的注册表，不改为 Unit。
 Map/List 读取使用公开的 `Option` 接口；缺失值仍还原为 nil，规则转换函数的默认值和调用顺序不变。
-前端依赖使用正式版本，包括 Alerts 0.10.53、Reel 0.6.37、Feather 0.4.27、Markdown 0.4.54、UI 0.7.39 和 Respo 0.16.120。
+前端依赖使用正式模块版本：Alerts 0.10.55、Reel 0.6.39、Feather 0.4.29、
+Markdown 0.4.56、UI 0.7.41 和 Respo 0.16.122；传递 Router 0.8.36 与 JS-FFI 0.2.3。
 严格 Caps 门禁不会降级；完整前端和部署验收通过后才能视为完成迁移。
-Reel 0.6.37 已正式发布，提供所需的 List 输入和旧 Map 返回边界修复。
 CI 直接执行完整 `calcit fix --workflow strict --verify`，不再只依赖普通检查和测试。
-不增加验证脚本，不锁 alpha 或提交 hash；精确 HEAD 的干净依赖安装与 CI 仍须独立通过。
+CLI 版本从 deps.cirru 安装，由 `caps verify --toolchain` 验证 CLI/runtime 配对；
+CI 不再额外硬编码旧版本号。使用精确已发布 tag，不用分支或 hash 代替正式依赖。
+本次配对不修改 Snapshot、原 parser 测试与断言；精确 HEAD 的干净安装、CI 和实际 review 仍须独立通过。
+解析结果与部分规则 payload 仍是开放容器；保留原 Some nil / 缺失语义，不宣称本次已完成它们的名义类型收敛。
 
 - `caps --strict` — resolve immutable dependencies
 - `calcit calcit.cirru --check-only` — strict snapshot check
