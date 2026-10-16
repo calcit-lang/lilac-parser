@@ -51,6 +51,7 @@ jobs:
           calcit calcit.cirru edit format
           git diff --exit-code -- calcit.cirru
           calcit calcit.cirru --check-only
+          calcit calcit.cirru fix --workflow strict --verify --format edn
           calcit calcit.cirru --check-only \
             --ns lilac-parser.core --ns lilac-parser.util --ns lilac-parser.preset \
             --ns lilac-parser.test --ns lilac-parser.comp.container --ns lilac-parser.main \
