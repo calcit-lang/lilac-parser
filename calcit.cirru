@@ -703,23 +703,79 @@
             assert "|expects content in list or string" $ or (list? x) (string? x)
             if (map? rule)
               let
-                  node $ .unwrap-or (get rule :parser-node) nil
+                  node-option $ get rule :parser-node
                   xs $ lilac-parser.util/input-list x
-                if (tag? node)
-                  match (get core-methods node)
-                    (:some method) (method xs rule)
-                    (:none)
-                      match
-                        get (deref *custom-methods) node
-                        (:some user-method) (user-method xs rule)
+                match node-option
+                  (:some node)
+                    if (tag? node)
+                      match (get core-methods node)
+                        (:some method) (method xs rule)
                         (:none)
-                          do (echo "|Unknown node" rule) nil
-                  do (echo "|Unknown node" rule) nil
+                          match
+                            get (deref *custom-methods) node
+                            (:some user-method) (user-method xs rule)
+                            (:none)
+                              do (echo "|Unknown node" rule) nil
+                      do (echo "|Unknown node" rule) nil
+                  (:none)
+                    do (echo "|Unknown node" rule) nil
               raise "|parser expects a rule map"
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'Dynamic)
             :args $ [] 'Dynamic 'Dynamic
             :features $ #{} :js-ffi
+          :tests $ []
+            %{} 'TestEntry (:name |preserves-missing-and-invalid-node)
+              :code $ quote $ do
+                assert= nil $ parse-lilac |x $ {}
+                assert= nil $ parse-lilac |x $ {} (:parser-node nil)
+                assert= nil $ parse-lilac |x $ {} (:parser-node false)
+                assert= nil $ parse-lilac |x $ {} (:parser-node 0)
+                assert= nil $ parse-lilac |x $ {} (:parser-node |)
+                assert= nil $ parse-lilac |x $ {} (:parser-node :unregistered-option-test)
+                , &unit
+              :tags $ #{} :parser-dispatch :unit
+            %{} 'TestEntry (:name |preserves-input-and-rule-errors)
+              :code $ quote $ do
+                assert=
+                  try (parse-lilac |x nil)
+                    fn (message) message
+                  , "|parser expects a rule map"
+                assert=
+                  try (parse-lilac 0 nil)
+                    fn (message) message
+                  , "|expects content in list or string (or (list? x) (string? x))"
+                , &unit
+              :tags $ #{} :parser-dispatch :unit
+            %{} 'TestEntry (:name |preserves-core-and-custom-dispatch)
+              :code $ quote $ let
+                  original $ deref *custom-methods
+                  custom-rule $ {} (:parser-node :option-test-custom) (:extra 7)
+                  custom $ fn (xs rule)
+                    hint-fn $ {}
+                      :args $ [] (:: 'List 'Dynamic) 'Dynamic
+                      :return 'Dynamic
+                    assert= ([] |x) xs
+                    assert= custom-rule rule
+                    , |custom-result
+                  shadow $ fn (xs rule)
+                    hint-fn $ {}
+                      :args $ [] (:: 'List 'Dynamic) 'Dynamic
+                      :return 'Dynamic
+                    raise "|custom shadow must not replace core"
+                reset! *custom-methods $ -> original (.assoc :option-test-custom custom) (.assoc :is shadow)
+                try
+                  do
+                    assert= |custom-result $ parse-lilac |x custom-rule
+                    assert=
+                      {} (:ok? true) (:value |x)
+                        :rest $ []
+                        :parser-node :is
+                      parse-lilac |x $ is+ |x
+                    reset! *custom-methods original
+                    , &unit
+                  fn (message) (reset! *custom-methods original) (raise message)
+              :tags $ #{} :parser-dispatch :unit
         'parse-many $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn parse-many (xs0 rule)
             let
