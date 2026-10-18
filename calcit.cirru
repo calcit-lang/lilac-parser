@@ -159,7 +159,7 @@
                         :cursor :pointer
                       fn (e d!) &unit
                   if
-                    .unwrap-or (get node :ok?) nil
+                    .unwrap-or (get node :ok?) false
                     span $ {}
                       :class-name $ str-spaced css-label css/font-fancy
                       :inner-text |Ok
@@ -180,28 +180,28 @@
                       :inner-text $ .unwrap-or (get node :label) nil
                       :style $ {} $ :background-color (hsl 200 90 60)
                   if-not
-                    .unwrap-or (get node :ok?) nil
+                    .unwrap-or (get node :ok?) false
                     span $ {} (:class-name css-label)
                       :inner-text $ .unwrap-or (get node :message) nil
                       :style $ {} $ :background-color (hsl 0 80 60)
                   if
                     and
-                      .unwrap-or (get node :ok?) nil
+                      .unwrap-or (get node :ok?) false
                       &= :is $ .unwrap-or (get node :parser-node) nil
                     span $ {} (:class-name css-label)
-                      :inner-text $ .unwrap-or (get node :value) nil
+                      :inner-text $ .unwrap $ get node :value
                       :style $ {} $ :background-color (hsl 200 80 70)
                   if
-                    .unwrap-or (get node :ok?) nil
+                    .unwrap-or (get node :ok?) false
                     span $ {} (:class-name css-label)
-                      :inner-text $ to-lispy-string $ .unwrap-or (get node :value) nil
+                      :inner-text $ to-lispy-string $ .unwrap (get node :value)
                       :style $ {}
                         :background-color $ hsl 200 80 80
                         :font-size 10
                   span $ {} (:class-name css-label)
                     :inner-text $ join-string
                       take
-                        require-list $ .unwrap-or (get node :rest) nil
+                        require-list $ .unwrap $ get node :rest
                         , 10
                       , |
                     :style $ {}
@@ -354,7 +354,7 @@
           :code $ quote $ defn combine+ (xs & args)
             let
                 transform $ either
-                  .unwrap-or (first args) nil
+                  .unwrap-or (first args) identity
                   , identity
               {} (:parser-node :combine) (:items xs) (:transform transform)
           :examples $ []
@@ -422,16 +422,16 @@
               let
                   attempt $ lilac-parser.util/require-map $ parse-lilac content rule
                 if
-                  .unwrap-or (get attempt :ok?) nil
+                  .unwrap-or (get attempt :ok?) false
                   recur
                     &list:append acc $ {}
                       :content $ join-string
                         &list:slice content 0 $ - (count content)
-                          count $ lilac-parser.util/require-list $ .unwrap-or (get attempt :rest) nil
+                          count $ lilac-parser.util/require-list $ .unwrap (get attempt :rest)
                         , |
-                      :value $ .unwrap-or (get attempt :value) nil
+                      :value $ .unwrap $ get attempt :value
                     &list:append attempts attempt
-                    lilac-parser.util/require-list $ .unwrap-or (get attempt :rest) nil
+                    lilac-parser.util/require-list $ .unwrap $ get attempt :rest
                     , rule
                   recur acc (&list:append attempts attempt) (&list:rest content) rule
           :examples $ []
@@ -443,7 +443,7 @@
           :code $ quote $ defn interleave+ (x y & args)
             let
                 transform $ either
-                  .unwrap-or (first args) nil
+                  .unwrap-or (first args) identity
                   , identity
               {} (:parser-node :interleave) (:x x) (:y y) (:transform transform)
           :examples $ []
@@ -455,7 +455,7 @@
           :code $ quote $ defn is+ (x & args)
             let
                 transform $ either
-                  .unwrap-or (first args) nil
+                  .unwrap-or (first args) identity
                   , identity
               {} (:parser-node :is) (:item x) (:transform transform)
           :examples $ []
@@ -475,7 +475,7 @@
           :code $ quote $ defn many+ (item & args)
             let
                 transform $ either
-                  .unwrap-or (first args) nil
+                  .unwrap-or (first args) identity
                   , identity
               {} (:parser-node :many) (:item item) (:transform transform)
           :examples $ []
@@ -487,7 +487,7 @@
           :code $ quote $ defn one-of+ (xs & args)
             let
                 transform $ either
-                  .unwrap-or (first args) nil
+                  .unwrap-or (first args) identity
                   , identity
               when
                 not $ or (string? xs) (set? xs)
@@ -502,7 +502,7 @@
           :code $ quote $ defn optional+ (x & args)
             let
                 transform $ either
-                  .unwrap-or (first args) nil
+                  .unwrap-or (first args) identity
                   , identity
               {} (:parser-node :optional) (:item x) (:transform transform)
           :examples $ []
@@ -517,7 +517,7 @@
               println "|Expected list passed to or+ :" xs
             let
                 transform $ either
-                  .unwrap-or (first args) nil
+                  .unwrap-or (first args) identity
                   , identity
               {} (:parser-node :or) (:items xs) (:transform transform)
           :examples $ []
@@ -529,7 +529,7 @@
           :code $ quote $ defn other-than+ (items & args)
             let
                 transform $ either
-                  .unwrap-or (first args) nil
+                  .unwrap-or (first args) identity
                   , identity
               when
                 not $ or (string? items) (set? items)
@@ -543,8 +543,8 @@
         'parse-combine $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn parse-combine (xs0 rule)
             let
-                items $ lilac-parser.util/require-list $ .unwrap-or (get rule :items) nil
-                transform $ .unwrap-or (get rule :transform) nil
+                items $ lilac-parser.util/require-list $ .unwrap (get rule :items)
+                transform $ .unwrap $ get rule :transform
               loop
                   acc $ assert-type ([])
                     :: 'List $ :: 'Map 'Dynamic 'Dynamic
@@ -558,7 +558,7 @@
                             hint-fn $ {}
                               :args $ [] $ :: 'Map 'Dynamic 'Dynamic
                               :return 'Dynamic
-                            .unwrap-or (get x :value) nil
+                            .unwrap $ get x :value
                         if (non-nil? transform) (transform v) v
                       :rest xs
                       :parser-node :combine
@@ -567,9 +567,9 @@
                       result $ lilac-parser.util/require-map $ parse-lilac xs
                         .unwrap-or (first ys) nil
                     if
-                      .unwrap-or (get result :ok?) nil
+                      .unwrap-or (get result :ok?) false
                       recur (&list:append acc result)
-                        lilac-parser.util/require-list $ .unwrap-or (get result :rest) nil
+                        lilac-parser.util/require-list $ .unwrap $ get result :rest
                         &list:rest ys
                       {} (:ok? false) (:parser-node :combine) (:message "|failed to combine") (:result result) (:previous-results acc) (:rest xs)
           :examples $ []
@@ -579,7 +579,7 @@
         'parse-component $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn parse-component (xs rule)
             let
-                rule-name $ .unwrap-or (get rule :name) nil
+                rule-name $ .unwrap $ get rule :name
                 item $ let
                     maker $ .unwrap-or (get rule :fn) nil
                   if (fn? maker)
@@ -591,13 +591,13 @@
                       (:err message) (raise message)
                     raise "|component rule expects a parser function"
                 result $ lilac-parser.util/require-map $ parse-lilac xs item
-                value-fn $ .unwrap-or (get rule :value-fn) nil
+                value-fn $ .unwrap $ get rule :value-fn
                 blackbox? $ .unwrap-or (get rule :blackbox?) nil
               if
-                .unwrap-or (get result :ok?) nil
+                .unwrap-or (get result :ok?) false
                 {} (:ok? true)
-                  :value $ value-fn $ .unwrap-or (get result :value) nil
-                  :rest $ .unwrap-or (get result :rest) nil
+                  :value $ value-fn $ .unwrap (get result :value)
+                  :rest $ .unwrap $ get result :rest
                   :parser-node :component
                   :label rule-name
                   :result $ if blackbox? nil result
@@ -611,9 +611,9 @@
         'parse-interleave $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn parse-interleave (xs0 rule)
             let
-                x0 $ .unwrap-or (get rule :x) nil
-                y0 $ .unwrap-or (get rule :y) nil
-                transform $ .unwrap-or (get rule :transform) nil
+                x0 $ .unwrap $ get rule :x
+                y0 $ .unwrap $ get rule :y
+                transform $ .unwrap $ get rule :transform
               loop
                   acc $ assert-type ([])
                     :: 'List $ :: 'Map 'Dynamic 'Dynamic
@@ -623,9 +623,9 @@
                 let
                     result $ lilac-parser.util/require-map $ parse-lilac xs x
                   if
-                    .unwrap-or (get result :ok?) nil
+                    .unwrap-or (get result :ok?) false
                     recur (&list:append acc result)
-                      lilac-parser.util/require-list $ .unwrap-or (get result :rest) nil
+                      lilac-parser.util/require-list $ .unwrap $ get result :rest
                       , y x
                     if (empty? acc)
                       {} (:ok? false) (:message "|no match") (:parser-node :interleave) (:peek-result result) (:rest xs)
@@ -635,7 +635,7 @@
                               hint-fn $ {}
                                 :args $ [] $ :: 'Map 'Dynamic 'Dynamic
                                 :return 'Dynamic
-                              .unwrap-or (get x :value) nil
+                              .unwrap $ get x :value
                           if (non-nil? transform) (transform v) v
                         :rest xs
                         :parser-node :interleave
@@ -650,22 +650,22 @@
             if (empty? xs)
               {} (:ok? false)
                 :message $ str "|expects "
-                  to-lispy-string $ .unwrap-or (get rule :item) nil
+                  to-lispy-string $ .unwrap $ get rule :item
                   , "| but got EOF"
                 :parser-node :is
                 :rest xs
               let
                   item $ match
-                    data-view $ .unwrap-or (get rule :item) nil
+                    data-view $ .unwrap $ get rule :item
                     (:string text) text
                     _ $ raise "|is rule expects a string"
-                  transform $ .unwrap-or (get rule :transform) nil
+                  transform $ .unwrap $ get rule :transform
                   strip-result $ seq-strip-beginning xs $ split item |
                 if
-                  .unwrap-or (get strip-result :ok?) nil
+                  .unwrap-or (get strip-result :ok?) false
                   {} (:ok? true)
                     :value $ if (non-nil? transform) (transform item) item
-                    :rest $ lilac-parser.util/require-list $ .unwrap-or (get strip-result :rest) nil
+                    :rest $ lilac-parser.util/require-list $ .unwrap (get strip-result :rest)
                     :parser-node :is
                   {} (:ok? false)
                     :message $ str "|expects " (to-lispy-string item) "| but got " $ to-lispy-string
@@ -682,18 +682,18 @@
           :code $ quote $ defn parse-label (xs rule)
             let
                 result $ lilac-parser.util/require-map $ parse-lilac xs
-                  .unwrap-or (get rule :item) nil
+                  .unwrap $ get rule :item
               if
-                .unwrap-or (get result :ok?) nil
+                .unwrap-or (get result :ok?) false
                 {} (:ok? true) (:parser-node :label)
-                  :label $ .unwrap-or (get rule :label) nil
-                  :value $ .unwrap-or (get result :value) nil
-                  :rest $ .unwrap-or (get result :rest) nil
+                  :label $ .unwrap $ get rule :label
+                  :value $ .unwrap $ get result :value
+                  :rest $ .unwrap $ get result :rest
                   :result result
                 {} (:ok? false) (:message nil) (:parser-node :label)
-                  :label $ .unwrap-or (get rule :label) nil
+                  :label $ .unwrap $ get rule :label
                   :result result
-                  :rest $ .unwrap-or (get result :rest) nil
+                  :rest $ .unwrap $ get result :rest
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'Dynamic)
             :args $ [] (:: 'List 'Dynamic) (:: 'Map 'Dynamic 'Dynamic)
@@ -779,8 +779,8 @@
         'parse-many $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn parse-many (xs0 rule)
             let
-                item $ .unwrap-or (get rule :item) nil
-                transform $ .unwrap-or (get rule :transform) nil
+                item $ .unwrap $ get rule :item
+                transform $ .unwrap $ get rule :transform
               loop
                   acc $ assert-type ([])
                     :: 'List $ :: 'Map 'Dynamic 'Dynamic
@@ -789,9 +789,9 @@
                     result $ parse-lilac xs item
                   if (map? result)
                     if
-                      .unwrap-or (get result :ok?) nil
+                      .unwrap-or (get result :ok?) false
                       recur (&list:append acc result)
-                        lilac-parser.util/require-list $ .unwrap-or (get result :rest) nil
+                        lilac-parser.util/require-list $ .unwrap $ get result :rest
                       if (empty? acc)
                         {} (:ok? false) (:message "|no match") (:parser-node :many) (:peek-result result) (:rest xs)
                         {} (:ok? true)
@@ -800,7 +800,7 @@
                                 hint-fn $ {}
                                   :args $ [] $ :: 'Map 'Dynamic 'Dynamic
                                   :return 'Dynamic
-                                .unwrap-or (get x :value) nil
+                                .unwrap $ get x :value
                             if (non-nil? transform) (transform v) v
                           :rest xs
                           :parser-node :many
@@ -818,8 +818,8 @@
                 {} (:ok? false) (:message "|unexpected EOF") (:parser-node :one-of) (:rest xs)
               (:some x0 xss)
                 let
-                    items $ .unwrap-or (get rule :items) nil
-                    transform $ .unwrap-or (get rule :transform) nil
+                    items $ .unwrap $ get rule :items
+                    transform $ .unwrap $ get rule :transform
                   if
                     if (string? items) (includes? items x0) (includes? items x0)
                     {} (:ok? true)
@@ -842,16 +842,16 @@
         'parse-optional $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn parse-optional (xs rule)
             let
-                item $ .unwrap-or (get rule :item) nil
-                transform $ .unwrap-or (get rule :transform) nil
+                item $ .unwrap $ get rule :item
+                transform $ .unwrap $ get rule :transform
                 result $ lilac-parser.util/require-map $ parse-lilac xs item
               if
-                .unwrap-or (get result :ok?) nil
+                .unwrap-or (get result :ok?) false
                 {} (:ok? true)
                   :value $ let
-                      v $ .unwrap-or (get result :value) nil
+                      v $ .unwrap $ get result :value
                     if (non-nil? transform) (transform v) v
-                  :rest $ .unwrap-or (get result :rest) nil
+                  :rest $ .unwrap $ get result :rest
                   :parser-node :optional
                   :result result
                 {} (:ok? true) (:value nil) (:result result) (:parser-node :optional) (:rest xs)
@@ -862,8 +862,8 @@
         'parse-or $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn parse-or (xs rule)
             let
-                items $ lilac-parser.util/require-list $ .unwrap-or (get rule :items) nil
-                transform $ .unwrap-or (get rule :transform) nil
+                items $ lilac-parser.util/require-list $ .unwrap (get rule :items)
+                transform $ .unwrap $ get rule :transform
               loop
                   rules items
                   failures $ []
@@ -877,12 +877,12 @@
                       result $ parse-lilac xs $ .unwrap-or (first rules) nil
                     if (map? result)
                       if
-                        .unwrap-or (get result :ok?) nil
+                        .unwrap-or (get result :ok?) false
                         {} (:ok? true)
                           :value $ let
-                              v $ .unwrap-or (get result :value) nil
+                              v $ .unwrap $ get result :value
                             if (non-nil? transform) (transform v) v
-                          :rest $ lilac-parser.util/require-list $ .unwrap-or (get result :rest) nil
+                          :rest $ lilac-parser.util/require-list $ .unwrap (get result :rest)
                           :parser-node :or
                           :results failures
                           :result result
@@ -899,8 +899,8 @@
                 {} (:ok? false) (:message "|Unexpected EOF") (:parser-node :other-than) (:rest xs)
               (:some x0 xss)
                 let
-                    items $ .unwrap-or (get rule :items) nil
-                    transform $ .unwrap-or (get rule :transform) nil
+                    items $ .unwrap $ get rule :items
+                    transform $ .unwrap $ get rule :transform
                   if
                     if (string? items) (includes? items x0) (includes? items x0)
                     {} (:ok? false)
@@ -924,8 +924,8 @@
         'parse-some $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn parse-some (xs0 rule)
             let
-                item $ .unwrap-or (get rule :item) nil
-                transform $ .unwrap-or (get rule :transform) nil
+                item $ .unwrap $ get rule :item
+                transform $ .unwrap $ get rule :transform
               loop
                   acc $ assert-type ([])
                     :: 'List $ :: 'Map 'Dynamic 'Dynamic
@@ -934,16 +934,16 @@
                     result $ parse-lilac xs item
                     result-map $ lilac-parser.util/require-map $ either result ({})
                   if
-                    .unwrap-or (get result-map :ok?) nil
+                    .unwrap-or (get result-map :ok?) false
                     recur (&list:append acc result-map)
-                      lilac-parser.util/require-list $ .unwrap-or (get result-map :rest) nil
+                      lilac-parser.util/require-list $ .unwrap $ get result-map :rest
                     {} (:ok? true)
                       :value $ let
                           v $ map acc $ fn (x)
                             hint-fn $ {}
                               :args $ [] $ :: 'Map 'Dynamic 'Dynamic
                               :return 'Dynamic
-                            .unwrap-or (get x :value) nil
+                            .unwrap $ get x :value
                         if (non-nil? transform) (transform v) v
                       :rest xs
                       :parser-node :some
@@ -961,14 +961,14 @@
               (:some x0 xss)
                 let
                     min-code $ match
-                      data-view $ .unwrap-or (get rule :min-code) nil
+                      data-view $ .unwrap $ get rule :min-code
                       (:number code) code
                       _ $ raise "|unicode-range expects numeric :min-code"
                     max-code $ match
-                      data-view $ .unwrap-or (get rule :max-code) nil
+                      data-view $ .unwrap $ get rule :max-code
                       (:number code) code
                       _ $ raise "|unicode-range expects numeric :max-code"
-                    transform $ .unwrap-or (get rule :transform) nil
+                    transform $ .unwrap $ get rule :transform
                     head-code $ match (data-view x0)
                       (:string char) (get-char-code char)
                       _ $ raise "|unicode-range expects a character string"
@@ -1011,11 +1011,11 @@
                 let
                     attempt $ lilac-parser.util/require-map $ parse-lilac content rule
                   if
-                    .unwrap-or (get attempt :ok?) nil
+                    .unwrap-or (get attempt :ok?) false
                     recur
-                      str acc $ replacer $ .unwrap-or (get attempt :value) nil
+                      str acc $ replacer $ .unwrap (get attempt :value)
                       append attempts attempt
-                      lilac-parser.util/require-list $ .unwrap-or (get attempt :rest) nil
+                      lilac-parser.util/require-list $ .unwrap $ get attempt :rest
                       , rule replacer
                     recur (str acc c0) (append attempts attempt) cs rule replacer
           :examples $ []
@@ -1036,7 +1036,7 @@
             if (nil? x) (raise "|expected non-empty rule")
             let
                 transform $ either
-                  .unwrap-or (first args) nil
+                  .unwrap-or (first args) identity
                   , identity
               {} (:parser-node :some) (:item x) (:transform transform)
           :examples $ []
@@ -1048,7 +1048,7 @@
           :code $ quote $ defn unicode-range+ (min-code max-code & args)
             let
                 transform $ either
-                  .unwrap-or (first args) nil
+                  .unwrap-or (first args) identity
                   , identity
               {} (:parser-node :unicode-range) (:min-code min-code) (:max-code max-code) (:transform transform)
           :examples $ []
@@ -1486,8 +1486,8 @@
           :code $ quote $ defn exactly-ok? (x)
             if (map? x)
               and
-                .unwrap-or (get x :ok?) nil
-                empty? $ .unwrap-or (get x :rest) nil
+                .unwrap-or (get x :ok?) false
+                empty? $ .unwrap $ get x :rest
               raise "|parser test expects a result map"
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'Dynamic)
@@ -1507,7 +1507,7 @@
         'not-ok? $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn not-ok? (x)
             if (map? x)
-              not $ .unwrap-or (get x :ok?) nil
+              not $ .unwrap-or (get x :ok?) false
               raise "|parser test expects a result map"
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'Dynamic)
@@ -1523,8 +1523,8 @@
           :code $ quote $ defn roughly-ok? (x)
             if (map? x)
               and
-                .unwrap-or (get x :ok?) nil
-                not $ empty? $ .unwrap-or (get x :rest) nil
+                .unwrap-or (get x :ok?) false
+                not $ empty? $ .unwrap (get x :rest)
               raise "|parser test expects a result map"
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'Dynamic)
