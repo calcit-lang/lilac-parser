@@ -158,7 +158,7 @@ MIT
 
 ### Development
 
-当前源码配对已发布的 Calcit CLI / `@calcit/procs` `0.30.1-alpha.5`，
+当前 0.0.8 候选源码配对已发布的 Calcit CLI / `@calcit/procs` `0.30.1-alpha.5`，
 使用 Node.js 24 和 Yarn 4.18.0。这不是稳定 Calcit 0.30.1；不要只升级 runtime 而保留旧 CLI。
 0.0.5 tag 尚未包含此前 main 的 Option 迁移，不能把当前源码的验收当作旧 tag 的兼容性保证。
 
@@ -187,6 +187,12 @@ CI 复用 Calcit `0.30.1-alpha.5` 已发布的统一运行器，在 native 与 J
 成功时只调用一次并传播原错误。自定义成功结果的 `:value`、包装结果的 `:rest` 和显示标签
 仍沿用原有开放合同，不用无条件 unwrap 改变合法输入。
 详见[本轮边界审阅](docs/option-boundaries.md)；原测试与断言保留，新增语义放在 `parse-lilac :tests`。
+
+后续收尾将两个局部 UI 状态读取收窄为 `Option<Dynamic> → State`，直接消费 get 的结果，
+并在 component 参数、子节点和宿主输入处直接分支，不再先转 nil 再判断。
+旧初始化、开放 custom payload、宿主文本和 dispatch 协议等保留点逐项记录在上述边界文档中，
+不代表整个开放解析结果已经名义定型。附加纯语义测试在 native/JS 回放，
+实际 GUI SSR 测试在 JS 执行；不把浏览器 CSS 的 native 不支持路径当作成功。
 
 - `caps --strict` — resolve immutable dependencies
 - `calcit calcit.cirru --check-only` — strict snapshot check

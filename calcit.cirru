@@ -28,7 +28,7 @@
                 store $ :store reel
                 states $ :states store
                 cursor $ []
-                state $ read-container-state $ .unwrap-or (get states :data) nil
+                state $ read-container-state $ get states :data
                 load-plugin $ use-prompt (>> states :load)
                   {} (:text "|Load EDN") (:multiline? true) (:placeholder "|lilac-parser parsing rule...")
                     :input-style $ {} (:font-family ui/font-code) (:height 400) (:white-space :pre) (:font-size 12) (:line-height |18px)
@@ -83,10 +83,10 @@
                           find-result $ find-lilac
                             split (:code state) |
                             s-expr-parser+
-                        println $ .unwrap-or (get result :result) nil
+                        println $ .unwrap $ get result :result
                         d! cursor $ struct-with state $ :result
-                          .unwrap-or (get result :attempts) nil
-                        println "|Find results:" $ to-lispy-string $ .unwrap-or (get find-result :result) nil
+                          .unwrap $ get result :attempts
+                        println "|Find results:" $ to-lispy-string $ .unwrap (get find-result :result)
                 div
                   {} $ :class-name $ str-spaced css/expand css/row
                   textarea $ {} (:class-name |codearea) (:placeholder |Content)
@@ -128,15 +128,24 @@
         'comp-node $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-node (states node)
             let
-                cursor $ .unwrap-or (get states :cursor) nil
-                state $ read-node-state $ .unwrap-or (get states :data) nil
-                children $ require-list $ or
-                  .unwrap-or (get node :results) nil
-                  .unwrap-or (get node :previous-results) nil
-                  []
+                cursor-option $ get states :cursor
+                state $ read-node-state $ get states :data
+                children $ let
+                    previous-children $ fn () $ match (get node :previous-results)
+                      (:some previous)
+                        if previous (require-list previous) ([])
+                      (:none) ([])
+                  match (get node :results)
+                    (:some results)
+                      if results (require-list results) (previous-children)
+                    (:none) (previous-children)
                 has-children? $ or
-                  non-nil? $ .unwrap-or (get node :result) nil
-                  non-nil? $ .unwrap-or (get node :peek-result) nil
+                  match (get node :result)
+                    (:some present-child) (non-nil? present-child)
+                    (:none) false
+                  match (get node :peek-result)
+                    (:some present-child) (non-nil? present-child)
+                    (:none) false
                   not $ empty? children
               div
                 {} $ :class-name css-node
@@ -150,8 +159,8 @@
                         :margin 8
                         :cursor :pointer
                       fn (e d!)
-                        d! cursor $ struct-with state $ :folded?
-                          not $ :folded? state
+                        d! (.unwrap-or cursor-option nil)
+                          struct-with state $ :folded? $ not (:folded? state)
                     comp-icon :minus
                       {} (:font-size 14)
                         :color $ hsl 200 80 90
@@ -174,8 +183,12 @@
                     :style $ {} $ :background-color (hsl 200 80 76)
                   if
                     or
-                      &= :label $ .unwrap-or (get node :parser-node) nil
-                      &= :component $ .unwrap-or (get node :parser-node) nil
+                      match (get node :parser-node)
+                        (:some kind) (&= :label kind)
+                        (:none) false
+                      match (get node :parser-node)
+                        (:some kind) (&= :component kind)
+                        (:none) false
                     span $ {} (:class-name css-label)
                       :inner-text $ .unwrap-or (get node :label) nil
                       :style $ {} $ :background-color (hsl 200 90 60)
@@ -187,7 +200,9 @@
                   if
                     and
                       .unwrap-or (get node :ok?) false
-                      &= :is $ .unwrap-or (get node :parser-node) nil
+                      match (get node :parser-node)
+                        (:some kind) (&= :is kind)
+                        (:none) false
                     span $ {} (:class-name css-label)
                       :inner-text $ match (get node :value)
                         (:some present-value) present-value
@@ -219,22 +234,100 @@
                       {} $ :style $ {} (:padding-left 16) (:margin-top 8)
                       -> children $ map-indexed $ fn (idx child)
                         [] idx $ comp-node (>> states idx) (read-node child)
-                    if
-                      non-nil? $ .unwrap-or (get node :result) nil
-                      div
-                        {} $ :style $ {} (:padding-left 16) (:margin-top 8)
-                        comp-node (>> states :result)
-                          read-node $ .unwrap-or (get node :result) nil
-                    if
-                      non-nil? $ .unwrap-or (get node :peek-result) nil
-                      div
-                        {} $ :style $ {} (:padding-left 16) (:margin-top 8)
-                        comp-node (>> states :peek-result)
-                          read-node $ .unwrap-or (get node :peek-result) nil
+                    match (get node :result)
+                      (:some present-child)
+                        if (non-nil? present-child)
+                          div
+                            {} $ :style $ {} (:padding-left 16) (:margin-top 8)
+                            comp-node (>> states :result) (read-node present-child)
+                      (:none) nil
+                    match (get node :peek-result)
+                      (:some present-child)
+                        if (non-nil? present-child)
+                          div
+                            {} $ :style $ {} (:padding-left 16) (:margin-top 8)
+                            comp-node (>> states :peek-result) (read-node present-child)
+                      (:none) nil
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'respo.schema/Component)
             :args $ [] (:: 'Map 'Dynamic 'Dynamic) (:: 'Map 'Tag 'Dynamic)
             :features $ #{} :js-ffi
+          :tests $ []
+            %{} 'TestEntry (:name |preserves-lazy-child-rendering)
+              :code $ quote $ let
+                  states $ {} $ :cursor ([])
+                  folded $ {}
+                    :cursor $ []
+                    :data $ NodeState :folded? true
+                  node $ {} (:ok? false) (:parser-node :custom)
+                    :rest $ []
+                  render $ fn (states node)
+                    respo.render.html/make-string $ comp-node states node
+                  empty-html $ render states node
+                  good $ assoc node :result $ {} (:ok? true) (:parser-node :is) (:value |child)
+                    :rest $ []
+                assert= empty-html $ render states $ assoc node :result nil
+                assert= empty-html $ render states $ assoc node :peek-result nil
+                assert= empty-html $ render states $ assoc node :results nil
+                assert= empty-html $ render states $ assoc node :results false
+                assert= empty-html $ render states $ {} (:ok? false) (:parser-node :custom)
+                  :rest $ []
+                  :results $ []
+                  :previous-results $ [] false
+                assert |folded-invalid-child-is-not-decoded $ string? $ render folded (assoc node :result false)
+                assert |folded-invalid-peek-is-not-decoded $ string? $ render folded (assoc node :peek-result 0)
+                assert= "|decode-map-as failed at $: expected map, got bool" $ try
+                  render states $ assoc node :result false
+                  fn (message) message
+                assert= "|decode-map-as failed at $: expected map, got number" $ try
+                  render states $ assoc node :peek-result 0
+                  fn (message) message
+                assert |unfolded-child-is-rendered $ includes? (render states good) |child
+                assert |folded-child-is-not-rendered $ not $ includes? (render folded good) |child
+                assert |nil-results-fall-back $ string? $ render states
+                  -> node (assoc :results nil)
+                    assoc :previous-results $ []
+                assert |false-results-fall-back $ string? $ render states
+                  -> node (assoc :results false)
+                    assoc :previous-results $ []
+                , &unit
+              :tags $ #{} :js-host :parser-gui :unit
+            %{} 'TestEntry (:name |preserves-host-text-boundaries)
+              :code $ quote $ let
+                  states $ {} $ :cursor ([])
+                  render $ fn (node)
+                    respo.render.html/make-string $ comp-node states node
+                  value-node $ {} (:ok? true) (:parser-node :is)
+                    :rest $ []
+                  label-node $ {} (:ok? false) (:parser-node :component)
+                    :rest $ []
+                  unknown-node $ {} (:ok? false)
+                    :rest $ []
+                assert= (render value-node)
+                  render $ assoc value-node :value nil
+                assert |false-value-is-visible $ includes?
+                  render $ assoc value-node :value false
+                  , |>false</span>
+                assert |zero-value-is-visible $ includes?
+                  render $ assoc value-node :value 0
+                  , |>0</span>
+                assert= (render label-node)
+                  render $ assoc label-node :label nil
+                assert |label-is-visible $ includes?
+                  render $ assoc label-node :label |label-marker
+                  , |label-marker
+                assert |zero-label-is-visible $ includes?
+                  render $ assoc label-node :label 0
+                  , |>0</span>
+                assert= (render unknown-node)
+                  render $ assoc unknown-node :parser-node nil
+                assert= (render unknown-node)
+                  render $ assoc unknown-node :message nil
+                assert |message-is-visible $ includes?
+                  render $ assoc unknown-node :message |error-marker
+                  , |error-marker
+                , &unit
+              :tags $ #{} :js-host :parser-gui :unit
         'css-gui-toggler $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle css-gui-toggler
             {} $ |& $ {} (:font-family ui/font-fancy) (:font-weight 300) (:font-size 20) (:cursor :pointer) (:line-height |24px)
@@ -265,30 +358,74 @@
         'input-text $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn input-text (event)
             match
-              try-decode-map-as
-                .unwrap-or
-                  get (lilac-parser.util/require-map event) :value
-                  , nil
-                , 'String
-              (:ok text) text
-              (:err message) (raise message)
+              get (lilac-parser.util/require-map event) :value
+              (:some value)
+                match (try-decode-map-as value 'String)
+                  (:ok text) text
+                  (:err message) (raise message)
+              (:none)
+                raise "|decode-map-as failed at $: expected string, got nil"
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'String)
             :args $ [] 'Dynamic
+          :tests $ [] $ %{} 'TestEntry (:name |rejects-missing-and-invalid-event-values)
+            :code $ quote $ do
+              assert= | $ input-text $ {} (:value |)
+              assert= |text $ input-text $ {} (:value |text)
+              assert= "|decode-map-as failed at $: expected string, got nil" $ try
+                input-text $ {}
+                fn (message) message
+              assert= "|decode-map-as failed at $: expected string, got nil" $ try
+                input-text $ {} $ :value nil
+                fn (message) message
+              assert= "|decode-map-as failed at $: expected string, got bool" $ try
+                input-text $ {} $ :value false
+                fn (message) message
+              assert= "|decode-map-as failed at $: expected string, got number" $ try
+                input-text $ {} $ :value 0
+                fn (message) message
+              assert= "|parser expects a map" $ try (input-text nil)
+                fn (message) message
+              , &unit
+            :tags $ #{} :parser-dispatch :unit
         'read-container-state $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn read-container-state (value)
-            cond
-                nil? value
-                ContainerState :code "|(def a (add 1 2))" :result nil :gui? false
-              (struct? value)
-                struct-match value (ContainerState state state)
-                  _ _ $ raise "|Expected ContainerState"
-              true $ match (try-decode-map-as value 'lilac-parser.comp.container/ContainerState)
-                (:ok state) state
-                (:err message) (raise message)
+          :code $ quote $ defn read-container-state (value-option)
+            match value-option
+              (:none) (ContainerState :code "|(def a (add 1 2))" :result nil :gui? false)
+              (:some value)
+                cond
+                    nil? value
+                    ContainerState :code "|(def a (add 1 2))" :result nil :gui? false
+                  (struct? value)
+                    struct-match value (ContainerState state state)
+                      _ _ $ raise "|Expected ContainerState"
+                  true $ match (try-decode-map-as value 'lilac-parser.comp.container/ContainerState)
+                    (:ok state) state
+                    (:err message) (raise message)
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'lilac-parser.comp.container/ContainerState)
-            :args $ [] 'Dynamic
+            :args $ [] $ :: 'Option 'Dynamic
+          :tests $ [] $ %{} 'TestEntry (:name |preserves-option-state-initialization)
+            :code $ quote $ let
+                initial $ ContainerState :code "|(def a (add 1 2))" :result nil :gui? false
+                saved $ ContainerState :code |custom :result false :gui? true
+              assert= initial $ read-container-state $ Option :none
+              assert= initial $ read-container-state $ Option :some nil
+              assert= saved $ read-container-state $ Option :some saved
+              assert= saved $ read-container-state $ Option :some
+                {} (:code |custom) (:result false) (:gui? true)
+              assert= "|Expected ContainerState" $ try
+                read-container-state $ Option :some $ NodeState :folded? false
+                fn (message) message
+              assert=
+                match (try-decode-map-as 0 'lilac-parser.comp.container/ContainerState)
+                  (:err message) message
+                  (:ok state) (raise |invalid-state-was-decoded)
+                try
+                  read-container-state $ Option :some 0
+                  fn (message) message
+              , &unit
+            :tags $ #{} :parser-dispatch :unit
         'read-node $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn read-node (value)
             match
@@ -300,19 +437,43 @@
             :args $ [] 'Dynamic
             :return $ :: 'Map 'Tag 'Dynamic
         'read-node-state $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn read-node-state (value)
-            cond
-                nil? value
-                NodeState :folded? false
-              (struct? value)
-                struct-match value (NodeState state state)
-                  _ _ $ raise "|Expected NodeState"
-              true $ match (try-decode-map-as value 'lilac-parser.comp.container/NodeState)
-                (:ok state) state
-                (:err message) (raise message)
+          :code $ quote $ defn read-node-state (value-option)
+            match value-option
+              (:none) (NodeState :folded? false)
+              (:some value)
+                cond
+                    nil? value
+                    NodeState :folded? false
+                  (struct? value)
+                    struct-match value (NodeState state state)
+                      _ _ $ raise "|Expected NodeState"
+                  true $ match (try-decode-map-as value 'lilac-parser.comp.container/NodeState)
+                    (:ok state) state
+                    (:err message) (raise message)
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'lilac-parser.comp.container/NodeState)
-            :args $ [] 'Dynamic
+            :args $ [] $ :: 'Option 'Dynamic
+          :tests $ [] $ %{} 'TestEntry (:name |preserves-option-state-initialization)
+            :code $ quote $ let
+                initial $ NodeState :folded? false
+                saved $ NodeState :folded? true
+              assert= initial $ read-node-state $ Option :none
+              assert= initial $ read-node-state $ Option :some nil
+              assert= saved $ read-node-state $ Option :some saved
+              assert= saved $ read-node-state $ Option :some
+                {} $ :folded? true
+              assert= "|Expected NodeState" $ try
+                read-node-state $ Option :some $ ContainerState :code |x :result nil :gui? false
+                fn (message) message
+              assert=
+                match (try-decode-map-as false 'lilac-parser.comp.container/NodeState)
+                  (:err message) message
+                  (:ok state) (raise |invalid-state-was-decoded)
+                try
+                  read-node-state $ Option :some false
+                  fn (message) message
+              , &unit
+            :tags $ #{} :parser-dispatch :unit
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns lilac-parser.comp.container
           :require (respo-ui.core :as ui)
@@ -576,7 +737,7 @@
                       :results acc
                   true $ let
                       result $ lilac-parser.util/require-map $ parse-lilac xs
-                        .unwrap-or (first ys) nil
+                        .unwrap $ first ys
                     if
                       .unwrap-or (get result :ok?) false
                       recur (&list:append acc result)
@@ -587,25 +748,64 @@
           :schema $ :: 'Fn $ {} (:return 'Dynamic)
             :args $ [] (:: 'List 'Dynamic) (:: 'Map 'Dynamic 'Dynamic)
             :features $ #{} :js-ffi
+          :tests $ [] $ %{} 'TestEntry (:name |preserves-empty-and-invalid-rule-lists)
+            :code $ quote $ let
+                combined $ lilac-parser.util/require-map $ parse-lilac |x
+                  combine+ $ []
+                alternated $ lilac-parser.util/require-map $ parse-lilac |x
+                  or+ $ []
+              assert=
+                get
+                  {} $ :value $ []
+                  , :value
+                get combined :value
+              assert=
+                get
+                  {} $ :rest $ [] |x
+                  , :rest
+                get combined :rest
+              assert=
+                get
+                  {} $ :ok? false
+                  , :ok?
+                get alternated :ok?
+              assert=
+                get
+                  {} $ :rest $ [] |x
+                  , :rest
+                get alternated :rest
+              assert= "|parser expects a rule map" $ try
+                parse-lilac |x $ combine+ $ [] nil
+                fn (message) message
+              assert= "|parser expects a rule map" $ try
+                parse-lilac |x $ or+ $ [] nil
+                fn (message) message
+              , &unit
+            :tags $ #{} :parser-dispatch :unit
         'parse-component $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn parse-component (xs rule)
             let
                 rule-name $ match (get rule :name)
                   (:some present-value) present-value
                   (:none) nil
-                item $ let
-                    maker $ .unwrap-or (get rule :fn) nil
-                  if (fn? maker)
-                    match
-                      try-decode-map-as
-                        .unwrap-or (get rule :args) nil
-                        :: 'List 'Dynamic
-                      (:ok args) (apply maker args)
-                      (:err message) (raise message)
-                    raise "|component rule expects a parser function"
+                item $ match (get rule :fn)
+                  (:some maker)
+                    if (fn? maker)
+                      match (get rule :args)
+                        (:some raw-args)
+                          match
+                            try-decode-map-as raw-args $ :: 'List 'Dynamic
+                            (:ok args) (apply maker args)
+                            (:err message) (raise message)
+                        (:none)
+                          raise "|decode-map-as failed at $: expected list, got nil"
+                      raise "|component rule expects a parser function"
+                  (:none) (raise "|component rule expects a parser function")
                 result $ lilac-parser.util/require-map $ parse-lilac xs item
                 value-fn $ .unwrap $ get rule :value-fn
-                blackbox? $ .unwrap-or (get rule :blackbox?) nil
+                blackbox? $ match (get rule :blackbox?)
+                  (:some flag) (if flag true false)
+                  (:none) false
               if
                 .unwrap-or (get result :ok?) false
                 {} (:ok? true)
@@ -625,6 +825,58 @@
           :schema $ :: 'Fn $ {} (:return 'Dynamic)
             :args $ [] (:: 'List 'Dynamic) (:: 'Map 'Dynamic 'Dynamic)
             :features $ #{} :js-ffi
+          :tests $ []
+            %{} 'TestEntry (:name |preserves-maker-validation-order)
+              :code $ quote $ let
+                  calls $ ref 0
+                  maker $ fn () (swap! calls inc) (is+ |x)
+                  base $ {} (:parser-node :component) (:fn maker) (:value-fn identity)
+                  run-error $ fn (rule)
+                    try (parse-lilac |x rule)
+                      fn (message) message
+                assert= "|component rule expects a parser function" $ run-error $ {} (:parser-node :component) (:args 0)
+                assert= "|component rule expects a parser function" $ run-error $ {} (:parser-node :component) (:fn false) (:args 0)
+                assert= "|decode-map-as failed at $: expected list, got nil" $ run-error base
+                assert= "|decode-map-as failed at $: expected list, got nil" $ run-error $ assoc base :args nil
+                assert= "|decode-map-as failed at $: expected list, got number" $ run-error $ assoc base :args 0
+                assert= 0 $ deref calls
+                assert=
+                  get
+                    {} $ :value |x
+                    , :value
+                  get
+                    lilac-parser.util/require-map $ parse-lilac |x $ assoc base :args ([])
+                    , :value
+                assert= 1 $ deref calls
+                , &unit
+              :tags $ #{} :parser-dispatch :unit
+            %{} 'TestEntry (:name |preserves-blackbox-truthiness)
+              :code $ quote $ let
+                  maker $ fn () $ is+ |x
+                  rule $ {} (:parser-node :component) (:fn maker) (:value-fn identity)
+                    :args $ []
+                  result $ lilac-parser.util/require-map $ parse-lilac |x rule
+                  child $ get result :result
+                  none-value $ get
+                    {} $ :result nil
+                    , :result
+                assert= child $ get
+                  lilac-parser.util/require-map $ parse-lilac |x $ assoc rule :blackbox? nil
+                  , :result
+                assert= child $ get
+                  lilac-parser.util/require-map $ parse-lilac |x $ assoc rule :blackbox? false
+                  , :result
+                assert= none-value $ get
+                  lilac-parser.util/require-map $ parse-lilac |x $ assoc rule :blackbox? 0
+                  , :result
+                assert= none-value $ get
+                  lilac-parser.util/require-map $ parse-lilac |x $ assoc rule :blackbox? |
+                  , :result
+                assert= none-value $ get
+                  lilac-parser.util/require-map $ parse-lilac |x $ assoc rule :blackbox? true
+                  , :result
+                , &unit
+              :tags $ #{} :parser-dispatch :unit
         'parse-interleave $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn parse-interleave (xs0 rule)
             let
@@ -1119,7 +1371,7 @@
                     :results failures
                     :rest xs
                   let
-                      result $ parse-lilac xs $ .unwrap-or (first rules) nil
+                      result $ parse-lilac xs $ .unwrap (first rules)
                     if (map? result)
                       if
                         .unwrap-or (get result :ok?) false
@@ -1338,6 +1590,21 @@
             :args $ []
             :features $ #{} :js-ffi
             :return $ :: 'Map 'Tag 'Dynamic
+          :tests $ [] $ %{} 'TestEntry (:name |preserves-empty-array-result)
+            :code $ quote $ let
+                result $ lilac-parser.util/require-map $ lilac-parser.core/parse-lilac |[] (array-parser+)
+              assert=
+                get
+                  {} $ :value nil
+                  , :value
+                get result :value
+              assert=
+                get
+                  {} $ :rest $ []
+                  , :rest
+                get result :rest
+              , &unit
+            :tags $ #{} :parser-dispatch :unit
         'boolean-parser $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def boolean-parser
             label+ |boolean $ or+
@@ -1823,23 +2090,17 @@
           :code $ quote $ deftest test-find
             testing
               is $ &= 2 $ count
-                lilac-parser.util/require-list $ .unwrap-or
-                  get
-                    find-lilac "|write cumulo and respo" $ or+ $ [] (is+ |cumulo) (is+ |respo)
-                    , :result
-                  , nil
+                lilac-parser.util/require-list $ .unwrap $ get
+                  find-lilac "|write cumulo and respo" $ or+ $ [] (is+ |cumulo) (is+ |respo)
+                  , :result
               is $ &= 1 $ count
-                lilac-parser.util/require-list $ .unwrap-or
-                  get
-                    find-lilac "|write cumulo and phlox" $ or+ $ [] (is+ |cumulo) (is+ |respo)
-                    , :result
-                  , nil
+                lilac-parser.util/require-list $ .unwrap $ get
+                  find-lilac "|write cumulo and phlox" $ or+ $ [] (is+ |cumulo) (is+ |respo)
+                  , :result
               is $ &= 0 $ count
-                lilac-parser.util/require-list $ .unwrap-or
-                  get
-                    find-lilac "|write cumulo and phlox" $ or+ $ [] (is+ |cirru) (is+ |respo)
-                    , :result
-                  , nil
+                lilac-parser.util/require-list $ .unwrap $ get
+                  find-lilac "|write cumulo and phlox" $ or+ $ [] (is+ |cirru) (is+ |respo)
+                  , :result
           :examples $ []
           :schema $ :: 'Dynamic
         'test-interleave $ %{} 'CodeEntry (:doc |)
@@ -1948,27 +2209,24 @@
         'test-replace $ %{} 'CodeEntry (:doc |)
           :code $ quote $ deftest test-replace
             testing "|replaced content"
-              is $ &= "|my project" $ .unwrap-or
+              is $ &= "|my project" $ .unwrap
                 get
                   replace-lilac "|cumulo project"
                     or+ $ [] (is+ |cumulo) (is+ |respo)
                     fn (x) |my
                   , :result
-                , nil
-              is $ &= "|my project" $ .unwrap-or
+              is $ &= "|my project" $ .unwrap
                 get
                   replace-lilac "|respo project"
                     or+ $ [] (is+ |cumulo) (is+ |respo)
                     fn (x) |my
                   , :result
-                , nil
-              is $ &= "|phlox project" $ .unwrap-or
+              is $ &= "|phlox project" $ .unwrap
                 get
                   replace-lilac "|phlox project"
                     or+ $ [] (is+ |cumulo) (is+ |respo)
                     fn (x) |my
                   , :result
-                , nil
           :examples $ []
           :schema $ :: 'Dynamic
         'test-some $ %{} 'CodeEntry (:doc |)

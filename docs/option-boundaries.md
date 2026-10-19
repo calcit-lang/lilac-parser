@@ -18,23 +18,30 @@
 在修复前，两项最小新增测试确实因 `option:unwrap-received-none` 失败；不是仅给已成功路径追加断言。
 未删除或放宽原 parser 测试，没有增加 unsafe、开放 Dynamic 参数或新迁移入口。
 
-## 还须单独收尾的读取
+## 其余读取的逐项收尾（#29）
 
-下表说明审阅发现的具体后续位置，**不将它们一概认定为已完成迁移**。
-这些位置的最终改写或书面兼容结论、回归与正式依赖图仍由 Calcit #2080 跟踪。
+以下是基于已合并 #28 / main `debdb3c` 的本轮改写与具名兼容结论。
+尚须最终提交的实际 review / CI、模块正式发布与消费者配对，不以此宣称九消费者已完成。
 
-| 位置 | 必须保持的语义/后续判断 |
+| 位置 | 改写或明确保留的合同与验证 |
 | --- | --- |
-| `parse-combine` / `parse-or` 的非空规则列表头 | 分支已检查非空，可直接保留/解构 Option；不能改变空规则返回结果或引入额外求值 |
-| `parse-component` 的 `:fn` / `:args` / `:blackbox?` | 直接分支缺失与非函数，保留现有函数/参数解码错误顺序；blackbox 的假值与未设置均保留结果，不凭计数选择新的业务默认值 |
-| `comp-container` 的 states:data；`comp-node` 的 states:data/cursor | 既有 Respo state-tree 开放边界，缺失/nil 会初始化已有状态；需审阅有类型的局部状态读取，不能把它推断为任意业务 nil 合法 |
-| `comp-container` 的 find/replace `:result` / `:attempts` | 内部已知返回形状，可精确读取，不应以 UI 名义免除业务字段迁移 |
-| `comp-node` 的 `:results` / `:previous-results` | 既有 `or` 有短路和 nil/false 语义；空 List 是有效值。不能改成 eager fallback，也不能把 Some nil 当作有效子节点 |
-| `comp-node` 的 `:result` / `:peek-result` | 显式 nil 表示 blackbox 隐藏或没有嵌套结果；展开前的检查与展开后的解码时机不能互换 |
-| `comp-node` 的 `:parser-node` / `:label` / `:message` | 分类判断与最终宿主文本要分别处理，不能因为文本入口接受 nil 就豁免上游所有读取 |
-| `input-text` 的 event:value | 宿主事件需解码 String，缺失和非法值仍拒绝，不自动填空串 |
-| JSON demo `array-parser+` | 空数组当前输出 nil；改成空 List 属于公共表示变更，不能仅为消除回流而自动更改 |
-| `test-find` / `test-replace` | 保留所有原断言；可将已知结果读取改成 Option 断言，不删测试或用前缀匹配替代精确语义 |
+| `parse-combine` / `parse-or` 的非空规则列表头 | 仅在已有非空分支解包；附加测试保留空 combine、空 or 的完整值/剩余输入，以及含 nil 规则的精确原错误 |
+| `parse-component` 的 `:fn` / `:args` / `:blackbox?` | 直接匹配 Option；maker 缺失/非 Fn 先拒绝，参数缺失/非法时不调用 maker。测试核对精确原错误、调用次数及 blackbox 缺失/nil/false 与 0/空串/true；0 和空串仍是真值 |
+| `comp-container` / `comp-node` 的 states:data | 两个局部解码器参数从 Dynamic 收窄为 `Option<Dynamic>`，调用者直接传 get。None / Some nil 沿用原初始状态；已保存的名义状态/旧 Map 都解码为具体 State，错误 Struct、非 Map 仍拒绝，未开放字段类型 |
+| `comp-node` 的 states:cursor | 内部保存 Option，只在既有框架 dispatch 的实际调用点转换旧 nil；不把旧 Tag / cursor-list 协议改成另一个 API。本地真实浏览器已通过 Load EDN 加载 false payload/嵌套子节点并实际点击折叠、再次展开，验证正常 cursor-list 交互与保存状态读取；不以 SSR 冒称事件回调通过，也不冒称本次页面操作覆盖所有历史 Tag 调用 |
+| `comp-container` 的 find/replace `:result` / `:attempts` | 已读 `find-lilac-iter` / `replace-iter`：终止分支始终构造这两个字段；消费者解包而非 nil fallback，原查找/替换测试和实际页面继续回放 |
+| `comp-node` 的 `:results` / `:previous-results` | 直接匹配 Option，只有前者缺失/nil/false 才调用局部惰性 fallback；最终用原 require-list 收窄。SSR 测试核对空 List 不访问非法 fallback、nil/false 仍回退，不以 eager 函数代替短路 |
+| `comp-node` 的 `:result` / `:peek-result` | 先匹配 Option，再检查显式 nil；仅在未折叠的渲染分支解码子节点。None 只在最终 Respo child 组合处输出 nil（表示不生成节点），没有作为业务结果向下游传递。SSR 同时验证折叠不解码非法节点、展开仍精确报错及真实子节点可见性 |
+| `comp-node` 的 `:parser-node` / `:label` / `:message` / 最终 `:value` | 分类判断不再经 nil，直接匹配 Option；最终 inner-text 及显示格式化保留原宿主表示，缺失/nil 省略文本，false/0 等值不丢失。专门 SSR 断言核对 None/Some nil 等价、false/0 与标签/消息文本可见；不以整函数 js-ffi 标记豁免业务读取 |
+| `input-text` 的 event:value | 直接匹配 Option，成功分支仍用原 decoder 得到 String；缺失直接产生原精确 decoder 错误，nil/false/0/非 Map 也各自保留精确错误，不填空串。空串本身是合法输入 |
+| JSON demo `array-parser+` | native/JS 附加测试实际确认空数组的 value 是 present nil，rest 为空 List；这是原 parser 输出合同，不是业务缺失默认值。改成空 List 会改变表示，本次不擅自选择新语义 |
+| `test-find` / `test-replace` | 仅把生产函数保证存在的 result 字段改成解包，所有原比较和预期字符串不变；原 native/JS entry 继续执行 |
+
+纯语义测试沿用 `parser-dispatch` tag，在同一正式 alpha.5 runner 上执行 native / JS。
+新增局部状态与宿主输入测试使用 default entry，以加载实际模块图；原 test entry 仍独立执行。
+GUI SSR 测试沿用 definition `:tests`，以 `parser-gui` / `js-host` 标记并在同一 runner 的 JS 后端执行。
+它依赖 Respo 的浏览器 CSS 检测，native 无此宿主能力，不能将 native 的 unsupported `exists?` 伪报为通过；
+这里没有删除已通过的 native 断言、引入豁免表或复制宿主测试脚本。
 
 本轮不把“只读视图剩余多少处”当作通过证明，也不把已有模块 0.0.7 的验收冒称为覆盖本次未发布源码。
 类型形状进一步收窄、页面和其他八个消费者的原范围验收，均不能被这份文档替代。
