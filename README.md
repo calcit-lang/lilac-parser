@@ -158,7 +158,7 @@ MIT
 
 ### Development
 
-当前 0.0.7 候选配对已发布的 Calcit CLI / `@calcit/procs` `0.30.1-alpha.4`，
+当前源码配对已发布的 Calcit CLI / `@calcit/procs` `0.30.1-alpha.5`，
 使用 Node.js 24 和 Yarn 4.18.0。这不是稳定 Calcit 0.30.1；不要只升级 runtime 而保留旧 CLI。
 0.0.5 tag 尚未包含此前 main 的 Option 迁移，不能把当前源码的验收当作旧 tag 的兼容性保证。
 
@@ -177,10 +177,16 @@ CI 直接执行完整 `calcit fix --workflow strict --verify`，不再只依赖�
 CLI 版本从 deps.cirru 安装，由 `caps verify --toolchain` 验证 CLI/runtime 配对；
 CI 不再额外硬编码旧版本号。使用精确已发布 tag，不用分支或 hash 代替正式依赖。
 原 parser 测试与断言保留；新增入口合同放在 `parse-lilac` 的 `:tests` 中，
-CI 复用 Calcit `0.30.1-alpha.4` 已发布的统一运行器，在 native 与 JavaScript 回放同一份 AST。
+CI 复用 Calcit `0.30.1-alpha.5` 已发布的统一运行器，在 native 与 JavaScript 回放同一份 AST。
 不复制运行器，也不为此重编译 Calcit；零匹配和跨后端失败不能被视为通过。
 精确 HEAD 的干净安装、CI 和实际 review 仍须独立通过。
 解析结果与部分规则 payload 仍是开放容器；保留原 Some nil / 缺失语义，不宣称本次已完成它们的名义类型收敛。
+
+本轮审阅修复了字段清理误将可选转换和自定义结果字段当成必填的回归。
+转换的 Option 保留到消费处分支；缺失或显式 nil 不调用转换函数，失败分支也不调用，
+成功时只调用一次并传播原错误。自定义成功结果的 `:value`、包装结果的 `:rest` 和显示标签
+仍沿用原有开放合同，不用无条件 unwrap 改变合法输入。
+详见[本轮边界审阅](docs/option-boundaries.md)；原测试与断言保留，新增语义放在 `parse-lilac :tests`。
 
 - `caps --strict` — resolve immutable dependencies
 - `calcit calcit.cirru --check-only` — strict snapshot check
