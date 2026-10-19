@@ -80,13 +80,18 @@ jobs:
             /scripts/core-tests-exclusions.cirru
             /docs/installation/wasm-support.md
 
-      - name: Replay attached parser contracts (native and JavaScript)
+      - name: Replay attached parser contracts and JavaScript UI boundaries
         run: |
           CALCIT_BIN="$(command -v calcit)"
           export CALCIT_BIN
           node .calcit/core-test-tools/scripts/run-core-tests.mjs \
-            --snapshot calcit.cirru --entry test --tag parser-dispatch \
+            --snapshot calcit.cirru --entry default --tag parser-dispatch \
             --backend native,js \
+            --exclusions .calcit/core-test-tools/scripts/core-tests-exclusions.cirru \
+            --support-matrix .calcit/core-test-tools/docs/installation/wasm-support.md
+          node .calcit/core-test-tools/scripts/run-core-tests.mjs \
+            --snapshot calcit.cirru --entry default --tag parser-gui \
+            --backend js \
             --exclusions .calcit/core-test-tools/scripts/core-tests-exclusions.cirru \
             --support-matrix .calcit/core-test-tools/docs/installation/wasm-support.md
 
