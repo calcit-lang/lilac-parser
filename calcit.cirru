@@ -264,32 +264,32 @@
                   render $ fn (states node)
                     respo.render.html/make-string $ comp-node states node
                   empty-html $ render states node
-                  good $ assoc node :result $ {} (:ok? true) (:parser-node :is) (:value |child)
+                  good $ .assoc node :result $ {} (:ok? true) (:parser-node :is) (:value |child)
                     :rest $ []
-                assert= empty-html $ render states $ assoc node :result nil
-                assert= empty-html $ render states $ assoc node :peek-result nil
-                assert= empty-html $ render states $ assoc node :results nil
-                assert= empty-html $ render states $ assoc node :results false
+                assert= empty-html $ render states $ .assoc node :result nil
+                assert= empty-html $ render states $ .assoc node :peek-result nil
+                assert= empty-html $ render states $ .assoc node :results nil
+                assert= empty-html $ render states $ .assoc node :results false
                 assert= empty-html $ render states $ {} (:ok? false) (:parser-node :custom)
                   :rest $ []
                   :results $ []
                   :previous-results $ [] false
-                assert |folded-invalid-child-is-not-decoded $ string? $ render folded (assoc node :result false)
-                assert |folded-invalid-peek-is-not-decoded $ string? $ render folded (assoc node :peek-result 0)
+                assert |folded-invalid-child-is-not-decoded $ string? $ render folded (.assoc node :result false)
+                assert |folded-invalid-peek-is-not-decoded $ string? $ render folded (.assoc node :peek-result 0)
                 assert= "|decode-map-as failed at $: expected map, got bool" $ try
-                  render states $ assoc node :result false
+                  render states $ .assoc node :result false
                   fn (message) message
                 assert= "|decode-map-as failed at $: expected map, got number" $ try
-                  render states $ assoc node :peek-result 0
+                  render states $ .assoc node :peek-result 0
                   fn (message) message
                 assert |unfolded-child-is-rendered $ includes? (render states good) |child
                 assert |folded-child-is-not-rendered $ not $ includes? (render folded good) |child
                 assert |nil-results-fall-back $ string? $ render states
-                  -> node (assoc :results nil)
-                    assoc :previous-results $ []
+                  -> node (.assoc :results nil)
+                    .assoc :previous-results $ []
                 assert |false-results-fall-back $ string? $ render states
-                  -> node (assoc :results false)
-                    assoc :previous-results $ []
+                  -> node (.assoc :results false)
+                    .assoc :previous-results $ []
                 , &unit
               :tags $ #{} :js-host :parser-gui :unit
             %{} 'TestEntry (:name |preserves-host-text-boundaries)
@@ -304,27 +304,27 @@
                   unknown-node $ {} (:ok? false)
                     :rest $ []
                 assert= (render value-node)
-                  render $ assoc value-node :value nil
+                  render $ .assoc value-node :value nil
                 assert |false-value-is-visible $ includes?
-                  render $ assoc value-node :value false
+                  render $ .assoc value-node :value false
                   , |>false</span>
                 assert |zero-value-is-visible $ includes?
-                  render $ assoc value-node :value 0
+                  render $ .assoc value-node :value 0
                   , |>0</span>
                 assert= (render label-node)
-                  render $ assoc label-node :label nil
+                  render $ .assoc label-node :label nil
                 assert |label-is-visible $ includes?
-                  render $ assoc label-node :label |label-marker
+                  render $ .assoc label-node :label |label-marker
                   , |label-marker
                 assert |zero-label-is-visible $ includes?
-                  render $ assoc label-node :label 0
+                  render $ .assoc label-node :label 0
                   , |>0</span>
                 assert= (render unknown-node)
-                  render $ assoc unknown-node :parser-node nil
+                  render $ .assoc unknown-node :parser-node nil
                 assert= (render unknown-node)
-                  render $ assoc unknown-node :message nil
+                  render $ .assoc unknown-node :message nil
                 assert |message-is-visible $ includes?
-                  render $ assoc unknown-node :message |error-marker
+                  render $ .assoc unknown-node :message |error-marker
                   , |error-marker
                 , &unit
               :tags $ #{} :js-host :parser-gui :unit
@@ -837,15 +837,15 @@
                 assert= "|component rule expects a parser function" $ run-error $ {} (:parser-node :component) (:args 0)
                 assert= "|component rule expects a parser function" $ run-error $ {} (:parser-node :component) (:fn false) (:args 0)
                 assert= "|decode-map-as failed at $: expected list, got nil" $ run-error base
-                assert= "|decode-map-as failed at $: expected list, got nil" $ run-error $ assoc base :args nil
-                assert= "|decode-map-as failed at $: expected list, got number" $ run-error $ assoc base :args 0
+                assert= "|decode-map-as failed at $: expected list, got nil" $ run-error $ .assoc base :args nil
+                assert= "|decode-map-as failed at $: expected list, got number" $ run-error $ .assoc base :args 0
                 assert= 0 $ deref calls
                 assert=
                   get
                     {} $ :value |x
                     , :value
                   get
-                    lilac-parser.util/require-map $ parse-lilac |x $ assoc base :args ([])
+                    lilac-parser.util/require-map $ parse-lilac |x $ .assoc base :args ([])
                     , :value
                 assert= 1 $ deref calls
                 , &unit
@@ -861,19 +861,19 @@
                     {} $ :result nil
                     , :result
                 assert= child $ get
-                  lilac-parser.util/require-map $ parse-lilac |x $ assoc rule :blackbox? nil
+                  lilac-parser.util/require-map $ parse-lilac |x $ .assoc rule :blackbox? nil
                   , :result
                 assert= child $ get
-                  lilac-parser.util/require-map $ parse-lilac |x $ assoc rule :blackbox? false
+                  lilac-parser.util/require-map $ parse-lilac |x $ .assoc rule :blackbox? false
                   , :result
                 assert= none-value $ get
-                  lilac-parser.util/require-map $ parse-lilac |x $ assoc rule :blackbox? 0
+                  lilac-parser.util/require-map $ parse-lilac |x $ .assoc rule :blackbox? 0
                   , :result
                 assert= none-value $ get
-                  lilac-parser.util/require-map $ parse-lilac |x $ assoc rule :blackbox? |
+                  lilac-parser.util/require-map $ parse-lilac |x $ .assoc rule :blackbox? |
                   , :result
                 assert= none-value $ get
-                  lilac-parser.util/require-map $ parse-lilac |x $ assoc rule :blackbox? true
+                  lilac-parser.util/require-map $ parse-lilac |x $ .assoc rule :blackbox? true
                   , :result
                 , &unit
               :tags $ #{} :parser-dispatch :unit
@@ -1117,8 +1117,8 @@
                     (:some rule tail)
                       let
                           expected $ parse-lilac |x rule
-                        assert= expected $ parse-lilac |x $ dissoc rule :transform
-                        assert= expected $ parse-lilac |x $ assoc rule :transform nil
+                        assert= expected $ parse-lilac |x $ .dissoc rule :transform
+                        assert= expected $ parse-lilac |x $ .assoc rule :transform nil
                         recur tail
               :tags $ #{} :parser-dispatch :unit
             %{} 'TestEntry (:name |preserves-transform-effects)
