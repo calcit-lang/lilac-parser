@@ -1,0 +1,87 @@
+name: Temporary official formal migration
+on:
+  push:
+    branches: [prepare/formal-031]
+permissions:
+  contents: read
+jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6.5.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - name: Enable Corepack
+        run: |
+          corepack enable
+          corepack prepare yarn@4.18.0 --activate
+      - uses: calcit-lang/setup-calcit@v1.5.0
+        with:
+          tools: calcit,caps
+          caps-version: "0.1.1"
+          deps-file: deps.cirru
+      - name: Install coherent published formal graph
+        run: |
+          caps --strict --ci
+          yarn install --immutable
+          caps verify --toolchain
+      - name: Preserve original native and JavaScript baseline
+        run: |
+          calcit calcit.cirru --check-only --all-defs
+          calcit --entry test
+          calcit --entry test --emit-path js-out js
+          node test.mjs
+      - name: Official reviewed source transaction
+        run: node apply-reviewed.mjs
+      - name: Full original static gates
+        run: |
+          set -euo pipefail
+          calcit calcit.cirru edit format
+          calcit calcit.cirru --check-only --all-defs
+          calcit calcit.cirru --entry test --check-only
+          calcit calcit.cirru fix --workflow strict --verify --format json | tee acceptance/strict.json | jq -e '.data.workflow.status == "passed" and .diagnostics == []'
+          calcit calcit.cirru --check-only --ns lilac-parser.core --ns lilac-parser.util --ns lilac-parser.preset --ns lilac-parser.test --ns lilac-parser.comp.container --ns lilac-parser.main --ns lilac-parser.config --ns lilac-parser.schema --ns lilac-parser.updater --ns lilac-parser.demo.json --ns lilac-parser.demo.s-expr --format json
+      - name: Original parser native and JavaScript entry
+        run: |
+          calcit --entry test
+          calcit --entry test --emit-path js-out js
+          node test.mjs
+      - name: Released matching shared test runner
+        uses: actions/checkout@v7.0.1
+        with:
+          repository: calcit-lang/calcit
+          ref: 0.30.1
+          path: .calcit/core-test-tools
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /scripts/run-core-tests.mjs
+            /scripts/core-test-protocol.mjs
+            /scripts/core-tests-exclusions.cirru
+            /docs/installation/wasm-support.md
+      - name: Original attached contracts and actual JS UI boundaries
+        run: |
+          set -euo pipefail
+          CALCIT_BIN="$(command -v calcit)"
+          export CALCIT_BIN
+          node .calcit/core-test-tools/scripts/run-core-tests.mjs --snapshot calcit.cirru --entry default --tag parser-dispatch --backend native,js --exclusions .calcit/core-test-tools/scripts/core-tests-exclusions.cirru --support-matrix .calcit/core-test-tools/docs/installation/wasm-support.md
+          node .calcit/core-test-tools/scripts/run-core-tests.mjs --snapshot calcit.cirru --entry default --tag parser-gui --backend js --exclusions .calcit/core-test-tools/scripts/core-tests-exclusions.cirru --support-matrix .calcit/core-test-tools/docs/installation/wasm-support.md
+      - name: Build original frontend for isolated actual acceptance
+        run: |
+          calcit calcit.cirru js
+          yarn vite build --base=./
+          cp calcit.cirru acceptance/snapshot.cirru
+          cp -R dist acceptance/dist
+      - name: Keep official evidence
+        if: always()
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: formal-migration-evidence
+          path: acceptance/
+          if-no-files-found: error
+          retention-days: 7
