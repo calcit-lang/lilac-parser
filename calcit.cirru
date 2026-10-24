@@ -349,7 +349,7 @@
           :schema $ :: 'Dynamic
         'css-node $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle css-node
-            {} $ |& $ merge ui/expand
+            {} $ |& $ .merge ui/expand
               {} (:padding 4)
                 :border-left $ str "|1px solid " $ hsl 0 0 90
                 :border-top $ str "|1px solid " $ hsl 0 0 90
@@ -591,8 +591,8 @@
                   recur
                     &list:append acc $ {}
                       :content $ join-string
-                        &list:slice content 0 $ - (count content)
-                          count $ lilac-parser.util/require-list $ .unwrap (get attempt :rest)
+                        &list:slice content 0 $ - (.len content)
+                          .len $ lilac-parser.util/require-list $ .unwrap (get attempt :rest)
                         , |
                       :value $ match (get attempt :value)
                         (:some present-value) present-value
@@ -947,7 +947,7 @@
                   {} (:ok? false)
                     :message $ str "|expects " (to-lispy-string item) "| but got " $ to-lispy-string
                       join-string
-                        &list:slice xs 0 $ &min (count item) (count xs)
+                        &list:slice xs 0 $ &min (.len item) (.len xs)
                         , |
                     :parser-node :is
                     :rest xs
@@ -1168,7 +1168,7 @@
                                   :return 'Dynamic
                                 if (empty? xs)
                                   {} (:ok? false) (:rest xs)
-                                  merge (lilac-parser.util/require-map fields)
+                                  .merge (lilac-parser.util/require-map fields)
                                     {} (:ok? true)
                                       :rest $ []
                               expected $ get
@@ -1366,7 +1366,7 @@
                   failures $ []
                 if (empty? rules)
                   {} (:ok? false)
-                    :message $ str "|all " (count items) "| rules missed"
+                    :message $ str "|all " (.len items) "| rules missed"
                     :parser-node :or
                     :results failures
                     :rest xs
@@ -2089,15 +2089,15 @@
         'test-find $ %{} 'CodeEntry (:doc |)
           :code $ quote $ deftest test-find
             testing
-              is $ &= 2 $ count
+              is $ &= 2 $ .len
                 lilac-parser.util/require-list $ .unwrap $ get
                   find-lilac "|write cumulo and respo" $ or+ $ [] (is+ |cumulo) (is+ |respo)
                   , :result
-              is $ &= 1 $ count
+              is $ &= 1 $ .len
                 lilac-parser.util/require-list $ .unwrap $ get
                   find-lilac "|write cumulo and phlox" $ or+ $ [] (is+ |cumulo) (is+ |respo)
                   , :result
-              is $ &= 0 $ count
+              is $ &= 0 $ .len
                 lilac-parser.util/require-list $ .unwrap $ get
                   find-lilac "|write cumulo and phlox" $ or+ $ [] (is+ |cirru) (is+ |respo)
                   , :result
