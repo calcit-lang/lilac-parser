@@ -161,7 +161,16 @@ MIT
 
 ### Development
 
-当前 0.0.9 候选源码精确配对已发布的正式 Calcit CLI / `@calcit/procs` `0.30.1`，
+0.1.0-alpha.1 候选配对预发布 Calcit CLI / `@calcit/procs` `0.31.0-alpha.2`。前端依赖改为
+Alerts 0.11.0-alpha.1、Reel 0.7.0-alpha.1、Feather 0.5.0-alpha.2、Markdown 0.5.0-alpha.2、
+UI 0.9.0-alpha.1 和 Respo 0.17.0-alpha.2，传递 Router 0.9.0-alpha.1 与 JS-FFI 0.2.5。
+Reel 保持 0.7.0-alpha.1，与 Alerts 和 Feather 的要求一致，Caps strict 才不会报版本冲突。
+默认入口把 `:dispatch-op` 绑定到 `lilac-parser.schema/Op`，Op 同时列出 comp-reel 发送的
+`:reel/*` 控制操作；updater 对这些控制操作原样返回 store（它们由 Reel 自己处理）。
+加载 EDN 的弹窗回调改用 `schema/Op :states`，不再用两参数的 `d! cursor state`。
+组件结果里的 `:result` 先绑定成局部值，以满足 0.31 对 nil 分支的检查，取值不变。
+
+此前 0.0.9 候选源码精确配对已发布的正式 Calcit CLI / `@calcit/procs` `0.30.1`，
 使用 Node.js 24 和 Yarn 4.18.0；不要只升级 runtime 而保留 alpha CLI。
 已发布 0.0.8 仍配对 alpha.5，不能把当前源码的验收当作旧 tag 的兼容性保证；候选不等于已发版，发布状态以正式 Git tag 为准。
 
