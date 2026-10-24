@@ -6,7 +6,7 @@
     :default $ {} (:description |) (:init-fn 'lilac-parser.main/main!) (:mode :js) (:reload-fn 'lilac-parser.main/reload!) (:target :browser)
       :feature-policy $ {}
       :modules $ [] |respo.calcit/ |respo-ui.calcit/ |respo-markdown.calcit/ |reel.calcit/ |alerts.calcit/ |respo-feather.calcit/
-      :type-slots $ {}
+      :type-slots $ {} $ :dispatch-op |lilac-parser.schema/Op
     :test $ {} (:description |) (:init-fn 'lilac-parser.test/main!) (:mode :native) (:reload-fn 'lilac-parser.test/reload!) (:target :native)
       :feature-policy $ {}
       :modules $ []
@@ -62,6 +62,11 @@
                   =< 16 nil
                   a $ {} (:inner-text "|Load EDN") (:class-name css/link)
                     :on-click $ fn (e d!)
+                      hint-fn $ {}
+                        :args $ [] (:: 'Map 'Tag 'Dynamic)
+                          :: 'Fn $ {} (:return 'Unit)
+                            :args $ [] 'lilac-parser.schema/Op
+                        :return 'Unit
                       .show load-plugin d! $ fn (text)
                         hint-fn $ {}
                           :args $ [] 'String
@@ -69,8 +74,9 @@
                         let
                             snapshot $ parse-cirru-edn text
                           ; println |text snapshot
-                          d! cursor $ struct-with state $ :result snapshot
+                          d! $ lilac-parser.schema/Op :states cursor $ struct-with state (:result snapshot)
                         , &unit
+                      , &unit
                   =< 16 nil
                   a $ {} (:inner-text |Replacer) (:class-name css/link)
                     :on-click $ fn (e d!)
@@ -806,6 +812,7 @@
                 blackbox? $ match (get rule :blackbox?)
                   (:some flag) (if flag true false)
                   (:none) false
+                result-node $ if blackbox? nil result
               if
                 .unwrap-or (get result :ok?) false
                 {} (:ok? true)
@@ -817,10 +824,8 @@
                     (:none) nil
                   :parser-node :component
                   :label rule-name
-                  :result $ if blackbox? nil result
-                {} (:ok? false) (:message "|failed branch") (:parser-node :component) (:label rule-name)
-                  :result $ if blackbox? nil result
-                  :rest xs
+                  :result result-node
+                {} (:ok? false) (:message "|failed branch") (:parser-node :component) (:label rule-name) (:result result-node) (:rest xs)
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'Dynamic)
             :args $ [] (:: 'List 'Dynamic) (:: 'Map 'Dynamic 'Dynamic)
@@ -1798,7 +1803,7 @@
             , &unit
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'Unit)
-            :args $ [] 'Dynamic
+            :args $ [] 'lilac-parser.schema/Op
             :features $ #{} :js-ffi
         'main! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn main! ()
@@ -1815,7 +1820,8 @@
               hint-fn $ {}
                 :args $ [] 'Enum
                 :return 'Unit
-              dispatch! op
+              reset! *reel $ apply-op op
+              , &unit
             js-ffi.browser/add-event-listener! |beforeunload $ fn (event)
               hint-fn $ {}
                 :args $ [] 'js-ffi.browser/EventHost
@@ -1904,7 +1910,7 @@
             lilac-parser.comp.container :refer $ comp-container
             lilac-parser.updater :refer $ updater
             lilac-parser.schema :as schema
-            reel.util :refer $ listen-devtools! generate-id!
+            reel.util :refer $ listen-devtools!
             reel.typed :as typed
             lilac-parser.config :as config
             |./calcit.build-errors :default build-errors
@@ -1947,6 +1953,13 @@
             :states (:: 'List 'Dynamic) 'Dynamic
             :content 'String
             :hydrate-storage 'lilac-parser.schema/Store
+            :reel/toggle
+            :reel/recall 'Number
+            :reel/run
+            :reel/step
+            :reel/merge
+            :reel/reset
+            :reel/remove 'Number
           :examples $ []
           :schema $ :: 'EnumDef
         'Store $ %{} 'CodeEntry (:doc |)
@@ -2283,6 +2296,7 @@
               (:content c)
                 struct-with store $ :content c
               (:hydrate-storage d) d
+              _ store
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'lilac-parser.schema/Store)
             :args $ [] 'lilac-parser.schema/Store 'lilac-parser.schema/Op 'String 'Number
