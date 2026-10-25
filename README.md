@@ -161,7 +161,7 @@ MIT
 
 ### Development
 
-0.1.0-alpha.1 候选配对预发布 Calcit CLI / `@calcit/procs` `0.31.0-alpha.2`。前端依赖改为
+0.1.0-alpha.1 候选配对预发布 Calcit CLI / `@calcit/procs` `0.31.0-alpha.4`。前端依赖改为
 Alerts 0.11.0-alpha.1、Reel 0.7.0-alpha.1、Feather 0.5.0-alpha.2、Markdown 0.5.0-alpha.2、
 UI 0.9.0-alpha.1 和 Respo 0.17.0-alpha.2，传递 Router 0.9.0-alpha.1 与 JS-FFI 0.2.5。
 Reel 保持 0.7.0-alpha.1，与 Alerts 和 Feather 的要求一致，Caps strict 才不会报版本冲突。
