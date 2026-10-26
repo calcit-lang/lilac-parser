@@ -11,6 +11,15 @@ For JSON, use `parse-lilac` with the rules in the `lilac-parser.demo.json` names
 the current browser button does not select the JSON parser. Load EDN displays an
 existing parsing result rather than changing that parser.
 
+### 当前工具链：Calcit 0.31.0-alpha.7
+
+CLI 与 `@calcit/procs` 从 alpha.6 成对升级到已发布 `0.31.0-alpha.7`。
+解析器 API、失败原因、Snapshot 和现有精确模块图不变。新版默认预检查会拒绝未证明
+的 Dynamic 流向；保留原 native/JS 解析测试、附带合同回放与完整 strict，
+不添加兼容开关或放宽类型基线。本线仍为预发布，不供 0.30 稳定应用单独混装。
+定义测试同步官方同版 runner 的临时 fixture 策略；项目本身的检查和构建仍启用默认
+proof audit，不将 fixture 的回放设置扩散到项目。
+
 ### Usage
 
 ```cirru
@@ -161,7 +170,7 @@ MIT
 
 ### Development
 
-0.1.0-alpha.1 候选配对预发布 Calcit CLI / `@calcit/procs` `0.31.0-alpha.6`。前端依赖改为
+0.1.0-alpha.1 维护线配对预发布 Calcit CLI / `@calcit/procs` `0.31.0-alpha.7`。前端依赖保留
 Alerts 0.11.0-alpha.1、Reel 0.7.0-alpha.1、Feather 0.5.0-alpha.2、Markdown 0.5.0-alpha.2、
 UI 0.9.0-alpha.1 和 Respo 0.17.0-alpha.2，传递 Router 0.9.0-alpha.1 与 JS-FFI 0.2.5。
 Reel 保持 0.7.0-alpha.1，与 Alerts 和 Feather 的要求一致，Caps strict 才不会报版本冲突。
