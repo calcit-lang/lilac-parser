@@ -72,7 +72,7 @@ jobs:
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           repository: calcit-lang/calcit
-          ref: 0.31.0-alpha.6
+          ref: 0.31.0-alpha.7
           path: .calcit/core-test-tools
           persist-credentials: false
           sparse-checkout-cone-mode: false
