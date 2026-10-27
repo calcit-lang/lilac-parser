@@ -204,7 +204,8 @@ CI 直接执行完整 `calcit fix --workflow strict --verify`，不再只依赖�
 CLI 版本从 deps.cirru 安装，由 `caps verify --toolchain` 验证 CLI/runtime 配对；
 CI 不再额外硬编码旧版本号。使用精确已发布 tag，不用分支或 hash 代替正式依赖。
 原 parser 测试与断言保留；新增入口合同放在 `parse-lilac` 的 `:tests` 中，
-CI 复用正式 Calcit `0.30.1` 已发布的统一运行器，在 native 与 JavaScript 回放同一份 AST。
+当前 CI 复用已发布 Calcit `0.31.0-alpha.7` 的统一运行器，在 native 与 JavaScript 回放同一份 AST；
+上文 `0.30.1` 的模块配对属于历史迁移记录，不是当前 CI 的工具链。
 不复制运行器，也不为此重编译 Calcit；零匹配和跨后端失败不能被视为通过。
 精确 HEAD 的干净安装、CI 和实际 review 仍须独立通过。
 解析结果与部分规则 payload 仍是开放容器；保留原 Some nil / 缺失语义，不宣称本次已完成它们的名义类型收敛。
