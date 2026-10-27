@@ -11,9 +11,9 @@ For JSON, use `parse-lilac` with the rules in the `lilac-parser.demo.json` names
 the current browser button does not select the JSON parser. Load EDN displays an
 existing parsing result rather than changing that parser.
 
-### 当前工具链：Calcit 0.31.0-alpha.7
+### 当前工具链：Calcit 0.31.0
 
-CLI 与 `@calcit/procs` 从 alpha.6 成对升级到已发布 `0.31.0-alpha.7`。
+CLI 与 `@calcit/procs` 从 alpha.6 成对升级到正式 `0.31.0`。
 解析器 API、失败原因、Snapshot 和现有精确模块图不变。新版默认预检查会拒绝未证明
 的 Dynamic 流向；保留原 native/JS 解析测试、附带合同回放与完整 strict，
 不添加兼容开关或放宽类型基线。本线仍为预发布，不供 0.30 稳定应用单独混装。
@@ -170,7 +170,7 @@ MIT
 
 ### Development
 
-0.1.0-alpha.1 维护线配对预发布 Calcit CLI / `@calcit/procs` `0.31.0-alpha.7`。前端依赖保留
+0.1.0-alpha.1 维护线配对正式 Calcit CLI / `@calcit/procs` `0.31.0`。前端依赖保留
 Alerts 0.11.0-alpha.1、Reel 0.7.0-alpha.1、Feather 0.5.0-alpha.2、Markdown 0.5.0-alpha.2、
 UI 0.9.0-alpha.1 和 Respo 0.17.0-alpha.2，传递 Router 0.9.0-alpha.1 与 JS-FFI 0.2.5。
 Reel 保持 0.7.0-alpha.1，与 Alerts 和 Feather 的要求一致，Caps strict 才不会报版本冲突。
@@ -204,7 +204,7 @@ CI 直接执行完整 `calcit fix --workflow strict --verify`，不再只依赖�
 CLI 版本从 deps.cirru 安装，由 `caps verify --toolchain` 验证 CLI/runtime 配对；
 CI 不再额外硬编码旧版本号。使用精确已发布 tag，不用分支或 hash 代替正式依赖。
 原 parser 测试与断言保留；新增入口合同放在 `parse-lilac` 的 `:tests` 中，
-当前 CI 复用已发布 Calcit `0.31.0-alpha.7` 的统一运行器，在 native 与 JavaScript 回放同一份 AST；
+当前 CI 复用已发布 Calcit `0.31.0` 的统一运行器，在 native 与 JavaScript 回放同一份 AST；
 上文 `0.30.1` 的模块配对属于历史迁移记录，不是当前 CI 的工具链。
 不复制运行器，也不为此重编译 Calcit；零匹配和跨后端失败不能被视为通过。
 精确 HEAD 的干净安装、CI 和实际 review 仍须独立通过。
