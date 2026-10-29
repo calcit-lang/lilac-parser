@@ -338,7 +338,7 @@
           :code $ quote $ defstyle css-gui-toggler
             {} $ |& $ {} (:font-family ui/font-fancy) (:font-weight 300) (:font-size 20) (:cursor :pointer) (:line-height |24px)
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'String
         'css-label $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle css-label
             {} $ |& $ {} (:font-family ui/font-code)
@@ -352,7 +352,7 @@
               :min-height 14
               :font-size 13
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'String
         'css-node $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstyle css-node
             {} $ |& $ .merge ui/expand
@@ -360,7 +360,7 @@
                 :border-left $ str "|1px solid " $ hsl 0 0 90
                 :border-top $ str "|1px solid " $ hsl 0 0 90
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'String
         'input-text $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn input-text (event)
             match
@@ -2059,7 +2059,7 @@
         'reload! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn reload! () (println |TODO)
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'Dynamic)
+          :schema $ :: 'Fn $ {} (:return 'Unit)
             :args $ []
             :features $ #{} :js-ffi
         'roughly-ok? $ %{} 'CodeEntry (:doc |)
