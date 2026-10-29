@@ -63,6 +63,8 @@ parse-lilac "|(def a (add 1 2))" (s-expr-parser+)
 | `label+`         | `(label+ "just a" (is+ "a"))`                   | simpler rule for adding comments in result |
 | `unicode-range+` | `(unicode-range+ 97 122)`                       | matches a with unicode in between given    |
 
+Rules and results are Tag-keyed maps. Their fields and the `Rule` / `ParseResult` schema aliases are described in [docs/types.md](docs/types.md).
+
 ### `defparser`
 
 `defparser` is a macro for defining parser that can be used recursively. The type is `:component`, which is like a more complicated version of `:label`. Notice that `s-expr-parser+` defined with `defparser` is different from a normal rule, it's a function so it need to be called before being used as a rule.
