@@ -19,11 +19,11 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
 
-      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+      - uses: actions/setup-node@v6.5.0
         with:
           node-version: 24
           package-manager-cache: false
@@ -34,7 +34,7 @@ jobs:
           corepack prepare yarn@4.18.0 --activate
           yarn --version
 
-      - uses: calcit-lang/setup-calcit@ca701be5a471759e442aa053cd100720bbe1f09f # v1
+      - uses: calcit-lang/setup-calcit@v1.5.0
         with:
           tools: calcit,caps
           caps-version: "0.1.1"
@@ -50,7 +50,7 @@ jobs:
           caps verify --toolchain
           calcit --version
           calcit calcit.cirru edit format
-          git diff --exit-code -- calcit.cirru
+          git diff --exit-code --quiet -- calcit.cirru
           calcit calcit.cirru --check-only --all-defs
           calcit calcit.cirru --entry test --check-only
           calcit calcit.cirru fix --workflow strict --verify --format json | jq -e '.data.workflow.status == "passed" and .diagnostics == []'
@@ -84,10 +84,10 @@ jobs:
           node test.mjs
 
       - name: Load released definition-test runner
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        uses: actions/checkout@v7.0.1
         with:
           repository: calcit-lang/calcit
-          ref: 0.31.0
+          ref: 0.32.1
           path: .calcit/core-test-tools
           persist-credentials: false
           sparse-checkout-cone-mode: false
@@ -170,7 +170,7 @@ jobs:
       - name: Deploy to server
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         id: deploy
-        uses: Pendect/action-rsyncer@8e05ffa5c93e5d9c9b167796b26044d2c616b2b9 # v2.0.0
+        uses: Pendect/action-rsyncer@v2.0.0
         env:
           DEPLOY_KEY: ${{ secrets.rsync_private_key }}
         with:
