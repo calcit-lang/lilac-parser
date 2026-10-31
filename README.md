@@ -11,14 +11,20 @@ For JSON, use `parse-lilac` with the rules in the `lilac-parser.demo.json` names
 the current browser button does not select the JSON parser. Load EDN displays an
 existing parsing result rather than changing that parser.
 
-### 当前工具链：正式 Calcit 0.31.0
+### 当前工具链：正式 Calcit 0.32.1
 
-CLI 与 `@calcit/procs` 从 alpha.7 成对升级到已发布的正式 `0.31.0`。
-解析器 API、失败原因、Snapshot 和现有精确模块图不变。新版默认预检查会拒绝未证明
-的 Dynamic 流向；保留原 native/JS 解析测试、附带合同回放与完整 strict，
-不添加兼容开关或放宽类型基线。模块依赖仍包含 0.31 预发布 tag，不能作为完整正式模块图，亦不供 0.30 应用单独混装。
-定义测试同步官方同版 runner 的临时 fixture 策略；项目本身的检查和构建仍启用默认
-proof audit，不将 fixture 的回放设置扩散到项目。
+候选模块 **0.1.0** 配对正式 CLI / `@calcit/procs` **0.32.1**，消费者需升级完整依赖图并重新生成 JS。
+使用已发布 Alerts 0.11.0-alpha.4、Reel 0.7.0-alpha.5、Feather 0.5.0、Markdown 0.5.0-alpha.5、UI 0.9.0、Respo 0.17.1，传递 Router 0.9.0-alpha.4 / JS-FFI 0.2.9。
+其中四库尚无对应正式 tag，保留精确已发布 alpha，不把图称为全稳定版；不以本地链接、hash 或关闭 strict 代替正式安装。
+候选尚未发布，本 PR 不合并、发版或生产部署。旧 CLI 消费者须保留其原配对 tag。
+
+以最新 main 的规则/结果类型收窄为基础，通过官方 formatter 迁移 23 处旧类型表示；保留 `Rule`、`ParseResult`、字段检查和非宿主函数移除豁免的改进。
+原 unresolved 上限 **112** 保持，不放宽类型门禁、不增加强转或编译器改写规则。
+五处遗留双参数 dispatch 改为单个 `Op :states`：Parse、GUI 切换、Replacer、编辑输入和树节点折叠；补齐真实回调合同并检查节点 cursor。
+这些操作此前会在点击时发生参数数量错误。解析算法、当前 main 的缺失/nil、自定义 payload、转换调用次数、错误传播与 `hud!` 保持。
+
+保留原 native/JS 解析测试、共享合同与 GUI 回放、完整 strict 和构建，官方共享 runner 同步到 0.32.1。
+解析结果仍有真实开放边界，不把门禁通过称为零类型债务或完整名义结果建模。
 
 ### Usage
 
@@ -26,25 +32,26 @@ proof audit，不将 fixture 的回放设置扩散到项目。
 ns app $ :require $ lilac-parser.core :refer
   parse-lilac defparser is+ many+ one-of+ other-than+ some+ or+ combine+ interleave+ label+ replace-lilac find-lilac
 
-parse-lilac |aaaa
-  many+ $ is+ |a
+parse-lilac |aaaa $ many+ $ is+ |a
 ```
 
-Demo of a stupid S-expression parser:
+Demo of the bundled recursive S-expression parser:
 
 ```cirru
-def number-parser $ many+ $ one-of+ |1234567890
+ns app $ :require
+  lilac-parser.core :refer $ parse-lilac
+  lilac-parser.demo.s-expr :refer $ s-expr-parser+
 
-def space-parser $ is+ "| "
+parse-lilac "|(def a (add 1 2))" $ s-expr-parser+
+```
 
-def word-parser $ many+ $ one-of+ |qwertyuiopasdfghjklzxcvbnm
+The recursive `defparser` definition belongs in the project namespace, rather
+than inside an eval-local binding. Inspect the checked example and its helper
+rules with the official views:
 
-defparser s-expr-parser+ () identity
-  combine+ $ [] (is+ "|(")
-    some+ $ or+ $ [] number-parser word-parser space-parser (s-expr-parser+)
-    is+ "|)"
-
-parse-lilac "|(def a (add 1 2))" (s-expr-parser+)
+```sh
+calcit query def lilac-parser.demo.s-expr/s-expr-parser+
+calcit query defs lilac-parser.demo.s-expr
 ```
 
 ### Rules
@@ -144,7 +151,11 @@ defn xyz+ (xs transform) (; TODO)
 A function is also provided for replacing text pieces matching a given rule:
 
 ```cirru
-replace-lilac content rule $ fn (x) (str |<<< x |>>>)
+ns app $ :require $ lilac-parser.core :refer (replace-lilac is+)
+
+replace-lilac |abc (is+ |b)
+  fn (x)
+    if (string? x) (str |<<< x |>>>) (raise |expected-matched-text)
 ```
 
 which returns `:result` as well as parsing details in `:attempts`:
@@ -159,7 +170,9 @@ This is an experimental API serving jobs as a custom regular expression replacer
 Similarly matched pieces can be collected with `find-lilac`:
 
 ```cirru
-find-lilac content rule
+ns app $ :require $ lilac-parser.core :refer (find-lilac is+)
+
+find-lilac |abc $ is+ |b
 ```
 
 ### Workflow
@@ -172,66 +185,29 @@ MIT
 
 ### Development
 
-0.1.0-alpha.1 维护线当前候选配对正式 Calcit CLI / `@calcit/procs` `0.31.0`。前端依赖保留
-Alerts 0.11.0-alpha.1、Reel 0.7.0-alpha.1、Feather 0.5.0-alpha.2、Markdown 0.5.0-alpha.2、
-UI 0.9.0-alpha.1 和 Respo 0.17.0-alpha.2，传递 Router 0.9.0-alpha.1 与 JS-FFI 0.2.5。
-Reel 保持 0.7.0-alpha.1，与 Alerts 和 Feather 的要求一致，Caps strict 才不会报版本冲突。
-默认入口把 `:dispatch-op` 绑定到 `lilac-parser.schema/Op`，Op 同时列出 comp-reel 发送的
-`:reel/*` 控制操作；updater 对这些控制操作原样返回 store（它们由 Reel 自己处理）。
-加载 EDN 的弹窗回调改用 `schema/Op :states`，不再用两参数的 `d! cursor state`。
-组件结果里的 `:result` 先绑定成局部值，以满足 0.31 对 nil 分支的检查，取值不变。
+使用 Node.js 24、Yarn 4.18.0、Caps 0.1.1 与 Calcit 0.32.1：
 
-此前 0.0.9 候选源码精确配对已发布的正式 Calcit CLI / `@calcit/procs` `0.30.1`，
-使用 Node.js 24 和 Yarn 4.18.0；不要只升级 runtime 而保留 alpha CLI。
-已发布 0.0.8 仍配对 alpha.5，不能把当前源码的验收当作旧 tag 的兼容性保证；候选不等于已发版，发布状态以正式 Git tag 为准。
+```sh
+caps --strict --ci
+yarn install --immutable
+caps verify --toolchain
+calcit --check-only --all-defs
+calcit --entry test --check-only
+calcit fix --workflow strict --verify
+calcit --entry test
+calcit --entry test --emit-path js-out js
+node test.mjs
+calcit js
+yarn vite build --base=./
+```
 
-使用者不需要迁移解析数据：缺失/显式 nil、自定义结果、转换回调次数及错误传播合同保持不变。
-本轮迁移 8 处已知 String/List 计数和 2 处 Map 合并为公开接收者方法（包含原附带测试的一处），
-保留原 18 项附带测试的名称、tag、输入、断言和预期；无新增强转、默认值、预算或编译器 fix 规则。
-真实开放的 parser payload 和历史 nil 表示仍明确保留，不冒称已实现完整名义 ParseResult。
+规则与结果的 Tag 键 Map、注册回调和转换边界见 [数据形状](docs/types.md) 与 [Option 边界审阅](docs/option-boundaries.md)。
+注册函数按当前 main 返回 Unit；开放 custom payload 和 Some nil / 缺失语义继续保留。
+现有 parser-dispatch 合同由官方同版共享 runner 在 native/JS 回放，parser-gui 仅在 JS 回放。
+不复制 runner、不新增兼容开关，零匹配或排除不算运行成功；GUI 原 SSR 回放不替代浏览器交互验收。
 
-Set 形式的 `one-of+` / `other-than+` 不匹配时，错误消息先将 Set 实际转换为
-List；历史 List 输入经过解码后保留，不再用 `unsafe-coerce` 冒充集合转换。
-自定义规则注册表使用 `Ref<Map<Tag, Fn>>`，回调接收原有输入 List 和开放规则数据；
-`parse-lilac` 通过 `Option` 查询区分内置规则、自定义规则和未知规则，未知规则仍提示并返回 nil。
-命名空间状态使用 `defref`；注册函数仍返回更新后的注册表，不改为 Unit。
-Map/List 读取使用公开的 `Option` 接口。解析入口直接匹配 `:parser-node` 的 Option，
-仅在 Some 分支检查 Tag 并查找处理函数；缺失、显式 nil、非法节点及未知节点仍提示并返回 nil。
-输入转换、内置规则优先级、自定义处理函数参数和错误顺序不变；其他开放结果边界仍保留原 nil 语义。
-前端依赖使用同一配对的正式模块图：Alerts 0.10.57、Reel 0.6.41、Feather 0.4.30、
-Markdown 0.4.59、UI 0.8.0 和 Respo 0.16.124；传递 Router 0.8.37 与 JS-FFI 0.2.5。
-Feather 0.4.30 仍固定这一组依赖，不能逐个混入 UI 0.8.1 / Respo 0.16.126 等另一张依赖图，也不以 root override 或 hash 绕过冲突。
-严格 Caps 门禁不会降级；完整前端和部署验收通过后才能视为完成迁移。
-CI 直接执行完整 `calcit fix --workflow strict --verify`，不再只依赖普通检查和测试。
-CLI 版本从 deps.cirru 安装，由 `caps verify --toolchain` 验证 CLI/runtime 配对；
-CI 不再额外硬编码旧版本号。使用精确已发布 tag，不用分支或 hash 代替正式依赖。
-原 parser 测试与断言保留；新增入口合同放在 `parse-lilac` 的 `:tests` 中，
-当前 CI 复用已发布 Calcit `0.31.0` 的统一运行器，在 native 与 JavaScript 回放同一份 AST；
-上文 `0.30.1` 的模块配对属于历史迁移记录，不是当前 CI 的工具链。
-不复制运行器，也不为此重编译 Calcit；零匹配和跨后端失败不能被视为通过。
-精确 HEAD 的干净安装、CI 和实际 review 仍须独立通过。
-解析结果与部分规则 payload 仍是开放容器；保留原 Some nil / 缺失语义，不宣称本次已完成它们的名义类型收敛。
+原 unresolved 增长门禁保留112上限；新依赖解析等待60分钟，无单包豁免。Actions 使用精确正式 tag，维护者接受 tag 可移动风险。
+源码只维护 `calcit.cirru` / `deps.cirru`，生成的 `js-out/` 不提交；不加 concurrently、验证脚本或基线。
 
-本轮审阅修复了字段清理误将可选转换和自定义结果字段当成必填的回归。
-转换的 Option 保留到消费处分支；缺失或显式 nil 不调用转换函数，失败分支也不调用，
-成功时只调用一次并传播原错误。自定义成功结果的 `:value`、包装结果的 `:rest` 和显示标签
-仍沿用原有开放合同，不用无条件 unwrap 改变合法输入。
-详见[本轮边界审阅](docs/option-boundaries.md)；原测试与断言保留，新增语义放在 `parse-lilac :tests`。
-
-后续收尾将两个局部 UI 状态读取收窄为 `Option<Dynamic> → State`，直接消费 get 的结果，
-并在 component 参数、子节点和宿主输入处直接分支，不再先转 nil 再判断。
-旧初始化、开放 custom payload、宿主文本和 dispatch 协议等保留点逐项记录在上述边界文档中，
-不代表整个开放解析结果已经名义定型。附加纯语义测试在 native/JS 回放，
-实际 GUI SSR 测试在 JS 执行；不把浏览器 CSS 的 native 不支持路径当作成功。
-
-- `caps --strict` — resolve immutable dependencies
-- `calcit calcit.cirru --check-only` — strict snapshot check
-- `calcit --entry test` — native parser tests
-- `calcit --entry test --emit-path js-out js && node test.mjs` — JavaScript parser tests
-- `calcit calcit.cirru js && yarn vite build --base=./` — production build
-
-CI builds frontend assets with the COS CDN base URL and uses the upload action's
-built-in public checksum verification. Configure `COS_BUCKET`, `COS_SECRET_ID`
-and `COS_SECRET_KEY` in repository secrets. Production assets keep the existing
-`calcit-lang/lilac-parser/` prefix; PR previews use isolated paths. The original
-server deployment directory is unchanged. Generated `js-out/` is not committed.
+CI 构建原 COS CDN 路径，使用 action 自身 verify，PR 预览沿用独立 number/run/attempt 前缀。原生产前缀和服务器目录保持，不把前端迁移扩展到后端。
+生产部署与正式模块 tag 不由本 PR 执行；实际结果以精确提交的 Linux CI、评审和页面验收为准。

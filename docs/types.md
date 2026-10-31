@@ -1,6 +1,6 @@
 # 规则与结果的数据形状
 
-Lilac Parser 的规则和解析结果都是普通的 Tag 键 Map，不是 Struct。这样做是为了让结果能直接写成 Cirru EDN、被 GUI 的 Load EDN 读回，也让用户可以注册自己的规则种类。Calcit 0.31 还没有“结构化记录”类型，所以 schema 里用两个别名给这两类 Map 起名：
+Lilac Parser 的规则和解析结果都是普通的 Tag 键 Map，不是 Struct。这样做是为了让结果能直接写成 Cirru EDN、被 GUI 的 Load EDN 读回，也让用户可以注册自己的规则种类。本库保留这种公开 Map 表示，schema 里用两个别名给这两类 Map 起名，不把迁移变成 Struct 协议替换：
 
 | 别名 | 底层类型 | 用途 |
 | --- | --- | --- |
