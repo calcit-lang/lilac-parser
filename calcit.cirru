@@ -22,6 +22,21 @@
           :code $ quote $ defstruct NodeState (:folded? 'Bool)
           :examples $ []
           :schema $ quote StructDef
+        'child-view $ %{} 'CodeEntry
+          :doc "|The nested view of a :result or :peek-result node, or an empty span when there is none."
+          :code $ quote $ defn child-view (states node field)
+            let
+                child-option $ get node field
+              if
+                and (.some? child-option)
+                  non-nil? $ .unwrap child-option
+                div
+                  {} $ :style $ {} (:padding-left 16) (:margin-top 8)
+                  comp-node (>> states field)
+                    read-node $ .unwrap child-option
+                span $ {}
+          :examples $ []
+          :schema $ quote $ Fn (Map Dynamic Dynamic) (Map Dynamic Dynamic) Tag (-> respo.schema/Element) (:features :js-ffi)
         'comp-container $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-container (reel)
             let
@@ -174,7 +189,7 @@
                           Fn lilac-parser.schema/Op $ -> Unit
                           -> Unit
                         d! $ lilac-parser.schema/Op :states
-                          require-list $ .unwrap-or cursor-option nil
+                          require-list $ .unwrap cursor-option
                           struct-with state $ :folded? $ not (:folded? state)
                     comp-icon :minus
                       {} (:font-size 14)
@@ -194,7 +209,7 @@
                       :style $ {} $ :background-color (hsl 20 80 50)
                   span $ {}
                     :class-name $ str-spaced css-label css/font-fancy
-                    :inner-text $ .unwrap-or (get node :parser-node) nil
+                    :inner-text $ str $ .unwrap-or (get node :parser-node) |
                     :style $ {} $ :background-color (hsl 200 80 76)
                   if
                     or
@@ -205,12 +220,12 @@
                         (:some kind) (&= :component kind)
                         (:none) false
                     span $ {} (:class-name css-label)
-                      :inner-text $ .unwrap-or (get node :label) nil
+                      :inner-text $ str $ .unwrap-or (get node :label) |
                       :style $ {} $ :background-color (hsl 200 90 60)
                   if-not
                     .unwrap-or (get node :ok?) false
                     span $ {} (:class-name css-label)
-                      :inner-text $ .unwrap-or (get node :message) nil
+                      :inner-text $ str $ .unwrap-or (get node :message) |
                       :style $ {} $ :background-color (hsl 0 80 60)
                   if
                     and
@@ -219,16 +234,12 @@
                         (:some kind) (&= :is kind)
                         (:none) false
                     span $ {} (:class-name css-label)
-                      :inner-text $ match (get node :value)
-                        (:some present-value) present-value
-                        (:none) nil
+                      :inner-text $ display-value $ get node :value
                       :style $ {} $ :background-color (hsl 200 80 70)
                   if
                     .unwrap-or (get node :ok?) false
                     span $ {} (:class-name css-label)
-                      :inner-text $ to-lispy-string $ match (get node :value)
-                        (:some present-value) present-value
-                        (:none) nil
+                      :inner-text $ display-lispy $ get node :value
                       :style $ {}
                         :background-color $ hsl 200 80 80
                         :font-size 10
@@ -249,20 +260,8 @@
                       {} $ :style $ {} (:padding-left 16) (:margin-top 8)
                       -> children $ map-indexed $ fn (idx child)
                         [] idx $ comp-node (>> states idx) (read-node child)
-                    match (get node :result)
-                      (:some present-child)
-                        if (non-nil? present-child)
-                          div
-                            {} $ :style $ {} (:padding-left 16) (:margin-top 8)
-                            comp-node (>> states :result) (read-node present-child)
-                      (:none) nil
-                    match (get node :peek-result)
-                      (:some present-child)
-                        if (non-nil? present-child)
-                          div
-                            {} $ :style $ {} (:padding-left 16) (:margin-top 8)
-                            comp-node (>> states :peek-result) (read-node present-child)
-                      (:none) nil
+                    child-view states node :result
+                    child-view states node :peek-result
           :examples $ []
           :schema $ quote $ Fn (Map Dynamic Dynamic) (Map Tag Dynamic) (-> respo.schema/Component) (:features :js-ffi)
           :tests $ []
@@ -368,6 +367,22 @@
                 :border-top $ str "|1px solid " $ hsl 0 0 90
           :examples $ []
           :schema $ quote String
+        'display-lispy $ %{} 'CodeEntry
+          :doc "|A node's :value as Lisp-style text; a node without one shows nil, like an explicit nil value."
+          :code $ quote $ defn display-lispy (value-option)
+            match value-option
+              (:some value) (to-lispy-string value)
+              (:none) (to-lispy-string nil)
+          :examples $ []
+          :schema $ quote $ Fn (Option Dynamic) (-> String)
+        'display-value $ %{} 'CodeEntry
+          :doc "|A node's :value for display; a node without one shows nothing."
+          :code $ quote $ defn display-value (value-option)
+            match value-option
+              (:some value) value
+              (:none) |
+          :examples $ []
+          :schema $ quote $ Fn (Option Dynamic) (-> Dynamic)
         'input-text $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn input-text (event)
             match
@@ -602,9 +617,7 @@
                         &list:slice content 0 $ - (.len content)
                           .len $ lilac-parser.util/require-list $ .unwrap (get attempt :rest)
                         , |
-                      :value $ match (get attempt :value)
-                        (:some present-value) present-value
-                        (:none) nil
+                      :value $ lilac-parser.util/require-key attempt :value
                     &list:append attempts attempt
                     lilac-parser.util/require-list $ .unwrap $ get attempt :rest
                     , rule
@@ -709,9 +722,7 @@
                       :value $ let
                           v $ map acc $ fn (x)
                             hint-fn $ Fn (Map Dynamic Dynamic) (-> Dynamic)
-                            match (get x :value)
-                              (:some present-value) present-value
-                              (:none) nil
+                            lilac-parser.util/require-key x :value
                         match transform
                           (:some present-transform) (lilac-parser.util/apply-transform present-transform v)
                           (:none) v
@@ -766,9 +777,6 @@
         'parse-component $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn parse-component (xs rule)
             let
-                rule-name $ match (get rule :name)
-                  (:some present-value) present-value
-                  (:none) nil
                 item $ match (get rule :fn)
                   (:some maker)
                     if (fn? maker)
@@ -788,18 +796,15 @@
                   (:some flag) (if flag true false)
                   (:none) false
                 result-node $ if blackbox? nil result
+                rule-name $ lilac-parser.util/require-key rule :name
               if
                 .unwrap-or (get result :ok?) false
                 {} (:ok? true)
                   :value $ let
-                      v $ match (get result :value)
-                        (:some present-value) present-value
-                        (:none) nil
+                      v $ lilac-parser.util/require-key result :value
                     if (fn? value-fn) (value-fn v)
                       raise "|component rule expects :value-fn to be a function"
-                  :rest $ match (get result :rest)
-                    (:some present-value) present-value
-                    (:none) nil
+                  :rest $ lilac-parser.util/require-key result :rest
                   :parser-node :component
                   :label rule-name
                   :result result-node
@@ -811,7 +816,7 @@
               :code $ quote $ let
                   calls $ ref 0
                   maker $ fn () (swap! calls inc) (is+ |x)
-                  base $ {} (:parser-node :component) (:fn maker) (:value-fn identity)
+                  base $ {} (:parser-node :component) (:name :probe) (:fn maker) (:value-fn identity)
                   run-error $ fn (rule)
                     try (parse-lilac |x rule)
                       fn (message) message
@@ -834,7 +839,7 @@
             %{} 'TestEntry (:name |preserves-blackbox-truthiness)
               :code $ quote $ let
                   maker $ fn () $ is+ |x
-                  rule $ {} (:parser-node :component) (:fn maker) (:value-fn identity)
+                  rule $ {} (:parser-node :component) (:name :probe) (:fn maker) (:value-fn identity)
                     :args $ []
                   result $ lilac-parser.util/require-map $ parse-lilac |x rule
                   child $ get result :result
@@ -883,9 +888,7 @@
                         :value $ let
                             v $ map acc $ fn (x)
                               hint-fn $ Fn (Map Dynamic Dynamic) (-> Dynamic)
-                              match (get x :value)
-                                (:some present-value) present-value
-                                (:none) nil
+                              lilac-parser.util/require-key x :value
                           match transform
                             (:some present-transform) (lilac-parser.util/apply-transform present-transform v)
                             (:none) v
@@ -937,24 +940,14 @@
               if
                 .unwrap-or (get result :ok?) false
                 {} (:ok? true) (:parser-node :label)
-                  :label $ match (get rule :label)
-                    (:some present-value) present-value
-                    (:none) nil
-                  :value $ match (get result :value)
-                    (:some present-value) present-value
-                    (:none) nil
-                  :rest $ match (get result :rest)
-                    (:some present-value) present-value
-                    (:none) nil
+                  :label $ lilac-parser.util/require-key rule :label
+                  :value $ lilac-parser.util/require-key result :value
+                  :rest $ lilac-parser.util/require-key result :rest
                   :result result
                 {} (:ok? false) (:message nil) (:parser-node :label)
-                  :label $ match (get rule :label)
-                    (:some present-value) present-value
-                    (:none) nil
+                  :label $ lilac-parser.util/require-key rule :label
                   :result result
-                  :rest $ match (get result :rest)
-                    (:some present-value) present-value
-                    (:none) nil
+                  :rest $ lilac-parser.util/require-key result :rest
           :examples $ []
           :schema $ quote $ Fn (List Dynamic) lilac-parser.core/Rule (-> lilac-parser.core/ParseResult)
         'parse-lilac $ %{} 'CodeEntry
@@ -1046,7 +1039,7 @@
                   parse-lilac |x $ {} (:parser-node :unicode-range) (:min-code 120) (:max-code 120)
                 , &unit
               :tags $ #{} :parser-dispatch :unit
-            %{} 'TestEntry (:name |preserves-custom-missing-value)
+            %{} 'TestEntry (:name |requires-custom-value)
               :code $ quote $ let
                   original $ deref *custom-methods
                   rule $ {} $ :parser-node :option-test-missing-value
@@ -1055,18 +1048,14 @@
                     {} (:ok? true)
                       :rest $ []
                 reset! *custom-methods $ .assoc original :option-test-missing-value custom
-                try
-                  do
-                    assert=
-                      get
+                let
+                    message $ try
+                      do
                         parse-lilac |x $ optional+ rule
-                        , :value
-                      get
-                        {} $ :value nil
-                        , :value
-                    reset! *custom-methods original
-                    , &unit
-                  fn (message) (reset! *custom-methods original) (raise message)
+                        , |unexpected-success
+                      fn (message) message
+                  reset! *custom-methods original
+                  assert= "|[lilac-parser] missing key :value" message
               :tags $ #{} :parser-dispatch :unit
             %{} 'TestEntry (:name |preserves-transform-family)
               :code $ quote $ let
@@ -1113,7 +1102,7 @@
               :code $ quote $ let
                   original $ deref *custom-methods
                   rule $ {} $ :parser-node :option-test-payload
-                  variants $ [] ({})
+                  variants $ []
                     {} $ :value nil
                     {} $ :value false
                     {} $ :value 0
@@ -1126,9 +1115,7 @@
                         (:none) &unit
                         (:some fields tail)
                           let
-                              payload $ match (get fields :value)
-                                (:some value) value
-                                (:none) nil
+                              payload $ lilac-parser.util/require-key fields :value
                               custom $ fn (xs rule)
                                 hint-fn $ Fn (List Dynamic) Dynamic $ -> Dynamic
                                 if (empty? xs)
@@ -1140,9 +1127,11 @@
                                 {} $ :value payload
                                 , :value
                             reset! *custom-methods $ .assoc original :option-test-payload custom
-                            assert= expected $ get
-                              lilac-parser.util/require-map $ parse-lilac |x $ optional+ rule
-                              , :value
+                            assert=
+                              Option :some $ Option :some payload
+                              get
+                                lilac-parser.util/require-map $ parse-lilac |x $ optional+ rule
+                                , :value
                             assert= expected $ get
                               lilac-parser.util/require-map $ parse-lilac |x $ or+ ([] rule)
                               , :value
@@ -1188,7 +1177,7 @@
                     , &unit
                   fn (message) (reset! *custom-methods original) (raise message)
               :tags $ #{} :parser-dispatch :unit
-            %{} 'TestEntry (:name |preserves-open-wrapper-metadata)
+            %{} 'TestEntry (:name |wrappers-require-value-and-rest)
               :code $ quote $ let
                   original $ deref *custom-methods
                   rule $ {} $ :parser-node :option-test-open-wrapper
@@ -1196,30 +1185,22 @@
                     hint-fn $ Fn (List Dynamic) Dynamic $ -> Dynamic
                     {} $ :ok? true
                   maker $ fn () rule
-                  component $ {} (:parser-node :component) (:fn maker) (:value-fn identity)
+                  component $ {} (:parser-node :component) (:name :probe) (:fn maker) (:value-fn identity)
                     :args $ []
-                  label $ {} (:parser-node :label) (:item rule)
-                  nil-field $ get
-                    {} $ :value nil
-                    , :value
+                  label $ {} (:parser-node :label) (:label |probe) (:item rule)
+                  run-error $ fn (target)
+                    try
+                      do (parse-lilac |x target) |unexpected-success
+                      fn (message) message
                 reset! *custom-methods $ .assoc original :option-test-open-wrapper custom
-                try
-                  do
-                    let
-                        optional-result $ lilac-parser.util/require-map $ parse-lilac |x (optional+ rule)
-                        component-result $ lilac-parser.util/require-map $ parse-lilac |x component
-                        label-result $ lilac-parser.util/require-map $ parse-lilac |x label
-                      assert= nil-field $ get optional-result :value
-                      assert= nil-field $ get optional-result :rest
-                      assert= nil-field $ get component-result :value
-                      assert= nil-field $ get component-result :rest
-                      assert= nil-field $ get component-result :label
-                      assert= nil-field $ get label-result :value
-                      assert= nil-field $ get label-result :rest
-                      assert= nil-field $ get label-result :label
-                    reset! *custom-methods original
-                    , &unit
-                  fn (message) (reset! *custom-methods original) (raise message)
+                let
+                    optional-error $ run-error $ optional+ rule
+                    component-error $ run-error component
+                    label-error $ run-error label
+                  reset! *custom-methods original
+                  assert= "|[lilac-parser] missing key :value" optional-error
+                  assert= "|[lilac-parser] missing key :value" component-error
+                  assert= "|[lilac-parser] missing key :value" label-error
               :tags $ #{} :parser-dispatch :unit
         'parse-many $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn parse-many (xs0 rule)
@@ -1243,9 +1224,7 @@
                           :value $ let
                               v $ map acc $ fn (x)
                                 hint-fn $ Fn (Map Dynamic Dynamic) (-> Dynamic)
-                                match (get x :value)
-                                  (:some present-value) present-value
-                                  (:none) nil
+                                lilac-parser.util/require-key x :value
                             match transform
                               (:some present-transform) (lilac-parser.util/apply-transform present-transform v)
                               (:none) v
@@ -1293,19 +1272,19 @@
               if
                 .unwrap-or (get result :ok?) false
                 {} (:ok? true)
-                  :value $ let
-                      v $ match (get result :value)
-                        (:some present-value) present-value
-                        (:none) nil
+                  :value $ Option :some $ let
+                      v $ lilac-parser.util/require-key result :value
                     match transform
                       (:some present-transform) (lilac-parser.util/apply-transform present-transform v)
                       (:none) v
-                  :rest $ match (get result :rest)
-                    (:some present-value) present-value
-                    (:none) nil
+                  :rest $ lilac-parser.util/require-key result :rest
                   :parser-node :optional
                   :result result
-                {} (:ok? true) (:value nil) (:result result) (:parser-node :optional) (:rest xs)
+                {} (:ok? true)
+                  :value $ Option :none
+                  :result result
+                  :parser-node :optional
+                  :rest xs
           :examples $ []
           :schema $ quote $ Fn (List Dynamic) lilac-parser.core/Rule (-> lilac-parser.core/ParseResult)
         'parse-or $ %{} 'CodeEntry (:doc |)
@@ -1329,9 +1308,7 @@
                         .unwrap-or (get result :ok?) false
                         {} (:ok? true)
                           :value $ let
-                              v $ match (get result :value)
-                                (:some present-value) present-value
-                                (:none) nil
+                              v $ lilac-parser.util/require-key result :value
                             match transform
                               (:some present-transform) (lilac-parser.util/apply-transform present-transform v)
                               (:none) v
@@ -1392,9 +1369,7 @@
                       :value $ let
                           v $ map acc $ fn (x)
                             hint-fn $ Fn (Map Dynamic Dynamic) (-> Dynamic)
-                            match (get x :value)
-                              (:some present-value) present-value
-                              (:none) nil
+                            lilac-parser.util/require-key x :value
                         match transform
                           (:some present-transform) (lilac-parser.util/apply-transform present-transform v)
                           (:none) v
@@ -1461,9 +1436,7 @@
                   if
                     .unwrap-or (get attempt :ok?) false
                     recur
-                      str acc $ replacer $ match (get attempt :value)
-                        (:some present-value) present-value
-                        (:none) nil
+                      str acc $ replacer $ lilac-parser.util/require-key attempt :value
                       append attempts attempt
                       lilac-parser.util/require-list $ .unwrap $ get attempt :rest
                       , rule replacer
@@ -1581,7 +1554,15 @@
                     join-string (lilac-parser.util/require-list xs) |
               fn (xs)
                 match
-                  parse-float $ join-string (lilac-parser.util/require-list xs) |
+                  parse-float $ let[] (sign digits fraction) (lilac-parser.util/require-list xs)
+                    let
+                        sign-text $ match sign
+                          (:some text) text
+                          (:none) |
+                        fraction-text $ match fraction
+                          (:some text) text
+                          (:none) |
+                      str sign-text digits fraction-text
                   (:ok number) number
                   (:err source)
                     raise $ str "|Invalid parsed number: " source
@@ -1605,7 +1586,9 @@
                 let
                     xs $ require-list xs
                     entries $ &list:nth xs 1
-                  pairs-map $ if (nil? entries) ([]) (require-list entries)
+                  pairs-map $ match entries
+                    (:some present-entries) (require-list present-entries)
+                    (:none) ([])
           :examples $ []
           :schema $ quote $ Fn (-> lilac-parser.core/Rule)
         'space-parser $ %{} 'CodeEntry (:doc |)
@@ -2187,6 +2170,15 @@
           :examples $ []
           :schema $ quote $ Fn Dynamic
             -> $ List Dynamic
+        'require-key $ %{} 'CodeEntry
+          :doc "|Value stored under key, which may itself be nil; raises with the key when the key is missing."
+          :code $ quote $ defn require-key (data key)
+            match (get data key)
+              (:some value) value
+              (:none)
+                raise $ str "|[lilac-parser] missing key " key
+          :examples $ []
+          :schema $ quote $ Fn Dynamic Tag (-> Dynamic)
         'require-list $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn require-list (value)
             match (data-view value)

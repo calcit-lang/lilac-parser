@@ -44,13 +44,15 @@ Lilac Parser 的规则和解析结果都是普通的 Tag 键 Map，不是 Struct
 | --- | --- |
 | `:ok?` | Bool |
 | `:parser-node` | 产生这个结果的规则种类 |
-| `:rest` | 剩余 token（List）；包装类规则在自定义结果不带 `:rest` 时会输出 nil |
-| `:value` | 成功时的值，经过 `:transform`；可以是 nil、false、0 等任意值 |
+| `:rest` | 剩余 token（List）；成功结果必须带，包装类规则遇到不带 `:rest` 的自定义结果会报错 |
+| `:value` | 成功时的值，经过 `:transform`；值本身可以是 nil、false、0 等任意值，但键必须存在，缺失时报 `[lilac-parser] missing key :value`。`optional+` 的值是 Option：匹配时为 `Option :some v`，未匹配时为 `Option :none` |
 | `:message` | 失败原因，`label` 失败时为 nil |
 | `:label` | `:label` / `:component` 的展示名 |
 | `:result` / `:results` / `:peek-result` / `:previous-results` | 子规则的结果，用于 GUI 展示 |
 
-不同规则输出的字段集合不同，有些字段会以 nil 值出现，这是 [option-boundaries.md](option-boundaries.md) 里记录的既有合同。
+不同规则输出的字段集合不同，见 [option-boundaries.md](option-boundaries.md)。
+
+**不兼容改动（calcit#2124）**：`optional+` 的 `:value` 从「匹配值或 nil」改为 Option；自定义规则的成功结果必须带 `:value` 和 `:rest`，不再把缺失当作 nil；`:component` 规则需要 `:name`（`defparser` 会自动生成），`:label` 规则需要 `:label`。
 
 用 `register-custom-rule!` 注册的规则可以返回任意值，所以 `parse-lilac` 的返回类型仍然是 Dynamic。需要按 Map 读取时用 `lilac-parser.util/require-map`，它会确认值是 Tag 键 Map。
 
