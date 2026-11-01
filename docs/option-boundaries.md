@@ -9,9 +9,9 @@
 | 位置 | 原合同及本轮处理 | 验收 |
 | --- | --- | --- |
 | `parse-is`、`parse-one-of`、`parse-other-than`、`parse-unicode-range`、`parse-optional`、`parse-many`、`parse-some`、`parse-combine`、`parse-or`、`parse-interleave` 的 `:transform` | 原规则 Map 允许省略或显式 nil；保留 Option 到消费时匹配，不把 None 无条件 unwrap，也不先擦回 nil | 十类规则的省略/显式 nil 对照；成功回调一次，失败不调用，false 返回及异常传播 |
-| 上述组合规则以及 `parse-component`、`parse-label`、`find-lilac-iter`、`replace-iter` 消费自定义结果的 `:value` | 注册回调的既有返回是开放 Dynamic；成功结果可以没有值，也可以有显式 nil、false、0、空字符串。仅在这些具名旧结果合同处保留 nil 输出，不新增通用 nil getter | 缺字段及显式 nil/false/0/空字符串通过 optional、or、label、combine、many、some、interleave、find 和 replace 回放；回调注册表在成功与失败后均恢复 |
-| `parse-component` 的 `:name`、`parse-label` 的 `:label` | 展示元数据可缺失；不让原能解析的规则仅因缺少标签而异常 | 开放包装结果测试核对缺失标签仍输出 nil |
-| `parse-component`、`parse-label`、`parse-optional` 的结果 `:rest` | 原包装器原样传播开放自定义结果，不能以其他迭代器要求 List 为由擅自改变该合同 | 自定义成功结果不带 rest 时，三种包装器仍输出 present nil |
+| 上述组合规则以及 `parse-component`、`parse-label`、`find-lilac-iter`、`replace-iter` 消费自定义结果的 `:value` | 成功结果必须带 `:value` 键（值可以是 nil、false、0、空字符串），缺失时报 `[lilac-parser] missing key :value`；`optional+` 的值是 Option | payload family 测试回放 nil/false/0/空字符串；`requires-custom-value`、`wrappers-require-value-and-rest` 核对缺失时的错误 |
+| `parse-component` 的 `:name`、`parse-label` 的 `:label` | 必须存在（`defparser`、`label+` 会生成）；`:name` 在 maker 校验之后才读取，原有错误顺序不变 | maker 校验顺序与 blackbox 测试使用带 `:name` 的规则 |
+| `parse-component`、`parse-label`、`parse-optional` 的结果 `:rest` | 成功结果必须带 `:rest`，缺失时报错 | `wrappers-require-value-and-rest` |
 | `comp-node` 最终显示 `:value` | 可视化允许展示直接自定义结果；不因缺少 payload 而崩溃。nil 仅保留在既有展示合同处 | 原有 parser 回放及前端构建；本地真实页面验证成功 S-expression、失败输入和 Replacer 尝试列表，未把这视为自定义结果穷举验收 |
 
 新增测试附在 `parse-lilac :tests`，继续使用已有 `parser-dispatch` tag 和 Calcit 正式 alpha.5 的统一 native/JS 运行器。
