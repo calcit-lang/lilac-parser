@@ -11,7 +11,17 @@ For JSON, use `parse-lilac` with the rules in the `lilac-parser.demo.json` names
 the current browser button does not select the JSON parser. Load EDN displays an
 existing parsing result rather than changing that parser.
 
-### 当前工具链：正式 Calcit 0.32.1
+### 当前候选：Calcit 0.34.1 与 CharSet
+
+模块配对正式 CLI / `@calcit/procs` **0.34.1**，依赖 Respo 0.18.0、Respo UI 0.12.0、Reel 0.8.0、Feather 0.5.1、Alerts 0.11.2。
+Alerts 与项目使用同版 Reel 和 UI，安装时运行 `caps --strict --ci` 校验完整依赖图。
+
+`one-of+` 和 `other-than+` 的候选收窄为 `lilac-parser.core/CharSet`，即 `defunion CharSet String $ quote (Set String)`：
+String 的每个字符是一个候选，Set 里放 String token。以前 Set 里可以放非字符串的值，传入其他类型只打印警告；
+现在这些写法在类型检查时报错。解析时由 `read-char-set` 从规则读回 CharSet，`char-set-includes?` 和 `char-set-text`
+用 `match` 分派，代替原来的 `string?` / `set?` 判断。
+
+### 0.32.1 迁移记录
 
 候选模块 **0.1.0** 配对正式 CLI / `@calcit/procs` **0.32.1**，消费者需升级完整依赖图并重新生成 JS。
 使用已发布 Alerts 0.11.0-alpha.4、Reel 0.7.0-alpha.5、Feather 0.5.0、Markdown 0.5.0-alpha.5、UI 0.9.0、Respo 0.17.1，传递 Router 0.9.0-alpha.4 / JS-FFI 0.2.9。
@@ -59,8 +69,8 @@ calcit query defs lilac-parser.demo.s-expr
 | Rule             | Example                                         | Description                                |
 | ---------------- | ----------------------------------------------- | ------------------------------------------ |
 | `is+`            | `(is+ "a")` or `(is+ "abc")`                    | matches a piece of string                  |
-| `one-of+`        | `(one-of+ "abc")` or `(one-of+ #{"a" "b" "c"})` | matches a character in one of candidates   |
-| `other-than+`    | `(other-than+ "abc")`                           | matches a character that is not listed     |
+| `one-of+`        | `(one-of+ "abc")` or `(one-of+ #{"a" "b" "c"})` | matches a token in a `CharSet` (String or `Set String`) |
+| `other-than+`    | `(other-than+ "abc")`                           | matches a token not in the `CharSet`       |
 | `optional+`      | `(optional+ (is+ "a"))`                         | matching or nothing                        |
 | `some+`          | `(some+ (is+ "a"))`                             | matches 0 or more items                    |
 | `many+`          | `(many+ (is+ "a"))`                             | matches 1 or more items                    |
@@ -185,7 +195,7 @@ MIT
 
 ### Development
 
-使用 Node.js 24、Yarn 4.18.0、Caps 0.1.1 与 Calcit 0.32.1：
+使用 Node.js 24、Yarn 4.18.0、Caps 0.1.1 与 Calcit 0.34.1：
 
 ```sh
 caps --strict --ci
