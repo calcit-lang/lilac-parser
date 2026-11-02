@@ -11,7 +11,7 @@ Lilac Parser 的规则和解析结果都是普通的 Tag 键 Map，不是 Struct
 
 ## 输入
 
-`parse-lilac`、`find-lilac`、`replace-lilac` 的第一个参数可以是 String 或 List。String 会被拆成单个字符的 List；传入 List 时元素原样使用，所以内部的 token 列表类型是 `List Dynamic`。`one-of+` 的候选可以是 Set，Set 里也可以放非字符串的值。
+`parse-lilac`、`find-lilac`、`replace-lilac` 的第一个参数可以是 String 或 List。String 会被拆成单个字符的 List；传入 List 时元素原样使用，所以内部的 token 列表类型是 `List Dynamic`。`one-of+` 和 `other-than+` 的候选是 `CharSet`（`String | Set String`），Set 里只能放 String。
 
 ## 规则
 
@@ -20,8 +20,8 @@ Lilac Parser 的规则和解析结果都是普通的 Tag 键 Map，不是 Struct
 | `:parser-node` | 构造函数 | 其他字段 |
 | --- | --- | --- |
 | `:is` | `is+ (x String)` | `:item` String，`:transform` |
-| `:one-of` | `one-of+ xs` | `:items` String 或 Set，`:transform` |
-| `:other-than` | `other-than+ xs` | `:items` String 或 Set，`:transform` |
+| `:one-of` | `one-of+ xs` | `:items` CharSet（String 或 `Set String`），`:transform` |
+| `:other-than` | `other-than+ xs` | `:items` CharSet（String 或 `Set String`），`:transform` |
 | `:optional` | `optional+ (item Rule)` | `:item`，`:transform` |
 | `:many` / `:some` | `many+` / `some+ (item Rule)` | `:item`，`:transform` |
 | `:or` / `:combine` | `or+` / `combine+ (xs List)` | `:items` 规则列表，`:transform` |

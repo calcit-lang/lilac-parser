@@ -544,6 +544,12 @@
           :examples $ []
           :schema $ quote $ Ref
             Map Tag $ Fn (List Dynamic) Dynamic $ -> Dynamic
+        'CharSet $ %{} 'CodeEntry
+          :doc "|Candidates of `one-of+` / `other-than+`: a String (each character is a candidate) or a Set of String tokens."
+          :code $ quote $ defunion CharSet String
+            quote $ Set String
+          :examples $ []
+          :schema $ quote UnionDef
         'ParseResult $ %{} 'CodeEntry
           :doc "|Schema alias for what a built-in rule returns: a Tag-keyed map with :ok?, :parser-node, :rest (remaining tokens) and, depending on the kind, :value, :message, :label, :result, :results, :peek-result or :previous-results. Fields may be present with nil; see docs/types.md."
           :code $ quote $ def ParseResult ({})
@@ -554,6 +560,30 @@
           :code $ quote $ def Rule ({})
           :examples $ []
           :schema $ quote $ Map Tag Dynamic
+        'char-set-includes? $ %{} 'CodeEntry
+          :doc "|Whether token `x` is one of the candidates in a CharSet."
+          :code $ quote $ defn char-set-includes? (items x)
+            match items
+              (String text) (includes? text x)
+              (Set xs) (includes? xs x)
+          :examples $ []
+          :schema $ quote $ Fn lilac-parser.core/CharSet Dynamic (-> Bool)
+          :tests $ [] $ %{} 'TestEntry (:name |string-and-set)
+            :code $ quote $ do
+              assert= true $ char-set-includes? |abc |b
+              assert= false $ char-set-includes? |abc |d
+              assert= true $ char-set-includes? (#{} |ab |c) |ab
+              assert= false $ char-set-includes? (#{} |ab |c) |a
+            :tags $ #{} :parser-dispatch :unit
+        'char-set-text $ %{} 'CodeEntry
+          :doc "|Candidates of a CharSet as one String, for error messages."
+          :code $ quote $ defn char-set-text (items)
+            match items
+              (String text) text
+              (Set xs)
+                join-string (.to-list xs) |
+          :examples $ []
+          :schema $ quote $ Fn lilac-parser.core/CharSet (-> String)
         'combine+ $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn combine+ (xs & args)
             let
@@ -674,12 +704,9 @@
                 transform $ either
                   .unwrap-or (first args) identity
                   , identity
-              when
-                not $ or (string? xs) (set? xs)
-                println "|Unexpected argument passed to one-of+ :" xs
               {} (:parser-node :one-of) (:items xs) (:transform transform)
           :examples $ []
-          :schema $ quote $ Fn Dynamic & Dynamic (-> lilac-parser.core/Rule)
+          :schema $ quote $ Fn lilac-parser.core/CharSet & Dynamic (-> lilac-parser.core/Rule)
         'optional+ $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn optional+ (x & args)
             let
@@ -707,12 +734,9 @@
                 transform $ either
                   .unwrap-or (first args) identity
                   , identity
-              when
-                not $ or (string? items) (set? items)
-                println "|Unexpected parameter passed to other-than+ :" items
               {} (:parser-node :other-than) (:items items) (:transform transform)
           :examples $ []
-          :schema $ quote $ Fn Dynamic & Dynamic (-> lilac-parser.core/Rule)
+          :schema $ quote $ Fn lilac-parser.core/CharSet & Dynamic (-> lilac-parser.core/Rule)
         'parse-combine $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn parse-combine (xs0 rule)
             let
@@ -1248,10 +1272,9 @@
                 {} (:ok? false) (:message "|unexpected EOF") (:parser-node :one-of) (:rest xs)
               (:some x0 xss)
                 let
-                    items $ .unwrap $ get rule :items
+                    items $ read-char-set rule
                     transform $ get rule :transform
-                  if
-                    if (string? items) (includes? items x0) (includes? items x0)
+                  if (char-set-includes? items x0)
                     {} (:ok? true)
                       :value $ match transform
                         (:some present-transform) (lilac-parser.util/apply-transform present-transform x0)
@@ -1259,12 +1282,7 @@
                       :rest xss
                       :parser-node :one-of
                     {} (:ok? false)
-                      :message $ str (to-lispy-string x0) "| is not in " $ to-lispy-string
-                        if (string? items) items $ join-string
-                          if (set? items)
-                            .to-list $ decode-map-as items $ quote (Set Dynamic)
-                            decode-map-as items $ quote $ List Dynamic
-                          , |
+                      :message $ str (to-lispy-string x0) "| is not in " $ to-lispy-string (char-set-text items)
                       :parser-node :one-of
                       :rest xs
           :examples $ []
@@ -1333,17 +1351,12 @@
                 {} (:ok? false) (:message "|Unexpected EOF") (:parser-node :other-than) (:rest xs)
               (:some x0 xss)
                 let
-                    items $ .unwrap $ get rule :items
+                    items $ read-char-set rule
                     transform $ get rule :transform
-                  if
-                    if (string? items) (includes? items x0) (includes? items x0)
+                  if (char-set-includes? items x0)
                     {} (:ok? false)
                       :message $ str (to-lispy-string x0) "| among "
-                        to-lispy-string $ if (string? items) items $ join-string
-                          if (set? items)
-                            .to-list $ decode-map-as items $ quote (Set Dynamic)
-                            decode-map-as items $ quote $ List Dynamic
-                          , |
+                        to-lispy-string $ char-set-text items
                         , "| is invalid"
                       :parser-node :other-than
                       :rest xs
@@ -1418,6 +1431,14 @@
                       :rest xs
           :examples $ []
           :schema $ quote $ Fn (List Dynamic) lilac-parser.core/Rule (-> lilac-parser.core/ParseResult)
+        'read-char-set $ %{} 'CodeEntry
+          :doc "|Reads the :items of a one-of / other-than rule back as a CharSet."
+          :code $ quote $ defn read-char-set (rule)
+            decode-map-as
+              .unwrap $ get rule :items
+              quote lilac-parser.core/CharSet
+          :examples $ []
+          :schema $ quote $ Fn lilac-parser.core/Rule (-> lilac-parser.core/CharSet)
         'register-custom-rule! $ %{} 'CodeEntry
           :doc "|Registers parser function f for rule kind kind. f receives the token list and the rule map; parse-lilac dispatches to it when :parser-node is kind and no built-in method matches."
           :code $ quote $ defn register-custom-rule! (kind f)
