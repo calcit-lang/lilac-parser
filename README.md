@@ -13,9 +13,8 @@ existing parsing result rather than changing that parser.
 
 ### 当前候选：Calcit 0.34.1 与 CharSet
 
-模块配对正式 CLI / `@calcit/procs` **0.34.1**，依赖 Respo 0.18.0、Respo UI 0.12.0、Reel 0.8.0、Feather 0.5.1、Alerts 0.11.1；
-未使用的 respo-markdown 依赖已删除。Alerts 0.11.1 仍请求 Reel 0.7.1 / UI 0.10.0，`caps --strict` 会拒绝这个图，
-需要 Alerts 发布 0.34 版本后再更新这里。
+模块配对正式 CLI / `@calcit/procs` **0.34.1**，依赖 Respo 0.18.0、Respo UI 0.12.0、Reel 0.8.0、Feather 0.5.1、Alerts 0.11.2。
+Alerts 与项目使用同版 Reel 和 UI，安装时运行 `caps --strict --ci` 校验完整依赖图。
 
 `one-of+` 和 `other-than+` 的候选收窄为 `lilac-parser.core/CharSet`，即 `defunion CharSet String $ quote (Set String)`：
 String 的每个字符是一个候选，Set 里放 String token。以前 Set 里可以放非字符串的值，传入其他类型只打印警告；
