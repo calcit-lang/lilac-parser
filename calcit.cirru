@@ -5,7 +5,7 @@
   :entries $ {}
     :default $ {} (:description |) (:init-fn 'lilac-parser.main/main!) (:mode :js) (:reload-fn 'lilac-parser.main/reload!) (:target :browser)
       :feature-policy $ {}
-      :modules $ [] |respo.calcit/ |respo-ui.calcit/ |respo-markdown.calcit/ |reel.calcit/ |alerts.calcit/ |respo-feather.calcit/
+      :modules $ [] |respo.calcit/ |respo-ui.calcit/ |reel.calcit/ |alerts.calcit/ |respo-feather.calcit/
       :type-slots $ {} $ :dispatch-op |lilac-parser.schema/Op
     :test $ {} (:description |) (:init-fn 'lilac-parser.test/main!) (:mode :native) (:reload-fn 'lilac-parser.test/reload!) (:target :native)
       :feature-policy $ {}
@@ -15,11 +15,11 @@
     'lilac-parser.comp.container $ %{} 'FileEntry
       :defs $ {}
         'ContainerState $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defstruct ContainerState (:code 'String) (:result 'Dynamic) (:gui? 'Bool)
+          :code $ quote $ defstruct ContainerState (:code String) (:result Dynamic) (:gui? Bool)
           :examples $ []
           :schema $ quote StructDef
         'NodeState $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defstruct NodeState (:folded? 'Bool)
+          :code $ quote $ defstruct NodeState (:folded? Bool)
           :examples $ []
           :schema $ quote StructDef
         'child-view $ %{} 'CodeEntry
@@ -147,7 +147,9 @@
                       :disabled true
                       :spellcheck false
                       :value $ format-cirru-edn $ :result state
-                when dev? $ comp-reel (>> states :reel) (reel-view/view-data reel) ({})
+                if dev?
+                  Option :some $ comp-reel (>> states :reel) (reel-view/view-data reel) ({})
+                  Option :none
                 .render load-plugin
           :examples $ []
           :schema $ quote $ Fn (reel.typed/State lilac-parser.schema/Op lilac-parser.schema/Store) (-> respo.schema/Component) (:features :js-ffi)
@@ -219,30 +221,34 @@
                       match (get node :parser-node)
                         (:some kind) (&= :component kind)
                         (:none) false
-                    span $ {} (:class-name css-label)
+                    Option :some $ span $ {} (:class-name css-label)
                       :inner-text $ str $ .unwrap-or (get node :label) |
                       :style $ {} $ :background-color (hsl 200 90 60)
-                  if-not
-                    .unwrap-or (get node :ok?) false
-                    span $ {} (:class-name css-label)
+                    Option :none
+                  if
+                    not $ .unwrap-or (get node :ok?) false
+                    Option :some $ span $ {} (:class-name css-label)
                       :inner-text $ str $ .unwrap-or (get node :message) |
                       :style $ {} $ :background-color (hsl 0 80 60)
+                    Option :none
                   if
                     and
                       .unwrap-or (get node :ok?) false
                       match (get node :parser-node)
                         (:some kind) (&= :is kind)
                         (:none) false
-                    span $ {} (:class-name css-label)
+                    Option :some $ span $ {} (:class-name css-label)
                       :inner-text $ display-value $ get node :value
                       :style $ {} $ :background-color (hsl 200 80 70)
+                    Option :none
                   if
                     .unwrap-or (get node :ok?) false
-                    span $ {} (:class-name css-label)
+                    Option :some $ span $ {} (:class-name css-label)
                       :inner-text $ display-lispy $ get node :value
                       :style $ {}
                         :background-color $ hsl 200 80 80
                         :font-size 10
+                    Option :none
                   span $ {} (:class-name css-label)
                     :inner-text $ join-string
                       take
@@ -255,13 +261,14 @@
                       :min-height 16
                 if
                   and has-children? $ not $ :folded? state
-                  div ({})
+                  Option :some $ div ({})
                     list->
                       {} $ :style $ {} (:padding-left 16) (:margin-top 8)
                       -> children $ map-indexed $ fn (idx child)
                         [] idx $ comp-node (>> states idx) (read-node child)
                     child-view states node :result
                     child-view states node :peek-result
+                  Option :none
           :examples $ []
           :schema $ quote $ Fn (Map Dynamic Dynamic) (Map Tag Dynamic) (-> respo.schema/Component) (:features :js-ffi)
           :tests $ []
@@ -455,7 +462,7 @@
         'read-node $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn read-node (value)
             match
-              try-decode-map-as value $ :: 'Map 'Tag 'Dynamic
+              try-decode-map-as value $ quote $ Map Tag Dynamic
               (:ok node) node
               (:err message) (raise message)
           :examples $ []
@@ -516,7 +523,7 @@
     'lilac-parser.config $ %{} 'FileEntry
       :defs $ {}
         'Site $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defstruct Site (:storage-key 'String)
+          :code $ quote $ defstruct Site (:storage-key String)
           :examples $ []
           :schema $ quote StructDef
         'dev? $ %{} 'CodeEntry (:doc |)
@@ -783,7 +790,7 @@
                       match (get rule :args)
                         (:some raw-args)
                           match
-                            try-decode-map-as raw-args $ :: 'List 'Dynamic
+                            try-decode-map-as raw-args $ quote $ List Dynamic
                             (:ok args) (apply maker args)
                             (:err message) (raise message)
                         (:none)
@@ -795,20 +802,19 @@
                 blackbox? $ match (get rule :blackbox?)
                   (:some flag) (if flag true false)
                   (:none) false
-                result-node $ if blackbox? nil result
                 rule-name $ lilac-parser.util/require-key rule :name
-              if
-                .unwrap-or (get result :ok?) false
-                {} (:ok? true)
-                  :value $ let
-                      v $ lilac-parser.util/require-key result :value
-                    if (fn? value-fn) (value-fn v)
-                      raise "|component rule expects :value-fn to be a function"
-                  :rest $ lilac-parser.util/require-key result :rest
-                  :parser-node :component
-                  :label rule-name
-                  :result result-node
-                {} (:ok? false) (:message "|failed branch") (:parser-node :component) (:label rule-name) (:result result-node) (:rest xs)
+                node $ if
+                  .unwrap-or (get result :ok?) false
+                  {} (:ok? true)
+                    :value $ let
+                        v $ lilac-parser.util/require-key result :value
+                      if (fn? value-fn) (value-fn v)
+                        raise "|component rule expects :value-fn to be a function"
+                    :rest $ lilac-parser.util/require-key result :rest
+                    :parser-node :component
+                    :label rule-name
+                  {} (:ok? false) (:message "|failed branch") (:parser-node :component) (:label rule-name) (:rest xs)
+              if blackbox? (assoc node :result nil) (assoc node :result result)
           :examples $ []
           :schema $ quote $ Fn (List Dynamic) lilac-parser.core/Rule (-> lilac-parser.core/ParseResult)
           :tests $ []
@@ -956,7 +962,7 @@
             assert "|expects content in list or string" $ or (list? x) (string? x)
             if (map? rule)
               match
-                try-decode-map-as rule $ :: 'Map 'Tag 'Dynamic
+                try-decode-map-as rule $ quote $ Map Tag Dynamic
                 (:ok tag-rule)
                   let
                       node-option $ get tag-rule :parser-node
@@ -1256,8 +1262,8 @@
                       :message $ str (to-lispy-string x0) "| is not in " $ to-lispy-string
                         if (string? items) items $ join-string
                           if (set? items)
-                            .to-list $ decode-map-as items $ :: 'Set 'Dynamic
-                            decode-map-as items $ :: 'List 'Dynamic
+                            .to-list $ decode-map-as items $ quote (Set Dynamic)
+                            decode-map-as items $ quote $ List Dynamic
                           , |
                       :parser-node :one-of
                       :rest xs
@@ -1335,8 +1341,8 @@
                       :message $ str (to-lispy-string x0) "| among "
                         to-lispy-string $ if (string? items) items $ join-string
                           if (set? items)
-                            .to-list $ decode-map-as items $ :: 'Set 'Dynamic
-                            decode-map-as items $ :: 'List 'Dynamic
+                            .to-list $ decode-map-as items $ quote (Set Dynamic)
+                            decode-map-as items $ quote $ List Dynamic
                           , |
                         , "| is invalid"
                       :parser-node :other-than
@@ -1822,22 +1828,22 @@
           :code $ quote $ defenum Op
             :states
               quote $ List Dynamic
-              , 'Dynamic
-            :content 'String
-            :hydrate-storage 'lilac-parser.schema/Store
+              , Dynamic
+            :content String
+            :hydrate-storage lilac-parser.schema/Store
             :reel/toggle
-            :reel/recall 'Number
+            :reel/recall Number
             :reel/run
             :reel/step
             :reel/merge
             :reel/reset
-            :reel/remove 'Number
+            :reel/remove Number
           :examples $ []
           :schema $ quote EnumDef
         'Store $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstruct Store
             :states $ quote $ Map Dynamic Dynamic
-            :content 'String
+            :content String
           :examples $ []
           :schema $ quote StructDef
         'decode-op $ %{} 'CodeEntry (:doc |)
@@ -1845,7 +1851,7 @@
             match raw
               (:states cursor value)
                 match
-                  try-decode-map-as cursor $ :: 'List 'Dynamic
+                  try-decode-map-as cursor $ quote $ List Dynamic
                   (:ok path)
                     Result :ok $ Op :states path value
                   (:err message) (Result :err message)
@@ -2131,7 +2137,7 @@
         'checked-state-tree $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn checked-state-tree (raw)
             match
-              try-decode-map-as raw $ :: 'Map 'Dynamic 'Dynamic
+              try-decode-map-as raw $ quote $ Map Dynamic Dynamic
               (:ok states) states
               (:err message) (raise message)
           :examples $ []
@@ -2191,7 +2197,7 @@
           :doc "|Checks that value is a Tag-keyed map and returns it; raises \"parser expects a map\" otherwise."
           :code $ quote $ defn require-map (value)
             match
-              try-decode-map-as value $ :: 'Map 'Tag 'Dynamic
+              try-decode-map-as value $ quote $ Map Tag Dynamic
               (:ok tag-map) tag-map
               (:err _message) (raise "|parser expects a map")
           :examples $ []
