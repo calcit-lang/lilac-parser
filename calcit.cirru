@@ -409,26 +409,38 @@
                 raise "|decode-map-as failed at $: expected string, got nil"
           :examples $ []
           :schema $ quote $ Fn Dynamic (-> String)
-          :tests $ [] $ %{} 'TestEntry (:name |rejects-missing-and-invalid-event-values)
-            :code $ quote $ do
-              assert= | $ input-text $ {} (:value |)
-              assert= |text $ input-text $ {} (:value |text)
-              assert= "|decode-map-as failed at $: expected string, got nil" $ try
-                input-text $ {}
-                fn (message) message
-              assert= "|decode-map-as failed at $: expected string, got nil" $ try
-                input-text $ {} $ :value nil
-                fn (message) message
-              assert= "|decode-map-as failed at $: expected string, got bool" $ try
-                input-text $ {} $ :value false
-                fn (message) message
-              assert= "|decode-map-as failed at $: expected string, got number" $ try
-                input-text $ {} $ :value 0
-                fn (message) message
-              assert= "|parser expects a map" $ try (input-text nil)
-                fn (message) message
-              , &unit
-            :tags $ #{} :parser-dispatch :unit
+          :tests $ []
+            %{} 'TestEntry (:name |rejects-missing-and-invalid-event-values)
+              :code $ quote $ do
+                assert= | $ input-text $ {} (:value |)
+                assert= |text $ input-text $ {} (:value |text)
+                assert= "|decode-map-as failed at $: expected string, got nil" $ try
+                  input-text $ {}
+                  fn (message) message
+                assert= "|decode-map-as failed at $: expected string, got nil" $ try
+                  input-text $ {} $ :value nil
+                  fn (message) message
+                assert= "|decode-map-as failed at $: expected string, got bool" $ try
+                  input-text $ {} $ :value false
+                  fn (message) message
+                assert= "|decode-map-as failed at $: expected string, got number" $ try
+                  input-text $ {} $ :value 0
+                  fn (message) message
+                assert= "|parser expects a map" $ try (input-text nil)
+                  fn (message) message
+                , &unit
+              :tags $ #{} :parser-dispatch :unit
+            %{} 'TestEntry (:name |reads-respo-event-text)
+              :code $ quote $ let
+                  check $ fn ()
+                    hint-fn $ Fn (-> Unit) (:features :js-ffi)
+                    let
+                        native $ new js/Event |input
+                      js/Object.defineProperty native |target $ js-object $ :value
+                        js-object (:value "|中文事件🐈") (:checked false)
+                      assert= "|中文事件🐈" $ input-text $ js/Reflect.apply respo.util.format/event->edn nil (js-array native)
+                check
+              :tags $ #{} :js-host :parser-gui :unit
         'read-container-state $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn read-container-state (value-option)
             match value-option
