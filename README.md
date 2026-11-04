@@ -17,7 +17,7 @@ existing parsing result rather than changing that parser.
 
 解析算法与既有 CharSet union 保持，七处 GUI 回调采用真实 RespoEvent。输入 helper 在名义事件边界直接读声明字段，也保留原受检 Map 输入与精确错误，原附带测试保持。开发 Reel 直接接收 typed State；三处间距改为 space-x，根渲染使用 with-memo-frame，HUD 保持。原 unresolved 上限从 **91 收紧至 88**，共享 runner 与 CLI 同步 0.34.2，不放宽门禁或增加校验脚本。
 
-本地通过 359 个全定义、完整 strict、原 native/JS 解析入口、共享 parser-dispatch native/JS 各17项及 parser-gui JS两项（无排除）、不可变安装和构建。实际隔离 Chrome 验证正常/失败 S-expression、GUI切换、Load EDN 合成节点、折叠/展开、Replacer与刷新。结果以精确 PR 的原 Linux CI 和评审为准，不把这些测试扩展为任意自定义 payload 或所有消费者验收。
+本地通过 359 个全定义、完整 strict、原 native/JS 解析入口、共享 parser-dispatch native/JS 各17项及 parser-gui JS三项（保留原两项，新增真实 RespoEvent 输入分支，无排除）、不可变安装和构建。实际隔离 Chrome 验证正常/失败 S-expression、GUI切换、Load EDN 合成节点、折叠/展开、Replacer与刷新。结果以精确 PR 的原 Linux CI 和评审为准，不把这些测试扩展为任意自定义 payload 或所有消费者验收。
 
 `one-of+` 和 `other-than+` 的候选收窄为 `lilac-parser.core/CharSet`，即 `defunion CharSet String $ quote (Set String)`：
 String 的每个字符是一个候选，Set 里放 String token。以前 Set 里可以放非字符串的值，传入其他类型只打印警告；
