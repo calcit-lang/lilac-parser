@@ -60,7 +60,7 @@
                     :style $ {} $ :padding 8
                   button $ {} (:class-name css/button) (:inner-text |Parse)
                     :on-click $ fn (e d!)
-                      hint-fn $ Fn (Map Tag Dynamic)
+                      hint-fn $ Fn respo.schema/RespoEvent
                         Fn lilac-parser.schema/Op $ -> Unit
                         -> Unit
                       let
@@ -68,20 +68,20 @@
                             split (:code state) |
                             s-expr-parser+
                         d! $ lilac-parser.schema/Op :states cursor $ struct-with state (:result result)
-                  =< 16 nil
+                  space-x 16
                   span $ {} (:inner-text |GUI) (:class-name css-gui-toggler)
                     :style $ {} $ :color
                       if (:gui? state) (hsl 200 80 40) (hsl 200 80 80)
                     :on-click $ fn (e d!)
-                      hint-fn $ Fn (Map Tag Dynamic)
+                      hint-fn $ Fn respo.schema/RespoEvent
                         Fn lilac-parser.schema/Op $ -> Unit
                         -> Unit
                       d! $ lilac-parser.schema/Op :states cursor $ struct-with state
                         :gui? $ not $ :gui? state
-                  =< 16 nil
+                  space-x 16
                   a $ {} (:inner-text "|Load EDN") (:class-name css/link)
                     :on-click $ fn (e d!)
-                      hint-fn $ Fn (Map Tag Dynamic)
+                      hint-fn $ Fn respo.schema/RespoEvent
                         Fn lilac-parser.schema/Op $ -> Unit
                         -> Unit
                       .show load-plugin d! $ fn (text)
@@ -92,10 +92,10 @@
                           d! $ lilac-parser.schema/Op :states cursor $ struct-with state (:result snapshot)
                         , &unit
                       , &unit
-                  =< 16 nil
+                  space-x 16
                   a $ {} (:inner-text |Replacer) (:class-name css/link)
                     :on-click $ fn (e d!)
-                      hint-fn $ Fn (Map Tag Dynamic)
+                      hint-fn $ Fn respo.schema/RespoEvent
                         Fn lilac-parser.schema/Op $ -> Unit
                         -> Unit
                       let
@@ -118,7 +118,7 @@
                     :class-name $ str-spaced css/textarea css/font-code
                     :style $ {} $ :width 300
                     :on-input $ fn (e d!)
-                      hint-fn $ Fn (Map Tag Dynamic)
+                      hint-fn $ Fn respo.schema/RespoEvent
                         Fn lilac-parser.schema/Op $ -> Unit
                         -> Unit
                       d! $ lilac-parser.schema/Op :states cursor $ struct-with state
@@ -148,7 +148,7 @@
                       :spellcheck false
                       :value $ format-cirru-edn $ :result state
                 if dev?
-                  Option :some $ comp-reel (>> states :reel) (reel-view/view-data reel) ({})
+                  Option :some $ comp-typed-reel (>> states :reel) reel $ {}
                   Option :none
                 .render load-plugin
           :examples $ []
@@ -187,7 +187,7 @@
                         :margin 8
                         :cursor :pointer
                       fn (e d!)
-                        hint-fn $ Fn (Map Tag Dynamic)
+                        hint-fn $ Fn respo.schema/RespoEvent
                           Fn lilac-parser.schema/Op $ -> Unit
                           -> Unit
                         d! $ lilac-parser.schema/Op :states
@@ -198,7 +198,11 @@
                         :color $ hsl 200 80 90
                         :margin 8
                         :cursor :pointer
-                      fn (e d!) &unit
+                      fn (e d!)
+                        hint-fn $ Fn respo.schema/RespoEvent
+                          Fn lilac-parser.schema/Op $ -> Unit
+                          -> Unit
+                        , &unit
                   if
                     .unwrap-or (get node :ok?) false
                     span $ {}
@@ -393,7 +397,10 @@
         'input-text $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn input-text (event)
             match
-              get (lilac-parser.util/require-map event) :value
+              if
+                and (struct? event) (&struct:matches? event respo.schema/RespoEvent)
+                Option :some $ :value event
+                get (lilac-parser.util/require-map event) :value
               (:some value)
                 match (try-decode-map-as value 'String)
                   (:ok text) text
@@ -509,9 +516,8 @@
           :require (respo-ui.core :as ui)
             respo-ui.core :refer $ hsl
             respo.core :refer $ defcomp >> list-> div button textarea span a
-            respo.comp.space :refer $ =<
-            reel.comp.reel :refer $ comp-reel
-            reel.typed-compat :as reel-view
+            respo.comp.space :refer $ space-x
+            reel.comp.reel :refer $ comp-typed-reel
             lilac-parser.config :refer $ dev?
             lilac-parser.core :refer $ parse-lilac replace-lilac find-lilac
             lilac-parser.util :refer $ require-list
@@ -1788,7 +1794,7 @@
             :features :js-ffi
         'render-app! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn render-app! ()
-            render! (mount-target) (comp-container @*reel) dispatch!
+            with-memo-frame $ fn () $ render! (mount-target) (comp-container @*reel) dispatch!
           :examples $ []
           :schema $ quote $ Fn (-> Unit) (:features :js-ffi)
         'restart-persistence! $ %{} 'CodeEntry (:doc |)
@@ -1812,6 +1818,7 @@
             lilac-parser.config :as config
             |./calcit.build-errors :default build-errors
             |bottom-tip :default hud!
+            respo.memo :refer $ with-memo-frame
     'lilac-parser.preset $ %{} 'FileEntry
       :defs $ {}
         'lilac-alphabet $ %{} 'CodeEntry (:doc |)
