@@ -11,10 +11,13 @@ For JSON, use `parse-lilac` with the rules in the `lilac-parser.demo.json` names
 the current browser button does not select the JSON parser. Load EDN displays an
 existing parsing result rather than changing that parser.
 
-### 当前候选：Calcit 0.34.1 与 CharSet
+### 当前候选：Calcit 0.34.2 与现代 Respo
 
-模块配对正式 CLI / `@calcit/procs` **0.34.1**，依赖 Respo 0.18.0、Respo UI 0.12.0、Reel 0.8.0、Feather 0.5.1、Alerts 0.11.2。
-Alerts 与项目使用同版 Reel 和 UI，安装时运行 `caps --strict --ci` 校验完整依赖图。
+模块配对正式 CLI / `@calcit/procs` **0.34.2**，同步正式 Respo **0.19.2**、UI **0.14.1**、Reel **0.9.0**、Feather **0.6.0**、Alerts **0.12.0**，传递 Router **0.11.2** 与 JS-FFI **0.2.10**。消费者需整图升级、重新安装并生成 JS，不能与旧 Respo 0.18 混装。本候选源码版本仍为未发版的 **0.1.0**；本 PR 不发布 tag 或部署业务应用。
+
+解析算法与既有 CharSet union 保持，七处 GUI 回调采用真实 RespoEvent。输入 helper 在名义事件边界直接读声明字段，也保留原受检 Map 输入与精确错误，原附带测试保持。开发 Reel 直接接收 typed State；三处间距改为 space-x，根渲染使用 with-memo-frame，HUD 保持。原 unresolved 上限从 **91 收紧至 88**，共享 runner 与 CLI 同步 0.34.2，不放宽门禁或增加校验脚本。
+
+本地通过 359 个全定义、完整 strict、原 native/JS 解析入口、共享 parser-dispatch native/JS 各17项及 parser-gui JS两项（无排除）、不可变安装和构建。实际隔离 Chrome 验证正常/失败 S-expression、GUI切换、Load EDN 合成节点、折叠/展开、Replacer与刷新。结果以精确 PR 的原 Linux CI 和评审为准，不把这些测试扩展为任意自定义 payload 或所有消费者验收。
 
 `one-of+` 和 `other-than+` 的候选收窄为 `lilac-parser.core/CharSet`，即 `defunion CharSet String $ quote (Set String)`：
 String 的每个字符是一个候选，Set 里放 String token。以前 Set 里可以放非字符串的值，传入其他类型只打印警告；
@@ -29,7 +32,7 @@ String 的每个字符是一个候选，Set 里放 String token。以前 Set 里
 候选尚未发布，本 PR 不合并、发版或生产部署。旧 CLI 消费者须保留其原配对 tag。
 
 以最新 main 的规则/结果类型收窄为基础，通过官方 formatter 迁移 23 处旧类型表示；保留 `Rule`、`ParseResult`、字段检查和非宿主函数移除豁免的改进。
-原 unresolved 上限 **112** 保持，不放宽类型门禁、不增加强转或编译器改写规则。
+当时的 unresolved 上限 **112**，当前门禁见上节，不据此放宽，不放宽类型门禁、不增加强转或编译器改写规则。
 五处遗留双参数 dispatch 改为单个 `Op :states`：Parse、GUI 切换、Replacer、编辑输入和树节点折叠；补齐真实回调合同并检查节点 cursor。
 这些操作此前会在点击时发生参数数量错误。解析算法、当前 main 的缺失/nil、自定义 payload、转换调用次数、错误传播与 `hud!` 保持。
 
@@ -195,7 +198,7 @@ MIT
 
 ### Development
 
-使用 Node.js 24、Yarn 4.18.0、Caps 0.1.1 与 Calcit 0.34.1：
+使用 Node.js 24、Yarn 4.18.0、Caps 0.1.1 与 Calcit 0.34.2：
 
 ```sh
 caps --strict --ci
@@ -216,7 +219,7 @@ yarn vite build --base=./
 现有 parser-dispatch 合同由官方同版共享 runner 在 native/JS 回放，parser-gui 仅在 JS 回放。
 不复制 runner、不新增兼容开关，零匹配或排除不算运行成功；GUI 原 SSR 回放不替代浏览器交互验收。
 
-原 unresolved 增长门禁保留112上限；新依赖解析等待60分钟，无单包豁免。Actions 使用精确正式 tag，维护者接受 tag 可移动风险。
+unresolved 增长门禁收紧为88上限；新依赖解析等待60分钟，无单包豁免。Actions 使用精确正式 tag，维护者接受 tag 可移动风险。
 源码只维护 `calcit.cirru` / `deps.cirru`，生成的 `js-out/` 不提交；不加 concurrently、验证脚本或基线。
 
 CI 构建原 COS CDN 路径，使用 action 自身 verify，PR 预览沿用独立 number/run/attempt 前缀。原生产前缀和服务器目录保持，不把前端迁移扩展到后端。
