@@ -191,7 +191,7 @@
                           Fn lilac-parser.schema/Op $ -> Unit
                           -> Unit
                         d! $ lilac-parser.schema/Op :states
-                          require-list $ .unwrap cursor-option
+                          decode-map-as (.unwrap cursor-option) (List respo.schema/CoordKey)
                           struct-with state $ :folded? $ not (:folded? state)
                     comp-icon :minus
                       {} (:font-size 14)
@@ -481,7 +481,7 @@
         'read-node $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn read-node (value)
             match
-              try-decode-map-as value $ quote $ Map Tag Dynamic
+              try-decode-map-as value $ Map Tag Dynamic
               (:ok node) node
               (:err message) (raise message)
           :examples $ []
@@ -564,8 +564,7 @@
             Map Tag $ Fn (List Dynamic) Dynamic $ -> Dynamic
         'CharSet $ %{} 'CodeEntry
           :doc "|Candidates of `one-of+` / `other-than+`: a String (each character is a candidate) or a Set of String tokens."
-          :code $ quote $ defunion CharSet String
-            quote $ Set String
+          :code $ quote $ defunion CharSet String (Set String)
           :examples $ []
           :schema $ quote UnionDef
         'ParseResult $ %{} 'CodeEntry
@@ -762,7 +761,7 @@
                 transform $ get rule :transform
               loop
                   acc $ assert-type ([])
-                    quote $ List $ Map Dynamic Dynamic
+                    List $ Map Dynamic Dynamic
                   xs xs0
                   ys items
                 cond
@@ -832,7 +831,7 @@
                       match (get rule :args)
                         (:some raw-args)
                           match
-                            try-decode-map-as raw-args $ quote $ List Dynamic
+                            try-decode-map-as raw-args $ List Dynamic
                             (:ok args) (apply maker args)
                             (:err message) (raise message)
                         (:none)
@@ -919,7 +918,7 @@
                 transform $ get rule :transform
               loop
                   acc $ assert-type ([])
-                    quote $ List $ Map Dynamic Dynamic
+                    List $ Map Dynamic Dynamic
                   xs xs0
                   x x0
                   y y0
@@ -1004,7 +1003,7 @@
             assert "|expects content in list or string" $ or (list? x) (string? x)
             if (map? rule)
               match
-                try-decode-map-as rule $ quote $ Map Tag Dynamic
+                try-decode-map-as rule $ Map Tag Dynamic
                 (:ok tag-rule)
                   let
                       node-option $ get tag-rule :parser-node
@@ -1257,7 +1256,7 @@
                 transform $ get rule :transform
               loop
                   acc $ assert-type ([])
-                    quote $ List $ Map Dynamic Dynamic
+                    List $ Map Dynamic Dynamic
                   xs xs0
                 let
                     result $ parse-lilac xs item
@@ -1393,7 +1392,7 @@
                 transform $ get rule :transform
               loop
                   acc $ assert-type ([])
-                    quote $ List $ Map Dynamic Dynamic
+                    List $ Map Dynamic Dynamic
                   xs xs0
                 let
                     result $ parse-lilac xs item
@@ -1733,7 +1732,7 @@
                   (:err message)
                     do (eprintln "|Invalid operation:" message) @*reel
           :examples $ []
-          :schema $ quote $ Fn Enum
+          :schema $ quote $ Fn AnyEnum
             -> $ reel.typed/State lilac-parser.schema/Op lilac-parser.schema/Store
             :features :js-ffi
         'dispatch! $ %{} 'CodeEntry (:doc |)
@@ -1754,7 +1753,7 @@
               hint-fn $ Fn (reel.typed/State lilac-parser.schema/Op lilac-parser.schema/Store) (reel.typed/State lilac-parser.schema/Op lilac-parser.schema/Store) (-> Unit) (:features :js-ffi)
               render-app!
             listen-devtools! |k $ fn (op)
-              hint-fn $ Fn Enum $ -> Unit
+              hint-fn $ Fn AnyEnum $ -> Unit
               reset! *reel $ apply-op op
               , &unit
             js-ffi.browser/add-event-listener! |beforeunload $ fn (event)
@@ -1866,9 +1865,7 @@
       :defs $ {}
         'Op $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defenum Op
-            :states
-              quote $ List Dynamic
-              , Dynamic
+            :states (List respo.schema/CoordKey) Dynamic
             :content String
             :hydrate-storage lilac-parser.schema/Store
             :reel/toggle
@@ -1882,7 +1879,7 @@
           :schema $ quote EnumDef
         'Store $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstruct Store
-            :states $ quote $ Map Dynamic Dynamic
+            :states $ Map Dynamic Dynamic
             :content String
           :examples $ []
           :schema $ quote StructDef
@@ -1891,7 +1888,7 @@
             match raw
               (:states cursor value)
                 match
-                  try-decode-map-as cursor $ quote $ List Dynamic
+                  try-decode-map-as cursor $ List respo.schema/CoordKey
                   (:ok path)
                     Result :ok $ Op :states path value
                   (:err message) (Result :err message)
@@ -1911,7 +1908,7 @@
                     (:err message) (Result :err message)
               _ $ Result :err "|unknown application operation"
           :examples $ []
-          :schema $ quote $ Fn Enum
+          :schema $ quote $ Fn AnyEnum
             -> $ Result lilac-parser.schema/Op String
         'store $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def store
@@ -2177,7 +2174,7 @@
         'checked-state-tree $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn checked-state-tree (raw)
             match
-              try-decode-map-as raw $ quote $ Map Dynamic Dynamic
+              try-decode-map-as raw $ Map Dynamic Dynamic
               (:ok states) states
               (:err message) (raise message)
           :examples $ []
@@ -2237,7 +2234,7 @@
           :doc "|Checks that value is a Tag-keyed map and returns it; raises \"parser expects a map\" otherwise."
           :code $ quote $ defn require-map (value)
             match
-              try-decode-map-as value $ quote $ Map Tag Dynamic
+              try-decode-map-as value $ Map Tag Dynamic
               (:ok tag-map) tag-map
               (:err _message) (raise "|parser expects a map")
           :examples $ []

@@ -11,11 +11,11 @@ For JSON, use `parse-lilac` with the rules in the `lilac-parser.demo.json` names
 the current browser button does not select the JSON parser. Load EDN displays an
 existing parsing result rather than changing that parser.
 
-### 当前候选：Calcit 0.34.2 与现代 Respo
+### 当前候选：Calcit 0.35.1 与现代 Respo
 
-模块配对正式 CLI / `@calcit/procs` **0.34.2**，同步正式 Respo **0.19.2**、UI **0.14.1**、Reel **0.9.0**、Feather **0.6.0**、Alerts **0.12.0**，传递 Router **0.11.2** 与 JS-FFI **0.2.10**。消费者需整图升级、重新安装并生成 JS，不能与旧 Respo 0.18 混装。本候选源码版本仍为未发版的 **0.1.0**；本 PR 不发布 tag 或部署业务应用。
+模块配对正式 CLI / `@calcit/procs` **0.35.1**，同步正式 Respo **0.19.4**、UI **0.15.1**、Reel **0.9.2**、Feather **0.6.2**、Alerts **0.13.1**，传递 Router **0.12.1** 与 JS-FFI **0.2.13**。消费者需整图升级、重新安装并生成 JS，不能与旧 Respo 0.18 混装。本候选源码版本仍为未发版的 **0.1.0**；本 PR 不发布 tag 或部署业务应用。
 
-解析算法与既有 CharSet union 保持，七处 GUI 回调采用真实 RespoEvent。输入 helper 在名义事件边界直接读声明字段，也保留原受检 Map 输入与精确错误，原附带测试保持。开发 Reel 直接接收 typed State；三处间距改为 space-x，根渲染使用 with-memo-frame，HUD 保持。原 unresolved 上限从 **91 收紧至 88**，共享 runner 与 CLI 同步 0.34.2，不放宽门禁或增加校验脚本。
+GUI 游标使用 Respo 的 `CoordKey`，开放派发使用 `AnyEnum`。解析算法与既有 CharSet union 保持，七处 GUI 回调采用真实 RespoEvent。输入 helper 在名义事件边界直接读声明字段，也保留原受检 Map 输入与精确错误，原附带测试保持。开发 Reel 直接接收 typed State；三处间距改为 space-x，根渲染使用 with-memo-frame，HUD 保持。原 unresolved 上限从 **91 收紧至 88**，共享 runner 与 CLI 同步 0.35.1，不放宽门禁或增加校验脚本。
 
 本地通过 359 个全定义、完整 strict、原 native/JS 解析入口、共享 parser-dispatch native/JS 各17项及 parser-gui JS三项（保留原两项，新增真实 RespoEvent 输入分支，无排除）、不可变安装和构建。实际隔离 Chrome 验证正常/失败 S-expression、GUI切换、Load EDN 合成节点、折叠/展开、Replacer与刷新。结果以精确 PR 的原 Linux CI 和评审为准，不把这些测试扩展为任意自定义 payload 或所有消费者验收。
 
@@ -198,7 +198,7 @@ MIT
 
 ### Development
 
-使用 Node.js 24、Yarn 4.18.0、Caps 0.1.1 与 Calcit 0.34.2：
+使用 Node.js 24、Yarn 4.18.0、Caps 0.1.1 与 Calcit 0.35.1：
 
 ```sh
 caps --strict --ci
