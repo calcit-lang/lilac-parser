@@ -11,7 +11,13 @@ For JSON, use `parse-lilac` with the rules in the `lilac-parser.demo.json` names
 the current browser button does not select the JSON parser. Load EDN displays an
 existing parsing result rather than changing that parser.
 
-### 当前候选：Calcit 0.35.1 与现代 Respo
+### 当前候选 / Calcit 0.38.0
+
+将 CLI 与 `@calcit/procs` 对齐到正式 **0.38.0**，重新安装模块图并生成 JS。正式模块版本见 `deps.cirru`。自定义解析规则的回调现在能直接取得已验证的 `Rule`，原来使用 Dynamic 接收规则的回调仍可使用。JSON 演示中空数组原有的 nil 结果保持。
+
+收紧回调的规则参数与缓存签名，迁移旧变长类型标注和数组解析中的 Option 写法。unresolved 上限从 88 降至 86。
+
+### 历史 / Calcit 0.35.1 与现代 Respo
 
 模块配对正式 CLI / `@calcit/procs` **0.35.1**，同步正式 Respo **0.19.4**、UI **0.15.1**、Reel **0.9.2**、Feather **0.6.2**、Alerts **0.13.1**，传递 Router **0.12.1** 与 JS-FFI **0.2.13**。消费者需整图升级、重新安装并生成 JS，不能与旧 Respo 0.18 混装。本候选源码版本仍为未发版的 **0.1.0**；本 PR 不发布 tag 或部署业务应用。
 
@@ -198,7 +204,7 @@ MIT
 
 ### Development
 
-使用 Node.js 24、Yarn 4.18.0、Caps 0.1.1 与 Calcit 0.35.1：
+使用 Node.js 24、Yarn 4.18.0、Caps 0.1.1 与 Calcit 0.38.0：
 
 ```sh
 caps --strict --ci
@@ -219,7 +225,7 @@ yarn vite build --base=./
 现有 parser-dispatch 合同由官方同版共享 runner 在 native/JS 回放，parser-gui 仅在 JS 回放。
 不复制 runner、不新增兼容开关，零匹配或排除不算运行成功；GUI 原 SSR 回放不替代浏览器交互验收。
 
-unresolved 增长门禁收紧为88上限；新依赖解析等待60分钟，无单包豁免。Actions 使用精确正式 tag，维护者接受 tag 可移动风险。
+unresolved 增长门禁上限为86；新依赖解析等待60分钟，无单包豁免。Actions 使用精确正式 tag，维护者接受 tag 可移动风险。
 源码只维护 `calcit.cirru` / `deps.cirru`，生成的 `js-out/` 不提交；不加 concurrently、验证脚本或基线。
 
 CI 构建原 COS CDN 路径，使用 action 自身 verify，PR 预览沿用独立 number/run/attempt 前缀。原生产前缀和服务器目录保持，不把前端迁移扩展到后端。

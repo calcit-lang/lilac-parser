@@ -63,4 +63,4 @@ Lilac Parser 的规则和解析结果都是普通的 Tag 键 Map，不是 Struct
 
 ## 自定义规则
 
-`register-custom-rule! kind f` 中 `f` 的类型是 `Fn (List Dynamic, Dynamic) -> Dynamic`，第二个参数是已经确认为 Tag 键 Map 的规则。为了兼容已有的回调写法，参数类型没有收窄成 `Rule`。函数返回 Unit。
+`register-custom-rule! kind f` 中 `f` 的类型是 `Fn (List Dynamic, Rule) -> Dynamic`。第二个参数是已验证的 Tag 键 Map。已有以 Dynamic 接收规则的回调仍可注册，回调结果继续由调用方定义。注册函数返回 Unit。直接写入共享回调表的代码需同步更新回调签名，普通调用方可继续通过 `register-custom-rule!` 注册。

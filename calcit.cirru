@@ -6,7 +6,7 @@
     :default $ {} (:description |) (:init-fn 'lilac-parser.main/main!) (:mode :js) (:reload-fn 'lilac-parser.main/reload!) (:target :browser)
       :feature-policy $ {}
       :modules $ [] |respo.calcit/ |respo-ui.calcit/ |reel.calcit/ |alerts.calcit/ |respo-feather.calcit/
-      :type-slots $ {} $ :dispatch-op |lilac-parser.schema/Op
+      :type-slots $ {} $ :dispatch-op 'lilac-parser.schema/Op
     :test $ {} (:description |) (:init-fn 'lilac-parser.test/main!) (:mode :native) (:reload-fn 'lilac-parser.test/reload!) (:target :native)
       :feature-policy $ {}
       :modules $ []
@@ -561,7 +561,7 @@
           :code $ quote $ defref *custom-methods ({})
           :examples $ []
           :schema $ quote $ Ref
-            Map Tag $ Fn (List Dynamic) Dynamic $ -> Dynamic
+            Map Tag $ Fn (List Dynamic) lilac-parser.core/Rule $ -> Dynamic
         'CharSet $ %{} 'CodeEntry
           :doc "|Candidates of `one-of+` / `other-than+`: a String (each character is a candidate) or a Set of String tokens."
           :code $ quote $ defunion CharSet String (Set String)
@@ -609,7 +609,7 @@
                   , identity
               {} (:parser-node :combine) (:items xs) (:transform transform)
           :examples $ []
-          :schema $ quote $ Fn (List Dynamic) & Dynamic (-> lilac-parser.core/Rule)
+          :schema $ quote $ Fn (List Dynamic) (& Dynamic) (-> lilac-parser.core/Rule)
         'core-methods $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def core-methods
             {} (:is parse-is) (:or parse-or) (:many parse-many) (:some parse-some) (:optional parse-optional) (:component parse-component) (:combine parse-combine) (:one-of parse-one-of) (:interleave parse-interleave) (:other-than parse-other-than) (:label parse-label) (:unicode-range parse-unicode-range)
@@ -647,7 +647,7 @@
         'dev-check $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defmacro dev-check (& xs) |TODO
           :examples $ []
-          :schema $ quote $ Macro & Syntax
+          :schema $ quote $ Macro (& Syntax)
             -> $ Definition Dynamic
         'find-lilac $ %{} 'CodeEntry
           :doc "|Scans content for every non-overlapping match of rule. Returns {:result (List {:content String, :value v}), :attempts (List ParseResult)}."
@@ -691,7 +691,7 @@
                   , identity
               {} (:parser-node :interleave) (:x x) (:y y) (:transform transform)
           :examples $ []
-          :schema $ quote $ Fn lilac-parser.core/Rule lilac-parser.core/Rule & Dynamic (-> lilac-parser.core/Rule)
+          :schema $ quote $ Fn lilac-parser.core/Rule lilac-parser.core/Rule (& Dynamic) (-> lilac-parser.core/Rule)
         'is+ $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn is+ (x & args)
             let
@@ -700,7 +700,7 @@
                   , identity
               {} (:parser-node :is) (:item x) (:transform transform)
           :examples $ []
-          :schema $ quote $ Fn String & Dynamic (-> lilac-parser.core/Rule)
+          :schema $ quote $ Fn String (& Dynamic) (-> lilac-parser.core/Rule)
         'label+ $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn label+ (label item)
             {} (:parser-node :label) (:label label) (:item item)
@@ -714,7 +714,7 @@
                   , identity
               {} (:parser-node :many) (:item item) (:transform transform)
           :examples $ []
-          :schema $ quote $ Fn lilac-parser.core/Rule & Dynamic (-> lilac-parser.core/Rule)
+          :schema $ quote $ Fn lilac-parser.core/Rule (& Dynamic) (-> lilac-parser.core/Rule)
         'one-of+ $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn one-of+ (xs & args)
             let
@@ -723,7 +723,7 @@
                   , identity
               {} (:parser-node :one-of) (:items xs) (:transform transform)
           :examples $ []
-          :schema $ quote $ Fn lilac-parser.core/CharSet & Dynamic (-> lilac-parser.core/Rule)
+          :schema $ quote $ Fn lilac-parser.core/CharSet (& Dynamic) (-> lilac-parser.core/Rule)
         'optional+ $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn optional+ (x & args)
             let
@@ -732,7 +732,7 @@
                   , identity
               {} (:parser-node :optional) (:item x) (:transform transform)
           :examples $ []
-          :schema $ quote $ Fn lilac-parser.core/Rule & Dynamic (-> lilac-parser.core/Rule)
+          :schema $ quote $ Fn lilac-parser.core/Rule (& Dynamic) (-> lilac-parser.core/Rule)
         'or+ $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn or+ (xs & args)
             when
@@ -744,7 +744,7 @@
                   , identity
               {} (:parser-node :or) (:items xs) (:transform transform)
           :examples $ []
-          :schema $ quote $ Fn (List Dynamic) & Dynamic (-> lilac-parser.core/Rule)
+          :schema $ quote $ Fn (List Dynamic) (& Dynamic) (-> lilac-parser.core/Rule)
         'other-than+ $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn other-than+ (items & args)
             let
@@ -753,7 +753,7 @@
                   , identity
               {} (:parser-node :other-than) (:items items) (:transform transform)
           :examples $ []
-          :schema $ quote $ Fn lilac-parser.core/CharSet & Dynamic (-> lilac-parser.core/Rule)
+          :schema $ quote $ Fn lilac-parser.core/CharSet (& Dynamic) (-> lilac-parser.core/Rule)
         'parse-combine $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn parse-combine (xs0 rule)
             let
@@ -1052,12 +1052,12 @@
                   original $ deref *custom-methods
                   custom-rule $ {} (:parser-node :option-test-custom) (:extra 7)
                   custom $ fn (xs rule)
-                    hint-fn $ Fn (List Dynamic) Dynamic $ -> Dynamic
+                    hint-fn $ Fn (List Dynamic) lilac-parser.core/Rule $ -> Dynamic
                     assert= ([] |x) xs
                     assert= custom-rule rule
                     , |custom-result
                   shadow $ fn (xs rule)
-                    hint-fn $ Fn (List Dynamic) Dynamic $ -> Dynamic
+                    hint-fn $ Fn (List Dynamic) lilac-parser.core/Rule $ -> Dynamic
                     raise "|custom shadow must not replace core"
                 reset! *custom-methods $ -> original (.assoc :option-test-custom custom) (.assoc :is shadow)
                 try
@@ -1091,7 +1091,7 @@
                   original $ deref *custom-methods
                   rule $ {} $ :parser-node :option-test-missing-value
                   custom $ fn (xs rule)
-                    hint-fn $ Fn (List Dynamic) Dynamic $ -> Dynamic
+                    hint-fn $ Fn (List Dynamic) lilac-parser.core/Rule $ -> Dynamic
                     {} (:ok? true)
                       :rest $ []
                 reset! *custom-methods $ .assoc original :option-test-missing-value custom
@@ -1164,7 +1164,7 @@
                           let
                               payload $ lilac-parser.util/require-key fields :value
                               custom $ fn (xs rule)
-                                hint-fn $ Fn (List Dynamic) Dynamic $ -> Dynamic
+                                hint-fn $ Fn (List Dynamic) lilac-parser.core/Rule $ -> Dynamic
                                 if (empty? xs)
                                   {} (:ok? false) (:rest xs)
                                   .merge (lilac-parser.util/require-map fields)
@@ -1229,7 +1229,7 @@
                   original $ deref *custom-methods
                   rule $ {} $ :parser-node :option-test-open-wrapper
                   custom $ fn (xs rule)
-                    hint-fn $ Fn (List Dynamic) Dynamic $ -> Dynamic
+                    hint-fn $ Fn (List Dynamic) lilac-parser.core/Rule $ -> Dynamic
                     {} $ :ok? true
                   maker $ fn () rule
                   component $ {} (:parser-node :component) (:name :probe) (:fn maker) (:value-fn identity)
@@ -1466,7 +1466,7 @@
             , &unit
           :examples $ []
           :schema $ quote $ Fn Tag
-            Fn (List Dynamic) Dynamic $ -> Dynamic
+            Fn (List Dynamic) lilac-parser.core/Rule $ -> Dynamic
             -> Unit
         'replace-iter $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn replace-iter (acc attempts content rule replacer) (; echo "|replace iter...")
@@ -1506,7 +1506,7 @@
                   , identity
               {} (:parser-node :some) (:item x) (:transform transform)
           :examples $ []
-          :schema $ quote $ Fn lilac-parser.core/Rule & Dynamic (-> lilac-parser.core/Rule)
+          :schema $ quote $ Fn lilac-parser.core/Rule (& Dynamic) (-> lilac-parser.core/Rule)
         'unicode-range+ $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn unicode-range+ (min-code max-code & args)
             let
@@ -1515,7 +1515,7 @@
                   , identity
               {} (:parser-node :unicode-range) (:min-code min-code) (:max-code max-code) (:transform transform)
           :examples $ []
-          :schema $ quote $ Fn Number Number & Dynamic (-> lilac-parser.core/Rule)
+          :schema $ quote $ Fn Number Number (& Dynamic) (-> lilac-parser.core/Rule)
         'unknown-node $ %{} 'CodeEntry
           :doc "|Logs a rule whose :parser-node is missing, not a Tag, or not registered, and returns nil. parse-lilac keeps returning nil for such rules."
           :code $ quote $ defn unknown-node (rule) (echo "|Unknown node" rule) nil
@@ -1529,9 +1529,9 @@
         'array-parser+ $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defparser array-parser+ ()
             fn (x)
-              .unwrap-or
-                first $ require-list $ &list:nth (require-list x) 1
-                , nil
+              let
+                  values $ require-list $ &list:nth (require-list x) 1
+                if (empty? values) nil $ .unwrap $ first values
             combine+ $ [] (is+ |[)
               some+ $ interleave+ (value-parser+) comma-parser $ fn (xs)
                 take-nth (require-list xs) 2
@@ -1929,7 +1929,7 @@
               hint-fn $ Fn (-> Unit) (:features :js-ffi)
               do (~@ body) &unit
           :examples $ []
-          :schema $ quote $ Macro SyntaxSymbol & Syntax
+          :schema $ quote $ Macro SyntaxSymbol (& Syntax)
             -> $ Definition $ Fn (-> Unit) (:features :js-ffi)
         'exactly-ok? $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn exactly-ok? (x)
@@ -2162,7 +2162,7 @@
         'testing $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn testing (title & checks) &unit
           :examples $ []
-          :schema $ quote $ Fn String & Unit (-> Unit)
+          :schema $ quote $ Fn String (& Unit) (-> Unit)
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns lilac-parser.test
           :require
