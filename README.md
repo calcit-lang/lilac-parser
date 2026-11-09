@@ -11,11 +11,9 @@ For JSON, use `parse-lilac` with the rules in the `lilac-parser.demo.json` names
 the current browser button does not select the JSON parser. Load EDN displays an
 existing parsing result rather than changing that parser.
 
-### 当前候选 / Calcit 0.38.0
+### 当前候选 / Calcit 0.40.0
 
-将 CLI 与 `@calcit/procs` 对齐到正式 **0.38.0**，重新安装模块图并生成 JS。正式模块版本见 `deps.cirru`。自定义解析规则的回调现在能直接取得已验证的 `Rule`，原来使用 Dynamic 接收规则的回调仍可使用。JSON 演示中空数组原有的 nil 结果保持。
-
-收紧回调的规则参数与缓存签名，迁移旧变长类型标注和数组解析中的 Option 写法。unresolved 上限从 88 降至 86。
+将 CLI 与 `@calcit/procs` 对齐到正式 **0.40.0**，重新安装模块图并生成 JS。现有语法规则和解析结果保持原有 Map 合同。内部读取必需字段时会保留 Map 的键和值类型，缺键仍按原方式报错。
 
 ### 历史 / Calcit 0.35.1 与现代 Respo
 

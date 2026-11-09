@@ -1166,14 +1166,14 @@
                         (:none) &unit
                         (:some fields tail)
                           let
-                              payload $ lilac-parser.util/require-key fields :value
+                              fields-map $ lilac-parser.util/require-map fields
+                              payload $ lilac-parser.util/require-key fields-map :value
                               custom $ fn (xs rule)
                                 hint-fn $ Fn (List Dynamic) lilac-parser.core/Rule $ -> Dynamic
                                 if (empty? xs)
                                   {} (:ok? false) (:rest xs)
-                                  .merge (lilac-parser.util/require-map fields)
-                                    {} (:ok? true)
-                                      :rest $ []
+                                  .merge fields-map $ {} (:ok? true)
+                                    :rest $ []
                               expected $ get
                                 {} $ :value payload
                                 , :value
@@ -2228,7 +2228,7 @@
               (:none)
                 raise $ str "|[lilac-parser] missing key " key
           :examples $ []
-          :schema $ quote $ Fn Dynamic Tag (-> Dynamic)
+          :schema $ quote $ Fn (Map K V) K (-> V) (:generics K V)
         'require-list $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn require-list (value)
             match (data-view value)
