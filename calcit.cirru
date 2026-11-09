@@ -6,7 +6,7 @@
     :default $ {} (:description |) (:init-fn 'lilac-parser.main/main!) (:mode :js) (:reload-fn 'lilac-parser.main/reload!) (:target :browser)
       :feature-policy $ {}
       :modules $ [] |respo.calcit/ |respo-ui.calcit/ |reel.calcit/ |alerts.calcit/ |respo-feather.calcit/
-      :type-slots $ {} $ :dispatch-op 'lilac-parser.schema/Op
+      :type-slots $ {} $ :dispatch-op 'lilac-parser.schema/DispatchOp
     :test $ {} (:description |) (:init-fn 'lilac-parser.test/main!) (:mode :native) (:reload-fn 'lilac-parser.test/reload!) (:target :native)
       :feature-policy $ {}
       :modules $ []
@@ -38,7 +38,7 @@
           :examples $ []
           :schema $ quote $ Fn (Map Dynamic Dynamic) (Map Dynamic Dynamic) Tag (-> respo.schema/Element) (:features :js-ffi)
         'comp-container $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defcomp comp-container (reel)
+          :code $ quote $ defcomp comp-container (reel on-control on-op)
             let
                 store $ :store reel
                 states $ :states store
@@ -82,14 +82,14 @@
                   a $ {} (:inner-text "|Load EDN") (:class-name css/link)
                     :on-click $ fn (e d!)
                       hint-fn $ Fn respo.schema/RespoEvent
-                        Fn lilac-parser.schema/Op $ -> Unit
+                        Fn *dispatch-op $ -> Unit
                         -> Unit
                       .show load-plugin d! $ fn (text)
                         hint-fn $ Fn String $ -> Unit
                         let
                             snapshot $ parse-cirru-edn text
                           ; println |text snapshot
-                          d! $ lilac-parser.schema/Op :states cursor $ struct-with state (:result snapshot)
+                          on-op $ lilac-parser.schema/Op :states cursor $ struct-with state (:result snapshot)
                         , &unit
                       , &unit
                   space-x 16
@@ -148,11 +148,15 @@
                       :spellcheck false
                       :value $ format-cirru-edn $ :result state
                 if dev?
-                  Option :some $ comp-typed-reel (>> states :reel) reel $ {}
+                  Option :some $ comp-typed-reel (>> states :reel) reel ({}) on-control
                   Option :none
                 .render load-plugin
           :examples $ []
-          :schema $ quote $ Fn (reel.typed/State lilac-parser.schema/Op lilac-parser.schema/Store) (-> respo.schema/Component) (:features :js-ffi)
+          :schema $ quote $ Fn (reel.typed/State lilac-parser.schema/Op lilac-parser.schema/Store)
+            Fn reel.typed/Control $ -> Unit
+            Fn lilac-parser.schema/Op $ -> Unit
+            -> respo.schema/Component
+            :features :js-ffi
         'comp-node $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-node (states node)
             let
@@ -385,7 +389,7 @@
               (:some value) (to-lispy-string value)
               (:none) (to-lispy-string nil)
           :examples $ []
-          :schema $ quote $ Fn (Option Dynamic) (-> String)
+          :schema $ quote $ Fn (Option T) (-> String) (:generics T)
         'display-value $ %{} 'CodeEntry
           :doc "|A node's :value for display; a node without one shows nothing."
           :code $ quote $ defn display-value (value-option)
@@ -1520,7 +1524,7 @@
           :doc "|Logs a rule whose :parser-node is missing, not a Tag, or not registered, and returns nil. parse-lilac keeps returning nil for such rules."
           :code $ quote $ defn unknown-node (rule) (echo "|Unknown node" rule) nil
           :examples $ []
-          :schema $ quote $ Fn Dynamic (-> Nil)
+          :schema $ quote $ Fn T (-> Nil) (:generics T)
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns lilac-parser.core
           :require $ lilac-parser.util :refer $ seq-strip-beginning
@@ -1722,28 +1726,23 @@
           :code $ quote $ defref *reel (typed/new-reel schema/store)
           :examples $ []
           :schema $ quote $ Ref (reel.typed/State lilac-parser.schema/Op lilac-parser.schema/Store)
-        'apply-op $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn apply-op (raw)
-            match (typed/decode-control raw)
-              (:some control) (typed/apply-control updater @*reel control)
-              (:none)
-                match (schema/decode-op raw)
-                  (:ok operation) (next-reel operation)
-                  (:err message)
-                    do (eprintln "|Invalid operation:" message) @*reel
-          :examples $ []
-          :schema $ quote $ Fn AnyEnum
-            -> $ reel.typed/State lilac-parser.schema/Op lilac-parser.schema/Store
-            :features :js-ffi
         'dispatch! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn dispatch! (op)
             when config/dev? $ println |Dispatch: op
-            if (enum? op)
-              reset! *reel $ apply-op op
-              eprintln "|Expected an operation enum:" op
+            reset! *reel $ match op
+              (reel.typed/Control control) (typed/apply-control updater @*reel control)
+              (lilac-parser.schema/Op action) (next-reel action)
             , &unit
           :examples $ []
-          :schema $ quote $ Fn lilac-parser.schema/Op (-> Unit) (:features :js-ffi)
+          :schema $ quote $ Fn lilac-parser.schema/ResolvedOp (-> Unit) (:features :js-ffi)
+        'dispatch-event! $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn dispatch-event! (event)
+            match (schema/decode-op event)
+              (:ok op) (dispatch! op)
+              (:err message) (eprintln "|Invalid operation:" message)
+            , &unit
+          :examples $ []
+          :schema $ quote $ Fn *dispatch-op (-> Unit)
         'main! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn main! ()
             println "|Running mode:" $ if config/dev? |dev |release
@@ -1752,10 +1751,7 @@
             add-watch! *reel :changes $ fn (reel prev)
               hint-fn $ Fn (reel.typed/State lilac-parser.schema/Op lilac-parser.schema/Store) (reel.typed/State lilac-parser.schema/Op lilac-parser.schema/Store) (-> Unit) (:features :js-ffi)
               render-app!
-            listen-devtools! |k $ fn (op)
-              hint-fn $ Fn AnyEnum $ -> Unit
-              reset! *reel $ apply-op op
-              , &unit
+            listen-devtools! |k on-control!
             js-ffi.browser/add-event-listener! |beforeunload $ fn (event)
               hint-fn $ Fn js-ffi.browser/EventHost (-> Unit) (:features :js-ffi)
               persist-storage!
@@ -1776,6 +1772,10 @@
           :schema $ quote $ Fn lilac-parser.schema/Op
             -> $ reel.typed/State lilac-parser.schema/Op lilac-parser.schema/Store
             :features :js-ffi
+        'on-control! $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn on-control! (control) (dispatch! control)
+          :examples $ []
+          :schema $ quote $ Fn reel.typed/Control (-> Unit)
         'persist-storage! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn persist-storage! ()
             js-ffi.browser/storage-set! (:storage-key config/site)
@@ -1805,7 +1805,11 @@
             :features :js-ffi
         'render-app! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn render-app! ()
-            with-memo-frame $ fn () $ render! (mount-target) (comp-container @*reel) dispatch!
+            with-memo-frame $ fn () $ render! (mount-target)
+              comp-container @*reel on-control! $ fn (op)
+                hint-fn $ Fn lilac-parser.schema/Op $ -> Unit
+                dispatch! op
+              , dispatch-event!
           :examples $ []
           :schema $ quote $ Fn (-> Unit) (:features :js-ffi)
         'restart-persistence! $ %{} 'CodeEntry (:doc |)
@@ -1863,20 +1867,22 @@
           :require $ lilac-parser.core :refer $ parse-lilac defparser many+ is+ interleave+ some+ one-of+ combine+ optional+ other-than+ or+ unicode-range+ label+
     'lilac-parser.schema $ %{} 'FileEntry
       :defs $ {}
+        'DispatchOp $ %{} 'CodeEntry
+          :doc "|Respo event boundary accepts the anonymous states emitted by Alerts Prompt. The app normalizes those events before dispatch."
+          :code $ quote $ def DispatchOp (:: :unhandled)
+          :examples $ []
+          :schema $ quote AnyEnum
         'Op $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defenum Op
             :states (List respo.schema/CoordKey) Dynamic
             :content String
             :hydrate-storage lilac-parser.schema/Store
-            :reel/toggle
-            :reel/recall Number
-            :reel/run
-            :reel/step
-            :reel/merge
-            :reel/reset
-            :reel/remove Number
           :examples $ []
           :schema $ quote EnumDef
+        'ResolvedOp $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defunion ResolvedOp lilac-parser.schema/Op reel.typed/Control
+          :examples $ []
+          :schema $ quote UnionDef
         'Store $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstruct Store
             :states $ Map Dynamic Dynamic
