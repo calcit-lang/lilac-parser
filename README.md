@@ -13,7 +13,7 @@ existing parsing result rather than changing that parser.
 
 ### 当前候选 / Calcit 0.40.0
 
-将 CLI 与 `@calcit/procs` 对齐到正式 **0.40.0**，重新安装模块图并生成 JS。现有语法规则和解析结果保持原有 Map 合同。内部读取必需字段时会保留 Map 的键和值类型，缺键仍按原方式报错。
+将 CLI 与 `@calcit/procs` 对齐到正式 **0.40.0**，重新安装模块图并生成 JS。规则和内置解析结果沿用 Tag 键 Map。自定义解析回调可返回任意值，未注册的节点返回 nil。内部读取必需字段时会保留 Map 的键和值类型，缺键仍按原方式报错。
 
 ### 历史 / Calcit 0.35.1 与现代 Respo
 
@@ -87,7 +87,7 @@ calcit query defs lilac-parser.demo.s-expr
 | `label+`         | `(label+ "just a" (is+ "a"))`                   | simpler rule for adding comments in result |
 | `unicode-range+` | `(unicode-range+ 97 122)`                       | matches a with unicode in between given    |
 
-Rules and results are Tag-keyed maps. Their fields and the `Rule` / `ParseResult` schema aliases are described in [docs/types.md](docs/types.md).
+Rules and built-in results are Tag-keyed maps. Custom methods may return any value, and unknown rule tags return `nil`. `require-map` raises if the result is outside its Tag-keyed Map contract. See [docs/types.md](docs/types.md) for the `Rule` and `ParseResult` aliases.
 
 ### `defparser`
 
@@ -202,7 +202,7 @@ MIT
 
 ### Development
 
-使用 Node.js 24、Yarn 4.18.0、Caps 0.1.1 与 Calcit 0.38.0：
+使用 Node.js 24、Yarn 4.18.0、Caps 0.1.1 与 Calcit 0.40.0：
 
 ```sh
 caps --strict --ci
@@ -223,7 +223,7 @@ yarn vite build --base=./
 现有 parser-dispatch 合同由官方同版共享 runner 在 native/JS 回放，parser-gui 仅在 JS 回放。
 不复制 runner、不新增兼容开关，零匹配或排除不算运行成功；GUI 原 SSR 回放不替代浏览器交互验收。
 
-unresolved 增长门禁上限为86；新依赖解析等待60分钟，无单包豁免。Actions 使用精确正式 tag，维护者接受 tag 可移动风险。
+unresolved 增长门禁上限为 82；新依赖解析等待60分钟，无单包豁免。Actions 使用精确正式 tag，维护者接受 tag 可移动风险。
 源码只维护 `calcit.cirru` / `deps.cirru`，生成的 `js-out/` 不提交；不加 concurrently、验证脚本或基线。
 
 CI 构建原 COS CDN 路径，使用 action 自身 verify，PR 预览沿用独立 number/run/attempt 前缀。原生产前缀和服务器目录保持，不把前端迁移扩展到后端。
