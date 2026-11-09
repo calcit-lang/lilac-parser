@@ -1916,6 +1916,7 @@
           :examples $ []
           :schema $ quote $ Fn AnyEnum
             -> $ Result lilac-parser.schema/Op String
+            :open :decode
         'store $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def store
             Store :states ({}) :content |
