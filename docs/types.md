@@ -60,6 +60,7 @@ Lilac Parser 的规则和解析结果都是普通的 Tag 键 Map，不是 Struct
 
 - `find-lilac content rule` 返回 `{:result (List {:content String, :value v}), :attempts (List ParseResult)}`。
 - `replace-lilac content rule replacer` 中 `replacer` 的类型是 `Fn (Dynamic) -> String`，返回 `{:result String, :attempts (List ParseResult)}`。
+  返回 Map 的值类型是 `lilac-parser.core/ReplaceResultValue`。读取后可用类型模式 `(String text)` 或 `(List attempts)` 匹配对应分支。
 
 ## 自定义规则
 
