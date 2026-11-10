@@ -576,6 +576,11 @@
           :code $ quote $ def ParseResult ({})
           :examples $ []
           :schema $ quote $ Map Tag Dynamic
+        'ReplaceResultValue $ %{} 'CodeEntry
+          :doc "|Value of :result (replacement text) or :attempts (parser results) in the legacy replacement Map."
+          :code $ quote $ defunion ReplaceResultValue String (List lilac-parser.core/ParseResult)
+          :examples $ []
+          :schema $ quote UnionDef
         'Rule $ %{} 'CodeEntry
           :doc "|Schema alias for a parser rule: a Tag-keyed map whose :parser-node names the rule kind (:is, :one-of, :other-than, :optional, :many, :some, :or, :combine, :interleave, :label, :unicode-range, :component, or a tag registered with register-custom-rule!). Other fields depend on the kind; see docs/types.md."
           :code $ quote $ def Rule ({})
@@ -1492,7 +1497,7 @@
           :examples $ []
           :schema $ quote $ Fn String (List lilac-parser.core/ParseResult) (List Dynamic) lilac-parser.core/Rule
             Fn Dynamic $ -> String
-            -> $ Map Tag Dynamic
+            -> $ Map Tag lilac-parser.core/ReplaceResultValue
         'replace-lilac $ %{} 'CodeEntry
           :doc "|Replaces every match of rule in content with (replacer value). Returns {:result String, :attempts (List ParseResult)}."
           :code $ quote $ defn replace-lilac (content rule replacer) (echo |calling)
@@ -1500,7 +1505,7 @@
           :examples $ []
           :schema $ quote $ Fn Dynamic lilac-parser.core/Rule
             Fn Dynamic $ -> String
-            -> $ Map Tag Dynamic
+            -> $ Map Tag lilac-parser.core/ReplaceResultValue
         'some+ $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn some+ (x & args)
             if (nil? x) (raise "|expected non-empty rule")
@@ -2124,24 +2129,40 @@
         'test-replace $ %{} 'CodeEntry (:doc |)
           :code $ quote $ deftest test-replace
             testing "|replaced content"
-              is $ &= "|my project" $ .unwrap
-                get
-                  replace-lilac "|cumulo project"
+              let
+                  report $ replace-lilac "|cumulo project"
                     or+ $ [] (is+ |cumulo) (is+ |respo)
                     fn (x) |my
-                  , :result
-              is $ &= "|my project" $ .unwrap
-                get
+                is $ match
+                  .unwrap $ get report :result
+                  (String text) (&= "|my project" text)
+                  (List _) false
+                is $ match
+                  .unwrap $ get report :attempts
+                  (String _) false
+                  (List attempts)
+                    and
+                      = 9 $ .len attempts
+                      = (Option :some true)
+                        get
+                          .unwrap $ first attempts
+                          , :ok?
+              is $ match
+                .unwrap $ get
                   replace-lilac "|respo project"
                     or+ $ [] (is+ |cumulo) (is+ |respo)
                     fn (x) |my
                   , :result
-              is $ &= "|phlox project" $ .unwrap
-                get
+                (String text) (&= "|my project" text)
+                (List _attempts) false
+              is $ match
+                .unwrap $ get
                   replace-lilac "|phlox project"
                     or+ $ [] (is+ |cumulo) (is+ |respo)
                     fn (x) |my
                   , :result
+                (String text) (&= "|phlox project" text)
+                (List _attempts) false
           :examples $ []
           :schema $ quote $ Fn (-> Unit)
         'test-some $ %{} 'CodeEntry (:doc |)
