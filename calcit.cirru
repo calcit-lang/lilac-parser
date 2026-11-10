@@ -2129,14 +2129,24 @@
         'test-replace $ %{} 'CodeEntry (:doc |)
           :code $ quote $ deftest test-replace
             testing "|replaced content"
-              is $ match
-                .unwrap $ get
-                  replace-lilac "|cumulo project"
+              let
+                  report $ replace-lilac "|cumulo project"
                     or+ $ [] (is+ |cumulo) (is+ |respo)
                     fn (x) |my
-                  , :result
-                (String text) (&= "|my project" text)
-                (List _attempts) false
+                is $ match
+                  .unwrap $ get report :result
+                  (String text) (&= "|my project" text)
+                  (List _) false
+                is $ match
+                  .unwrap $ get report :attempts
+                  (String _) false
+                  (List attempts)
+                    and
+                      = 9 $ .len attempts
+                      = (Option :some true)
+                        get
+                          .unwrap $ first attempts
+                          , :ok?
               is $ match
                 .unwrap $ get
                   replace-lilac "|respo project"
