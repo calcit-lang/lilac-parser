@@ -36,7 +36,7 @@
                     read-node $ .unwrap child-option
                 span $ {}
           :examples $ []
-          :schema $ quote $ Fn (Map Dynamic Dynamic) (Map Dynamic Dynamic) Tag (-> respo.schema/Element) (:features :js-ffi)
+          :schema $ quote $ Fn respo.schema/States lilac-parser.core/ParseResult Tag (-> respo.schema/Element) (:features :js-ffi)
         'comp-container $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-container (reel on-control on-op)
             let
@@ -278,7 +278,7 @@
                     child-view states node :peek-result
                   , None
           :examples $ []
-          :schema $ quote $ Fn (Map Dynamic Dynamic) (Map Tag Dynamic) (-> respo.schema/Component) (:features :js-ffi)
+          :schema $ quote $ Fn respo.schema/States lilac-parser.core/ParseResult (-> respo.schema/Component) (:features :js-ffi)
           :tests $ []
             %{} 'TestEntry (:name |preserves-lazy-child-rendering)
               :code $ quote $ let
@@ -412,7 +412,7 @@
               (:none)
                 raise "|decode-map-as failed at $: expected string, got nil"
           :examples $ []
-          :schema $ quote $ Fn Dynamic (-> String)
+          :schema $ quote $ Fn T (-> String) (:generics T)
           :tests $ []
             %{} 'TestEntry (:name |rejects-missing-and-invalid-event-values)
               :code $ quote $ do
@@ -460,7 +460,7 @@
                     (:ok state) state
                     (:err message) (raise message)
           :examples $ []
-          :schema $ quote $ Fn (Option Dynamic) (-> ContainerState)
+          :schema $ quote $ Fn (Option T) (-> ContainerState) (:generics T)
           :tests $ [] $ %{} 'TestEntry (:name |preserves-option-state-initialization)
             :code $ quote $ let
                 initial $ ContainerState :code "|(def a (add 1 2))" :result nil :gui? false
@@ -489,7 +489,7 @@
               (:ok node) node
               (:err message) (raise message)
           :examples $ []
-          :schema $ quote $ Fn Dynamic (-> lilac-parser.core/ParseResult)
+          :schema $ quote $ Fn T (-> lilac-parser.core/ParseResult) (:generics T)
         'read-node-state $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn read-node-state (value-option)
             match value-option
@@ -505,7 +505,7 @@
                     (:ok state) state
                     (:err message) (raise message)
           :examples $ []
-          :schema $ quote $ Fn (Option Dynamic) (-> NodeState)
+          :schema $ quote $ Fn (Option T) (-> NodeState) (:generics T)
           :tests $ [] $ %{} 'TestEntry (:name |preserves-option-state-initialization)
             :code $ quote $ let
                 initial $ NodeState :folded? false
@@ -593,7 +593,7 @@
               (String text) (includes? text x)
               (Set xs) (includes? xs x)
           :examples $ []
-          :schema $ quote $ Fn CharSet Dynamic (-> Bool)
+          :schema $ quote $ Fn CharSet T (-> Bool) (:generics T)
           :tests $ [] $ %{} 'TestEntry (:name |string-and-set)
             :code $ quote $ do
               assert= true $ char-set-includes? |abc |b
