@@ -26,7 +26,7 @@
           :doc "|The nested view of a :result or :peek-result node, or an empty span when there is none."
           :code $ quote $ defn child-view (states node field)
             let
-                child-option $ get node field
+                child-option $ lilac-parser.util/get-field node field
               if
                 and (.some? child-option)
                   non-nil? $ .unwrap child-option
@@ -43,7 +43,7 @@
                 store $ :store reel
                 states $ :states store
                 cursor $ []
-                state $ read-container-state $ get states :data
+                state $ read-container-state $ lilac-parser.util/get-field states :data
                 load-plugin $ use-prompt (>> states :load)
                   {} (:text "|Load EDN") (:multiline? true) (:placeholder "|lilac-parser parsing rule...")
                     :input-style $ {} (:font-family ui/font-code) (:height 400) (:white-space :pre) (:font-size 12) (:line-height |18px)
@@ -107,9 +107,9 @@
                           find-result $ find-lilac
                             split (:code state) |
                             s-expr-parser+
-                        println $ .unwrap $ get result :result
+                        println $ .unwrap $ lilac-parser.util/get-field result :result
                         d! $ lilac-parser.schema/Op :states cursor $ struct-with state
-                          :result $ .unwrap $ get result :attempts
+                          :result $ .unwrap $ lilac-parser.util/get-field result :attempts
                         println "|Find results:" $ to-lispy-string $ .unwrap (get find-result :result)
                 div
                   {} $ :class-name $ str-spaced css/expand css/row
@@ -160,22 +160,22 @@
         'comp-node $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-node (states node)
             let
-                cursor-option $ get states :cursor
-                state $ read-node-state $ get states :data
+                cursor-option $ lilac-parser.util/get-field states :cursor
+                state $ read-node-state $ lilac-parser.util/get-field states :data
                 children $ let
-                    previous-children $ fn () $ match (get node :previous-results)
+                    previous-children $ fn () $ match (lilac-parser.util/get-field node :previous-results)
                       (:some previous)
                         if previous (require-list previous) ([])
                       (:none) ([])
-                  match (get node :results)
+                  match (lilac-parser.util/get-field node :results)
                     (:some results)
                       if results (require-list results) (previous-children)
                     (:none) (previous-children)
                 has-children? $ or
-                  match (get node :result)
+                  match (lilac-parser.util/get-field node :result)
                     (:some present-child) (non-nil? present-child)
                     (:none) false
-                  match (get node :peek-result)
+                  match (lilac-parser.util/get-field node :peek-result)
                     (:some present-child) (non-nil? present-child)
                     (:none) false
                   not $ empty? children
@@ -208,7 +208,7 @@
                           -> Unit
                         , &unit
                   if
-                    .unwrap-or (get node :ok?) false
+                    .unwrap-or (lilac-parser.util/get-field node :ok?) false
                     span $ {}
                       :class-name $ str-spaced css-label css/font-fancy
                       :inner-text |Ok
@@ -219,40 +219,40 @@
                       :style $ {} $ :background-color (hsl 20 80 50)
                   span $ {}
                     :class-name $ str-spaced css-label css/font-fancy
-                    :inner-text $ str $ .unwrap-or (get node :parser-node) |
+                    :inner-text $ str $ .unwrap-or (lilac-parser.util/get-field node :parser-node) |
                     :style $ {} $ :background-color (hsl 200 80 76)
                   if
                     or
-                      match (get node :parser-node)
+                      match (lilac-parser.util/get-field node :parser-node)
                         (:some kind) (&= :label kind)
                         (:none) false
-                      match (get node :parser-node)
+                      match (lilac-parser.util/get-field node :parser-node)
                         (:some kind) (&= :component kind)
                         (:none) false
                     Some $ span $ {} (:class-name css-label)
-                      :inner-text $ str $ .unwrap-or (get node :label) |
+                      :inner-text $ str $ .unwrap-or (lilac-parser.util/get-field node :label) |
                       :style $ {} $ :background-color (hsl 200 90 60)
                     , None
                   if
-                    not $ .unwrap-or (get node :ok?) false
+                    not $ .unwrap-or (lilac-parser.util/get-field node :ok?) false
                     Some $ span $ {} (:class-name css-label)
-                      :inner-text $ str $ .unwrap-or (get node :message) |
+                      :inner-text $ str $ .unwrap-or (lilac-parser.util/get-field node :message) |
                       :style $ {} $ :background-color (hsl 0 80 60)
                     , None
                   if
                     and
-                      .unwrap-or (get node :ok?) false
-                      match (get node :parser-node)
+                      .unwrap-or (lilac-parser.util/get-field node :ok?) false
+                      match (lilac-parser.util/get-field node :parser-node)
                         (:some kind) (&= :is kind)
                         (:none) false
                     Some $ span $ {} (:class-name css-label)
-                      :inner-text $ display-value $ get node :value
+                      :inner-text $ display-value $ lilac-parser.util/get-field node :value
                       :style $ {} $ :background-color (hsl 200 80 70)
                     , None
                   if
-                    .unwrap-or (get node :ok?) false
+                    .unwrap-or (lilac-parser.util/get-field node :ok?) false
                     Some $ span $ {} (:class-name css-label)
-                      :inner-text $ display-lispy $ get node :value
+                      :inner-text $ display-lispy $ lilac-parser.util/get-field node :value
                       :style $ {}
                         :background-color $ hsl 200 80 80
                         :font-size 10
@@ -260,7 +260,7 @@
                   span $ {} (:class-name css-label)
                     :inner-text $ join-string
                       take
-                        require-list $ .unwrap $ get node :rest
+                        require-list $ .unwrap $ lilac-parser.util/get-field node :rest
                         , 10
                       , |
                     :style $ {}
@@ -674,16 +674,16 @@
               let
                   attempt $ lilac-parser.util/require-map $ parse-lilac content rule
                 if
-                  .unwrap-or (get attempt :ok?) false
+                  .unwrap-or (lilac-parser.util/get-field attempt :ok?) false
                   recur
                     &list:append acc $ {}
                       :content $ join-string
                         &list:slice content 0 $ - (.len content)
-                          .len $ lilac-parser.util/require-list $ .unwrap (get attempt :rest)
+                          .len $ lilac-parser.util/require-list $ .unwrap (lilac-parser.util/get-field attempt :rest)
                         , |
                       :value $ lilac-parser.util/require-key attempt :value
                     &list:append attempts attempt
-                    lilac-parser.util/require-list $ .unwrap $ get attempt :rest
+                    lilac-parser.util/require-list $ .unwrap $ lilac-parser.util/get-field attempt :rest
                     , rule
                   recur acc (&list:append attempts attempt) (&list:rest content) rule
           :examples $ []
@@ -767,8 +767,8 @@
         'parse-combine $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn parse-combine (xs0 rule)
             let
-                items $ lilac-parser.util/require-list $ .unwrap (get rule :items)
-                transform $ get rule :transform
+                items $ lilac-parser.util/require-list $ .unwrap (lilac-parser.util/get-field rule :items)
+                transform $ lilac-parser.util/get-field rule :transform
               loop
                   acc $ assert-type ([])
                     List $ Map Dynamic Dynamic
@@ -791,9 +791,9 @@
                       result $ lilac-parser.util/require-map $ parse-lilac xs
                         .unwrap $ first ys
                     if
-                      .unwrap-or (get result :ok?) false
+                      .unwrap-or (lilac-parser.util/get-field result :ok?) false
                       recur (&list:append acc result)
-                        lilac-parser.util/require-list $ .unwrap $ get result :rest
+                        lilac-parser.util/require-list $ .unwrap $ lilac-parser.util/get-field result :rest
                         &list:rest ys
                       {} (:ok? false) (:parser-node :combine) (:message "|failed to combine") (:result result) (:previous-results acc) (:rest xs)
           :examples $ []
@@ -835,10 +835,10 @@
         'parse-component $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn parse-component (xs rule)
             let
-                item $ match (get rule :fn)
+                item $ match (lilac-parser.util/get-field rule :fn)
                   (:some maker)
                     if (fn? maker)
-                      match (get rule :args)
+                      match (lilac-parser.util/get-field rule :args)
                         (:some raw-args)
                           match
                             try-decode-map-as raw-args $ List Dynamic
@@ -849,13 +849,13 @@
                       raise "|component rule expects a parser function"
                   (:none) (raise "|component rule expects a parser function")
                 result $ lilac-parser.util/require-map $ parse-lilac xs item
-                value-fn $ .unwrap $ get rule :value-fn
-                blackbox? $ match (get rule :blackbox?)
+                value-fn $ .unwrap $ lilac-parser.util/get-field rule :value-fn
+                blackbox? $ match (lilac-parser.util/get-field rule :blackbox?)
                   (:some flag) (if flag true false)
                   (:none) false
                 rule-name $ lilac-parser.util/require-key rule :name
                 node $ if
-                  .unwrap-or (get result :ok?) false
+                  .unwrap-or (lilac-parser.util/get-field result :ok?) false
                   {} (:ok? true)
                     :value $ let
                         v $ lilac-parser.util/require-key result :value
@@ -899,7 +899,7 @@
                   rule $ {} (:parser-node :component) (:name :probe) (:fn maker) (:value-fn identity)
                     :args $ []
                   result $ lilac-parser.util/require-map $ parse-lilac |x rule
-                  child $ get result :result
+                  child $ lilac-parser.util/get-field result :result
                   none-value $ get
                     {} $ :result nil
                     , :result
@@ -923,9 +923,9 @@
         'parse-interleave $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn parse-interleave (xs0 rule)
             let
-                x0 $ .unwrap $ get rule :x
-                y0 $ .unwrap $ get rule :y
-                transform $ get rule :transform
+                x0 $ .unwrap $ lilac-parser.util/get-field rule :x
+                y0 $ .unwrap $ lilac-parser.util/get-field rule :y
+                transform $ lilac-parser.util/get-field rule :transform
               loop
                   acc $ assert-type ([])
                     List $ Map Dynamic Dynamic
@@ -935,9 +935,9 @@
                 let
                     result $ lilac-parser.util/require-map $ parse-lilac xs x
                   if
-                    .unwrap-or (get result :ok?) false
+                    .unwrap-or (lilac-parser.util/get-field result :ok?) false
                     recur (&list:append acc result)
-                      lilac-parser.util/require-list $ .unwrap $ get result :rest
+                      lilac-parser.util/require-list $ .unwrap $ lilac-parser.util/get-field result :rest
                       , y x
                     if (empty? acc)
                       {} (:ok? false) (:message "|no match") (:parser-node :interleave) (:peek-result result) (:rest xs)
@@ -960,16 +960,16 @@
             if (empty? xs)
               {} (:ok? false)
                 :message $ str "|expects "
-                  to-lispy-string $ .unwrap $ get rule :item
+                  to-lispy-string $ .unwrap $ lilac-parser.util/get-field rule :item
                   , "| but got EOF"
                 :parser-node :is
                 :rest xs
               let
                   item $ match
-                    data-view $ .unwrap $ get rule :item
+                    data-view $ .unwrap $ lilac-parser.util/get-field rule :item
                     (:string text) text
                     _ $ raise "|is rule expects a string"
-                  transform $ get rule :transform
+                  transform $ lilac-parser.util/get-field rule :transform
                 match
                   seq-strip-beginning xs $ split item |
                   (:some rest-xs)
@@ -993,9 +993,9 @@
           :code $ quote $ defn parse-label (xs rule)
             let
                 result $ lilac-parser.util/require-map $ parse-lilac xs
-                  .unwrap $ get rule :item
+                  .unwrap $ lilac-parser.util/get-field rule :item
               if
-                .unwrap-or (get result :ok?) false
+                .unwrap-or (lilac-parser.util/get-field result :ok?) false
                 {} (:ok? true) (:parser-node :label)
                   :label $ lilac-parser.util/require-key rule :label
                   :value $ lilac-parser.util/require-key result :value
@@ -1062,12 +1062,12 @@
                   original $ deref *custom-methods
                   custom-rule $ {} (:parser-node :option-test-custom) (:extra 7)
                   custom $ fn (xs rule)
-                    hint-fn $ Fn (List Dynamic) lilac-parser.core/Rule $ -> Dynamic
+                    hint-fn $ Fn (List Dynamic) Rule $ -> Dynamic
                     assert= ([] |x) xs
                     assert= custom-rule rule
                     , |custom-result
                   shadow $ fn (xs rule)
-                    hint-fn $ Fn (List Dynamic) lilac-parser.core/Rule $ -> Dynamic
+                    hint-fn $ Fn (List Dynamic) Rule $ -> Dynamic
                     raise "|custom shadow must not replace core"
                 reset! *custom-methods $ -> original (.assoc :option-test-custom custom) (.assoc :is shadow)
                 try
@@ -1101,7 +1101,7 @@
                   original $ deref *custom-methods
                   rule $ {} $ :parser-node :option-test-missing-value
                   custom $ fn (xs rule)
-                    hint-fn $ Fn (List Dynamic) lilac-parser.core/Rule $ -> Dynamic
+                    hint-fn $ Fn (List Dynamic) Rule $ -> Dynamic
                     {} (:ok? true)
                       :rest $ []
                 reset! *custom-methods $ .assoc original :option-test-missing-value custom
@@ -1175,7 +1175,7 @@
                               fields-map $ lilac-parser.util/require-map fields
                               payload $ lilac-parser.util/require-key fields-map :value
                               custom $ fn (xs rule)
-                                hint-fn $ Fn (List Dynamic) lilac-parser.core/Rule $ -> Dynamic
+                                hint-fn $ Fn (List Dynamic) Rule $ -> Dynamic
                                 if (empty? xs)
                                   {} (:ok? false) (:rest xs)
                                   .merge fields-map $ {} (:ok? true)
@@ -1239,7 +1239,7 @@
                   original $ deref *custom-methods
                   rule $ {} $ :parser-node :option-test-open-wrapper
                   custom $ fn (xs rule)
-                    hint-fn $ Fn (List Dynamic) lilac-parser.core/Rule $ -> Dynamic
+                    hint-fn $ Fn (List Dynamic) Rule $ -> Dynamic
                     {} $ :ok? true
                   maker $ fn () rule
                   component $ {} (:parser-node :component) (:name :probe) (:fn maker) (:value-fn identity)
@@ -1262,8 +1262,8 @@
         'parse-many $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn parse-many (xs0 rule)
             let
-                item $ .unwrap $ get rule :item
-                transform $ get rule :transform
+                item $ .unwrap $ lilac-parser.util/get-field rule :item
+                transform $ lilac-parser.util/get-field rule :transform
               loop
                   acc $ assert-type ([])
                     List $ Map Dynamic Dynamic
@@ -1272,9 +1272,9 @@
                     result $ parse-lilac xs item
                   if (map? result)
                     if
-                      .unwrap-or (get result :ok?) false
+                      .unwrap-or (lilac-parser.util/get-field result :ok?) false
                       recur (&list:append acc result)
-                        lilac-parser.util/require-list $ .unwrap $ get result :rest
+                        lilac-parser.util/require-list $ .unwrap $ lilac-parser.util/get-field result :rest
                       if (empty? acc)
                         {} (:ok? false) (:message "|no match") (:parser-node :many) (:peek-result result) (:rest xs)
                         {} (:ok? true)
@@ -1300,7 +1300,7 @@
               (:some x0 xss)
                 let
                     items $ read-char-set rule
-                    transform $ get rule :transform
+                    transform $ lilac-parser.util/get-field rule :transform
                   if (char-set-includes? items x0)
                     {} (:ok? true)
                       :value $ match transform
@@ -1317,11 +1317,11 @@
         'parse-optional $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn parse-optional (xs rule)
             let
-                item $ .unwrap $ get rule :item
-                transform $ get rule :transform
+                item $ .unwrap $ lilac-parser.util/get-field rule :item
+                transform $ lilac-parser.util/get-field rule :transform
                 result $ lilac-parser.util/require-map $ parse-lilac xs item
               if
-                .unwrap-or (get result :ok?) false
+                .unwrap-or (lilac-parser.util/get-field result :ok?) false
                 {} (:ok? true)
                   :value $ Some $ let
                       v $ lilac-parser.util/require-key result :value
@@ -1337,8 +1337,8 @@
         'parse-or $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn parse-or (xs rule)
             let
-                items $ lilac-parser.util/require-list $ .unwrap (get rule :items)
-                transform $ get rule :transform
+                items $ lilac-parser.util/require-list $ .unwrap (lilac-parser.util/get-field rule :items)
+                transform $ lilac-parser.util/get-field rule :transform
               loop
                   rules items
                   failures $ []
@@ -1352,14 +1352,14 @@
                       result $ parse-lilac xs $ .unwrap (first rules)
                     if (map? result)
                       if
-                        .unwrap-or (get result :ok?) false
+                        .unwrap-or (lilac-parser.util/get-field result :ok?) false
                         {} (:ok? true)
                           :value $ let
                               v $ lilac-parser.util/require-key result :value
                             match transform
                               (:some present-transform) (lilac-parser.util/apply-transform present-transform v)
                               (:none) v
-                          :rest $ lilac-parser.util/require-list $ .unwrap (get result :rest)
+                          :rest $ lilac-parser.util/require-list $ .unwrap (lilac-parser.util/get-field result :rest)
                           :parser-node :or
                           :results failures
                           :result result
@@ -1375,7 +1375,7 @@
               (:some x0 xss)
                 let
                     items $ read-char-set rule
-                    transform $ get rule :transform
+                    transform $ lilac-parser.util/get-field rule :transform
                   if (char-set-includes? items x0)
                     {} (:ok? false)
                       :message $ str (to-lispy-string x0) "| among "
@@ -1394,8 +1394,8 @@
         'parse-some $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn parse-some (xs0 rule)
             let
-                item $ .unwrap $ get rule :item
-                transform $ get rule :transform
+                item $ .unwrap $ lilac-parser.util/get-field rule :item
+                transform $ lilac-parser.util/get-field rule :transform
               loop
                   acc $ assert-type ([])
                     List $ Map Dynamic Dynamic
@@ -1429,14 +1429,14 @@
               (:some x0 xss)
                 let
                     min-code $ match
-                      data-view $ .unwrap $ get rule :min-code
+                      data-view $ .unwrap $ lilac-parser.util/get-field rule :min-code
                       (:number code) code
                       _ $ raise "|unicode-range expects numeric :min-code"
                     max-code $ match
-                      data-view $ .unwrap $ get rule :max-code
+                      data-view $ .unwrap $ lilac-parser.util/get-field rule :max-code
                       (:number code) code
                       _ $ raise "|unicode-range expects numeric :max-code"
-                    transform $ get rule :transform
+                    transform $ lilac-parser.util/get-field rule :transform
                     head-code $ match (data-view x0)
                       (:string char) (get-char-code char)
                       _ $ raise "|unicode-range expects a character string"
@@ -1458,7 +1458,7 @@
           :doc "|Reads the :items of a one-of / other-than rule back as a CharSet."
           :code $ quote $ defn read-char-set (rule)
             decode-map-as
-              .unwrap $ get rule :items
+              .unwrap $ lilac-parser.util/get-field rule :items
               quote lilac-parser.core/CharSet
           :examples $ []
           :schema $ quote $ Fn Rule (-> CharSet)
@@ -1484,11 +1484,11 @@
                 let
                     attempt $ lilac-parser.util/require-map $ parse-lilac content rule
                   if
-                    .unwrap-or (get attempt :ok?) false
+                    .unwrap-or (lilac-parser.util/get-field attempt :ok?) false
                     recur
                       str acc $ replacer $ lilac-parser.util/require-key attempt :value
                       append attempts attempt
-                      lilac-parser.util/require-list $ .unwrap $ get attempt :rest
+                      lilac-parser.util/require-list $ .unwrap $ lilac-parser.util/get-field attempt :rest
                       , rule replacer
                     recur (str acc c0) (append attempts attempt) cs rule replacer
           :examples $ []
@@ -1552,12 +1552,12 @@
                 get
                   {} $ :value nil
                   , :value
-                get result :value
+                lilac-parser.util/get-field result :value
               assert=
                 get
                   {} $ :rest $ []
                   , :rest
-                get result :rest
+                lilac-parser.util/get-field result :rest
               , &unit
             :tags $ #{} :parser-dispatch :unit
         'boolean-parser $ %{} 'CodeEntry (:doc |)
@@ -1752,7 +1752,7 @@
             if config/dev? $ load-console-formatter!
             render-app!
             add-watch! *reel :changes $ fn (reel prev)
-              hint-fn $ Fn (reel.typed/State lilac-parser.schema/Op lilac-parser.schema/Store) (reel.typed/State lilac-parser.schema/Op lilac-parser.schema/Store) (-> Unit) (:features :js-ffi)
+              hint-fn $ Fn (typed/State schema/Op schema/Store) (typed/State schema/Op schema/Store) (-> Unit) (:features :js-ffi)
               render-app!
             listen-devtools! |k on-control!
             js-ffi.browser/add-event-listener! |beforeunload $ fn (event)
@@ -1791,7 +1791,7 @@
             if (nil? build-errors)
               do (remove-watch! *reel :changes) (clear-cache!)
                 add-watch! *reel :changes $ fn (reel prev)
-                  hint-fn $ Fn (reel.typed/State lilac-parser.schema/Op lilac-parser.schema/Store) (reel.typed/State lilac-parser.schema/Op lilac-parser.schema/Store) (-> Unit) (:features :js-ffi)
+                  hint-fn $ Fn (typed/State schema/Op schema/Store) (typed/State schema/Op schema/Store) (-> Unit) (:features :js-ffi)
                   render-app!
                 reset! *reel $ reloaded-reel
                 restart-persistence!
@@ -1810,7 +1810,7 @@
           :code $ quote $ defn render-app! ()
             with-memo-frame $ fn () $ render! (mount-target)
               comp-container @*reel on-control! $ fn (op)
-                hint-fn $ Fn lilac-parser.schema/Op $ -> Unit
+                hint-fn $ Fn schema/Op $ -> Unit
                 dispatch! op
               , dispatch-event!
           :examples $ []
@@ -2142,7 +2142,7 @@
                     and
                       = 9 $ .len attempts
                       = (Some true)
-                        get
+                        lilac-parser.util/get-field
                           .unwrap $ first attempts
                           , :ok?
               is $ match
@@ -2230,6 +2230,13 @@
               raise $ str "|lilac rule :transform expects a function, got " f
           :examples $ []
           :schema $ quote $ Fn Dynamic Dynamic (-> Dynamic)
+        'get-field $ %{} 'CodeEntry
+          :doc "|Looks up an optional field without conflating a missing key with a stored nil."
+          :code $ quote $ defn get-field (data key) (get data key)
+          :examples $ []
+          :schema $ quote $ Fn (Map K V) K
+            -> $ Option V
+            :generics K V
         'input-list $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn input-list (content)
             match (data-view content)
