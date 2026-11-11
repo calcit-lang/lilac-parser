@@ -663,8 +663,9 @@
           :code $ quote $ defn find-lilac (content rule)
             find-lilac-iter ([]) ([]) (lilac-parser.util/input-list content) rule
           :examples $ []
-          :schema $ quote $ Fn Dynamic Rule
+          :schema $ quote $ Fn Input Rule
             -> $ Map Tag $ List (Map Tag Dynamic)
+            :generics Input
         'find-lilac-iter $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn find-lilac-iter (acc attempts content rule)
             assert "|expects content in sequence" $ list? content
@@ -714,7 +715,7 @@
           :code $ quote $ defn label+ (label item)
             {} (:parser-node :label) (:label label) (:item item)
           :examples $ []
-          :schema $ quote $ Fn Dynamic Rule (-> Rule)
+          :schema $ quote $ Fn Label Rule (-> Rule) (:generics Label)
         'many+ $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn many+ (item & args)
             let
@@ -1032,7 +1033,7 @@
                 (:err _message) (unknown-node rule)
               raise "|parser expects a rule map"
           :examples $ []
-          :schema $ quote $ Fn Dynamic Dynamic (-> Dynamic)
+          :schema $ quote $ Fn Input RuleInput (-> Dynamic) (:generics Input RuleInput)
           :tests $ []
             %{} 'TestEntry (:name |preserves-missing-and-invalid-node)
               :code $ quote $ do
@@ -1499,9 +1500,10 @@
           :code $ quote $ defn replace-lilac (content rule replacer) (echo |calling)
             replace-iter | ([]) (lilac-parser.util/input-list content) rule replacer
           :examples $ []
-          :schema $ quote $ Fn Dynamic Rule
+          :schema $ quote $ Fn Input Rule
             Fn Dynamic $ -> String
             -> $ Map Tag ReplaceResultValue
+            :generics Input
         'some+ $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn some+ (x & args)
             if (nil? x) (raise "|expected non-empty rule")
@@ -2235,8 +2237,9 @@
               (:list xs) xs
               _ $ raise "|expects content in list or string"
           :examples $ []
-          :schema $ quote $ Fn Dynamic
+          :schema $ quote $ Fn Input
             -> $ List Dynamic
+            :generics Input
         'require-key $ %{} 'CodeEntry
           :doc "|Value stored under key, which may itself be nil; raises with the key when the key is missing."
           :code $ quote $ defn require-key (data key)
