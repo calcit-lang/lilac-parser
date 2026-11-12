@@ -246,7 +246,7 @@
                         (:some kind) (&= :is kind)
                         (:none) false
                     Some $ span $ {} (:class-name css-label)
-                      :inner-text $ display-value $ lilac-parser.util/get-field node :value
+                      :inner-text $ .unwrap-or (lilac-parser.util/get-field node :value) |
                       :style $ {} $ :background-color (hsl 200 80 70)
                     , None
                   if
@@ -390,14 +390,6 @@
               (:none) (to-lispy-string nil)
           :examples $ []
           :schema $ quote $ Fn (Option T) (-> String) (:generics T)
-        'display-value $ %{} 'CodeEntry
-          :doc "|A node's :value for display; a node without one shows nothing."
-          :code $ quote $ defn display-value (value-option)
-            match value-option
-              (:some value) value
-              (:none) |
-          :examples $ []
-          :schema $ quote $ Fn (Option Dynamic) (-> Dynamic)
         'input-text $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn input-text (event)
             match
@@ -2267,8 +2259,9 @@
               (:list xs) xs
               _ $ raise "|parser expects a list"
           :examples $ []
-          :schema $ quote $ Fn Dynamic
+          :schema $ quote $ Fn Input
             -> $ List Dynamic
+            :generics Input
         'require-map $ %{} 'CodeEntry
           :doc "|Checks that value is a Tag-keyed map and returns it; raises \"parser expects a map\" otherwise."
           :code $ quote $ defn require-map (value)
@@ -2277,8 +2270,9 @@
               (:ok tag-map) tag-map
               (:err _message) (raise "|parser expects a map")
           :examples $ []
-          :schema $ quote $ Fn Dynamic
+          :schema $ quote $ Fn Input
             -> $ Map Tag Dynamic
+            :generics Input
         'seq-strip-beginning $ %{} 'CodeEntry
           :doc "|Returns (Option :some rest) when xs starts with ys, otherwise (Option :none)."
           :code $ quote $ defn seq-strip-beginning (xs ys)
