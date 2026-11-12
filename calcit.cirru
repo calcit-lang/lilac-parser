@@ -156,7 +156,7 @@
             Fn reel.typed/Control $ -> Unit
             Fn lilac-parser.schema/Op $ -> Unit
             -> respo.schema/Component
-            :features :js-ffi
+            :features :io :js-ffi :state
         'comp-node $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-node (states node)
             let
@@ -618,7 +618,7 @@
                   , identity
               {} (:parser-node :combine) (:items xs) (:transform transform)
           :examples $ []
-          :schema $ quote $ Fn (List Dynamic) (& Dynamic) (-> Rule)
+          :schema $ quote $ Fn (List Item) (& Dynamic) (-> Rule) (:generics Item)
         'core-methods $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def core-methods
             {} (:is parse-is) (:or parse-or) (:many parse-many) (:some parse-some) (:optional parse-optional) (:component parse-component) (:combine parse-combine) (:one-of parse-one-of) (:interleave parse-interleave) (:other-than parse-other-than) (:label parse-label) (:unicode-range parse-unicode-range)
@@ -666,6 +666,7 @@
           :schema $ quote $ Fn Input Rule
             -> $ Map Tag $ List (Map Tag Dynamic)
             :generics Input
+            :features :io :state
         'find-lilac-iter $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn find-lilac-iter (acc attempts content rule)
             assert "|expects content in sequence" $ list? content
@@ -693,6 +694,7 @@
             List Dynamic
             , Rule
               -> $ Map Tag $ List (Map Tag Dynamic)
+              :features :io :state
         'interleave+ $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn interleave+ (x y & args)
             let
@@ -754,7 +756,7 @@
                   , identity
               {} (:parser-node :or) (:items xs) (:transform transform)
           :examples $ []
-          :schema $ quote $ Fn (List Dynamic) (& Dynamic) (-> Rule)
+          :schema $ quote $ Fn (List Item) (& Dynamic) (-> Rule) (:generics Item) (:features :io)
         'other-than+ $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn other-than+ (items & args)
             let
@@ -797,7 +799,7 @@
                         &list:rest ys
                       {} (:ok? false) (:parser-node :combine) (:message "|failed to combine") (:result result) (:previous-results acc) (:rest xs)
           :examples $ []
-          :schema $ quote $ Fn (List Dynamic) Rule (-> ParseResult)
+          :schema $ quote $ Fn (List Dynamic) Rule (-> ParseResult) (:features :io :state)
           :tests $ [] $ %{} 'TestEntry (:name |preserves-empty-and-invalid-rule-lists)
             :code $ quote $ let
                 combined $ lilac-parser.util/require-map $ parse-lilac |x
@@ -867,7 +869,7 @@
                   {} (:ok? false) (:message "|failed branch") (:parser-node :component) (:label rule-name) (:rest xs)
               if blackbox? (assoc node :result nil) (assoc node :result result)
           :examples $ []
-          :schema $ quote $ Fn (List Dynamic) Rule (-> ParseResult)
+          :schema $ quote $ Fn (List Dynamic) Rule (-> ParseResult) (:features :io :state)
           :tests $ []
             %{} 'TestEntry (:name |preserves-maker-validation-order)
               :code $ quote $ let
@@ -954,7 +956,7 @@
                         :results acc
                         :peek-result result
           :examples $ []
-          :schema $ quote $ Fn (List Dynamic) Rule (-> ParseResult)
+          :schema $ quote $ Fn (List Dynamic) Rule (-> ParseResult) (:features :io :state)
         'parse-is $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn parse-is (xs rule)
             if (empty? xs)
@@ -1006,7 +1008,7 @@
                   :result result
                   :rest $ lilac-parser.util/require-key result :rest
           :examples $ []
-          :schema $ quote $ Fn (List Dynamic) Rule (-> ParseResult)
+          :schema $ quote $ Fn (List Dynamic) Rule (-> ParseResult) (:features :io :state)
         'parse-lilac $ %{} 'CodeEntry
           :doc "|Runs rule on x (a String, split into characters, or a List of tokens). Returns the rule's result map, nil for an unknown node, or whatever a registered custom method returns; raises when rule is not a map."
           :code $ quote $ defn parse-lilac (x rule)
@@ -1033,7 +1035,7 @@
                 (:err _message) (unknown-node rule)
               raise "|parser expects a rule map"
           :examples $ []
-          :schema $ quote $ Fn Input RuleInput (-> Dynamic) (:generics Input RuleInput)
+          :schema $ quote $ Fn Input RuleInput (-> Dynamic) (:generics Input RuleInput) (:features :io :state)
           :tests $ []
             %{} 'TestEntry (:name |preserves-missing-and-invalid-node)
               :code $ quote $ do
@@ -1291,7 +1293,7 @@
                           :peek-result result
                     raise "|parser result expects a map"
           :examples $ []
-          :schema $ quote $ Fn (List Dynamic) Rule (-> ParseResult)
+          :schema $ quote $ Fn (List Dynamic) Rule (-> ParseResult) (:features :io :state)
         'parse-one-of $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn parse-one-of (xs rule)
             match (destruct-list xs)
@@ -1333,7 +1335,7 @@
                   :result result
                 {} (:ok? true) (:value None) (:result result) (:parser-node :optional) (:rest xs)
           :examples $ []
-          :schema $ quote $ Fn (List Dynamic) Rule (-> ParseResult)
+          :schema $ quote $ Fn (List Dynamic) Rule (-> ParseResult) (:features :io :state)
         'parse-or $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn parse-or (xs rule)
             let
@@ -1366,7 +1368,7 @@
                         recur (&list:rest rules) (&list:append failures result)
                       raise "|parser result expects a map"
           :examples $ []
-          :schema $ quote $ Fn (List Dynamic) Rule (-> ParseResult)
+          :schema $ quote $ Fn (List Dynamic) Rule (-> ParseResult) (:features :io :state)
         'parse-other-than $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn parse-other-than (xs rule)
             match (destruct-list xs)
@@ -1420,7 +1422,7 @@
                       :results acc
                       :peek-result result
           :examples $ []
-          :schema $ quote $ Fn (List Dynamic) Rule (-> ParseResult)
+          :schema $ quote $ Fn (List Dynamic) Rule (-> ParseResult) (:features :io :state)
         'parse-unicode-range $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn parse-unicode-range (xs rule)
             match (destruct-list xs)
@@ -1474,6 +1476,7 @@
           :schema $ quote $ Fn Tag
             Fn (List Dynamic) Rule $ -> Dynamic
             -> Unit
+            :features :io :state
         'replace-iter $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn replace-iter (acc attempts content rule replacer) (; echo "|replace iter...")
             assert "|expects content in list" $ list? content
@@ -1495,6 +1498,7 @@
           :schema $ quote $ Fn String (List ParseResult) (List Dynamic) Rule
             Fn Dynamic $ -> String
             -> $ Map Tag ReplaceResultValue
+            :features :io :state
         'replace-lilac $ %{} 'CodeEntry
           :doc "|Replaces every match of rule in content with (replacer value). Returns {:result String, :attempts (List ParseResult)}."
           :code $ quote $ defn replace-lilac (content rule replacer) (echo |calling)
@@ -1504,6 +1508,7 @@
             Fn Dynamic $ -> String
             -> $ Map Tag ReplaceResultValue
             :generics Input
+            :features :io :state
         'some+ $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn some+ (x & args)
             if (nil? x) (raise "|expected non-empty rule")
@@ -1527,7 +1532,7 @@
           :doc "|Logs a rule whose :parser-node is missing, not a Tag, or not registered, and returns nil. parse-lilac keeps returning nil for such rules."
           :code $ quote $ defn unknown-node (rule) (echo "|Unknown node" rule) nil
           :examples $ []
-          :schema $ quote $ Fn T (-> Nil) (:generics T)
+          :schema $ quote $ Fn T (-> Nil) (:generics T) (:features :io)
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns lilac-parser.core
           :require $ lilac-parser.util :refer $ seq-strip-beginning
@@ -1544,7 +1549,7 @@
                 take-nth (require-list xs) 2
               is+ |]
           :examples $ []
-          :schema $ quote $ Fn (-> lilac-parser.core/Rule)
+          :schema $ quote $ Fn (-> lilac-parser.core/Rule) (:features :io)
           :tests $ [] $ %{} 'TestEntry (:name |preserves-empty-array-result)
             :code $ quote $ let
                 result $ lilac-parser.util/require-map $ lilac-parser.core/parse-lilac |[] (array-parser+)
@@ -1641,7 +1646,7 @@
                     (:some present-entries) (require-list present-entries)
                     (:none) ([])
           :examples $ []
-          :schema $ quote $ Fn (-> lilac-parser.core/Rule)
+          :schema $ quote $ Fn (-> lilac-parser.core/Rule) (:features :io)
         'space-parser $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def space-parser
             label+ |space $ some+ (is+ "| ")
@@ -1686,7 +1691,7 @@
           :code $ quote $ defparser value-parser+ () identity
             or+ $ [] number-parser string-parser nil-parser boolean-parser (array-parser+) (object-parser+)
           :examples $ []
-          :schema $ quote $ Fn (-> lilac-parser.core/Rule)
+          :schema $ quote $ Fn (-> lilac-parser.core/Rule) (:features :io)
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns lilac-parser.demo.json
           :require
@@ -1706,7 +1711,7 @@
               some+ $ or+ $ [] number-parser word-parser space-parser (s-expr-parser+)
               is+ "|)"
           :examples $ []
-          :schema $ quote $ Fn (-> lilac-parser.core/Rule)
+          :schema $ quote $ Fn (-> lilac-parser.core/Rule) (:features :io)
         'space-parser $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def space-parser (is+ "| ")
           :examples $ []
@@ -1737,7 +1742,7 @@
               (lilac-parser.schema/Op action) (next-reel action)
             , &unit
           :examples $ []
-          :schema $ quote $ Fn schema/ResolvedOp (-> Unit) (:features :js-ffi)
+          :schema $ quote $ Fn schema/ResolvedOp (-> Unit) (:features :io :js-ffi :state)
         'dispatch-event! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn dispatch-event! (event)
             match (schema/decode-op event)
@@ -1745,7 +1750,7 @@
               (:err message) (eprintln "|Invalid operation:" message)
             , &unit
           :examples $ []
-          :schema $ quote $ Fn *dispatch-op (-> Unit)
+          :schema $ quote $ Fn *dispatch-op (-> Unit) (:features :io :state)
         'main! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn main! ()
             println "|Running mode:" $ if config/dev? |dev |release
@@ -1762,7 +1767,7 @@
             println "|App started."
             , &unit
           :examples $ []
-          :schema $ quote $ Fn (-> Unit) (:features :js-ffi)
+          :schema $ quote $ Fn (-> Unit) (:features :io :js-ffi :state)
         'mount-target $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn mount-target ()
             respo.ffi.browser/narrow-element $ .unwrap $ js-ffi.browser/query-selector |.app
@@ -1774,18 +1779,18 @@
           :examples $ []
           :schema $ quote $ Fn schema/Op
             -> $ typed/State schema/Op schema/Store
-            :features :js-ffi
+            :features :js-ffi :state
         'on-control! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn on-control! (control) (dispatch! control)
           :examples $ []
-          :schema $ quote $ Fn typed/Control (-> Unit)
+          :schema $ quote $ Fn typed/Control (-> Unit) (:features :io :state)
         'persist-storage! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn persist-storage! ()
             js-ffi.browser/storage-set! (:storage-key config/site)
               format-cirru-edn $ :store @*reel
             , &unit
           :examples $ []
-          :schema $ quote $ Fn (-> Unit) (:features :js-ffi)
+          :schema $ quote $ Fn (-> Unit) (:features :js-ffi :state)
         'reload! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn reload! ()
             if (nil? build-errors)
@@ -1799,13 +1804,13 @@
               hud! |error build-errors
             , &unit
           :examples $ []
-          :schema $ quote $ Fn (-> Unit) (:features :js-ffi)
+          :schema $ quote $ Fn (-> Unit) (:features :io :js-ffi :state)
         'reloaded-reel $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn reloaded-reel () (typed/refresh updater @*reel schema/store)
           :examples $ []
           :schema $ quote $ Fn
             -> $ typed/State schema/Op schema/Store
-            :features :js-ffi
+            :features :js-ffi :state
         'render-app! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn render-app! ()
             with-memo-frame $ fn () $ render! (mount-target)
@@ -1814,7 +1819,7 @@
                 dispatch! op
               , dispatch-event!
           :examples $ []
-          :schema $ quote $ Fn (-> Unit) (:features :js-ffi)
+          :schema $ quote $ Fn (-> Unit) (:features :io :js-ffi :state)
         'restart-persistence! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn restart-persistence! ()
             match @*persist-timer
@@ -1823,7 +1828,7 @@
             reset! *persist-timer $ Some $ js-ffi.browser/set-interval! persist-storage! 60000
             , &unit
           :examples $ []
-          :schema $ quote $ Fn (-> Unit) (:features :js-ffi)
+          :schema $ quote $ Fn (-> Unit) (:features :js-ffi :state)
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns lilac-parser.main
           :require
@@ -1957,7 +1962,7 @@
         'main! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn main! () (reset! *quit-on-failure? true) (test-combine) (test-find) (test-interleave) (test-is) (test-many) (test-oneof) (test-optional) (test-or) (test-other-than) (test-preset) (test-replace) (test-some) (test-unicode-range)
           :examples $ []
-          :schema $ quote $ Fn (-> Unit)
+          :schema $ quote $ Fn (-> Unit) (:features :io :state)
         'not-ok? $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn not-ok? (x)
             if (map? x)
@@ -1968,7 +1973,7 @@
         'reload! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn reload! () (println |TODO)
           :examples $ []
-          :schema $ quote $ Fn (-> Unit)
+          :schema $ quote $ Fn (-> Unit) (:features :io)
         'roughly-ok? $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn roughly-ok? (x)
             if (map? x)
@@ -2003,7 +2008,7 @@
                 .unwrap $ get nested-result :value
                 {} $ |a $ {}
           :examples $ []
-          :schema $ quote $ Fn (-> Unit)
+          :schema $ quote $ Fn (-> Unit) (:features :io :state)
         'test-find $ %{} 'CodeEntry (:doc |)
           :code $ quote $ deftest test-find
             testing "|find matches"
@@ -2020,7 +2025,7 @@
                   find-lilac "|write cumulo and phlox" $ or+ $ [] (is+ |cirru) (is+ |respo)
                   , :result
           :examples $ []
-          :schema $ quote $ Fn (-> Unit)
+          :schema $ quote $ Fn (-> Unit) (:features :io :state)
         'test-interleave $ %{} 'CodeEntry (:doc |)
           :code $ quote $ deftest test-interleave
             testing "|repeat xy" $ is $ exactly-ok?
@@ -2032,7 +2037,7 @@
             testing "|repeat xy wrong" $ is $ not-ok?
               parse-lilac |yxy $ interleave+ (is+ |x) (is+ |y)
           :examples $ []
-          :schema $ quote $ Fn (-> Unit)
+          :schema $ quote $ Fn (-> Unit) (:features :io :state)
         'test-is $ %{} 'CodeEntry (:doc |)
           :code $ quote $ deftest test-is
             testing "|is x" $ is $ exactly-ok?
@@ -2046,7 +2051,7 @@
             testing "|is not x" $ is $ not-ok?
               parse-lilac |y $ is+ |x
           :examples $ []
-          :schema $ quote $ Fn (-> Unit)
+          :schema $ quote $ Fn (-> Unit) (:features :io :state)
         'test-many $ %{} 'CodeEntry (:doc |)
           :code $ quote $ deftest test-many
             testing "|an x" $ is $ exactly-ok?
@@ -2058,7 +2063,7 @@
             testing "|contains many xs" $ is $ roughly-ok?
               parse-lilac |xxxy $ many+ $ is+ |x
           :examples $ []
-          :schema $ quote $ Fn (-> Unit)
+          :schema $ quote $ Fn (-> Unit) (:features :io :state)
         'test-oneof $ %{} 'CodeEntry (:doc |)
           :code $ quote $ deftest test-oneof
             testing "|x/y/z is one of xyz"
@@ -2070,7 +2075,7 @@
             testing "|xy has one of xyz" $ is $ roughly-ok?
               parse-lilac |xy $ one-of+ |xyz
           :examples $ []
-          :schema $ quote $ Fn (-> Unit)
+          :schema $ quote $ Fn (-> Unit) (:features :io :state)
         'test-optional $ %{} 'CodeEntry (:doc |)
           :code $ quote $ deftest test-optional
             testing "|optional x" $ is $ exactly-ok?
@@ -2080,7 +2085,7 @@
             testing "|x for optional y" $ is $ roughly-ok?
               parse-lilac |x $ optional+ $ is+ |y
           :examples $ []
-          :schema $ quote $ Fn (-> Unit)
+          :schema $ quote $ Fn (-> Unit) (:features :io :state)
         'test-or $ %{} 'CodeEntry (:doc |)
           :code $ quote $ deftest test-or
             testing "|x or y" $ is $ exactly-ok?
@@ -2090,7 +2095,7 @@
             testing "|z is x or y" $ is $ not-ok?
               parse-lilac |z $ or+ $ [] (is+ |x) (is+ |y)
           :examples $ []
-          :schema $ quote $ Fn (-> Unit)
+          :schema $ quote $ Fn (-> Unit) (:features :io :state)
         'test-other-than $ %{} 'CodeEntry (:doc |)
           :code $ quote $ deftest test-other-than
             testing "|other than abc" $ is $ exactly-ok?
@@ -2100,7 +2105,7 @@
             testing "|a is in abc" $ is $ not-ok?
               parse-lilac |a $ other-than+ |abc
           :examples $ []
-          :schema $ quote $ Fn (-> Unit)
+          :schema $ quote $ Fn (-> Unit) (:features :io :state)
         'test-preset $ %{} 'CodeEntry (:doc |)
           :code $ quote $ deftest test-preset
             testing "|find alphabet"
@@ -2123,7 +2128,7 @@
               is $ not-ok? $ parse-lilac |, lilac-chinese-char
               is $ not-ok? $ parse-lilac "|，" lilac-chinese-char
           :examples $ []
-          :schema $ quote $ Fn (-> Unit)
+          :schema $ quote $ Fn (-> Unit) (:features :io :state)
         'test-replace $ %{} 'CodeEntry (:doc |)
           :code $ quote $ deftest test-replace
             testing "|replaced content"
@@ -2162,7 +2167,7 @@
                 (String text) (&= "|phlox project" text)
                 (List _attempts) false
           :examples $ []
-          :schema $ quote $ Fn (-> Unit)
+          :schema $ quote $ Fn (-> Unit) (:features :io :state)
         'test-some $ %{} 'CodeEntry (:doc |)
           :code $ quote $ deftest test-some
             testing "|no x" $ is $ exactly-ok?
@@ -2176,7 +2181,7 @@
             testing "|no x in y" $ is $ roughly-ok?
               parse-lilac |y $ some+ $ is+ |x
           :examples $ []
-          :schema $ quote $ Fn (-> Unit)
+          :schema $ quote $ Fn (-> Unit) (:features :io :state)
         'test-unicode-range $ %{} 'CodeEntry (:doc |)
           :code $ quote $ deftest test-unicode-range
             testing "|parse by unicode"
@@ -2184,7 +2189,7 @@
               is $ exactly-ok? $ parse-lilac |z (unicode-range+ 97 122)
               is $ not-ok? $ parse-lilac |A (unicode-range+ 97 122)
           :examples $ []
-          :schema $ quote $ Fn (-> Unit)
+          :schema $ quote $ Fn (-> Unit) (:features :io :state)
         'testing $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn testing (title & checks) &unit
           :examples $ []

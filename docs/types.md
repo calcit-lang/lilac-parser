@@ -30,7 +30,7 @@ Lilac Parser 的规则和解析结果都是普通的 Tag 键 Map，不是 Struct
 | `:unicode-range` | `unicode-range+ (min Number) (max Number)` | `:min-code`、`:max-code`，`:transform` |
 | `:component` | `defparser` 宏 | `:name` Tag，`:fn`、`:args`、`:value-fn`、`:blackbox?` |
 
-`or+`、`combine+` 的列表元素类型写成 `List Dynamic`，因为调用方常常把 schema 为 Dynamic 的规则定义放进 `[]` 字面量；列表元素在 `parse-lilac` 里逐个校验。
+`or+`、`combine+` 的列表参数使用 `List Item`。调用方提供的元素类型参与推断；旧规则列表仍由 `parse-lilac` 逐个校验。
 
 `:transform` 在匹配成功时作用于结果值：nil 表示不转换，函数会被调用，其他值会报错 `lilac rule :transform expects a function`（以前是调用非函数值时的运行时错误）。`:value-fn` 同理，不是函数时报 `component rule expects :value-fn to be a function`。
 
