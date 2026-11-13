@@ -1891,32 +1891,38 @@
           :schema $ quote StructDef
         'decode-op $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn decode-op (raw)
-            match raw
-              (:states cursor value)
-                match
-                  try-decode-map-as cursor $ List respo.schema/CoordKey
-                  (:ok path)
-                    Result :ok $ Op :states path value
-                  (:err message) (Result :err message)
-              (:content content)
-                match (data-view content)
-                  (:string text)
-                    Result :ok $ Op :content text
-                  _ $ Result :err "|content operation expects a string"
-              (:hydrate-storage value)
-                let
-                    normalized $ if (map? value)
-                      if (&map:contains? value :content) value $ &map:assoc value :content |
-                      , value
-                  match (try-decode-map-as normalized 'lilac-parser.schema/Store)
-                    (:ok data)
-                      Result :ok $ Op :hydrate-storage data
+            if (enum? raw)
+              match raw
+                (:states cursor value)
+                  match
+                    try-decode-map-as cursor $ List respo.schema/CoordKey
+                    (:ok path)
+                      Result :ok $ Op :states path value
                     (:err message) (Result :err message)
-              _ $ Result :err "|unknown application operation"
+                (:content content)
+                  match (data-view content)
+                    (:string text)
+                      Result :ok $ Op :content text
+                    _ $ Result :err "|content operation expects a string"
+                (:hydrate-storage value)
+                  let
+                      normalized $ if (map? value)
+                        if (&map:contains? value :content) value $ &map:assoc value :content |
+                        , value
+                    match (try-decode-map-as normalized 'lilac-parser.schema/Store)
+                      (:ok data)
+                        Result :ok $ Op :hydrate-storage data
+                      (:err message) (Result :err message)
+                _ $ Result :err "|unknown application operation"
+              Result :err "|unknown application operation"
           :examples $ []
-          :schema $ quote $ Fn AnyEnum
+          :schema $ quote $ Fn Input
             -> $ Result Op String
+            :generics Input
             :open :decode
+          :tests $ [] $ %{} 'TestEntry (:name |rejects-non-enum)
+            :code $ quote $ assert= (Result :err "|unknown application operation") (decode-op |content)
+            :tags $ #{} :parser-dispatch
         'store $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def store
             Store :states ({}) :content |
