@@ -1946,7 +1946,7 @@
                 empty? $ .unwrap $ get x :rest
               raise "|parser test expects a result map"
           :examples $ []
-          :schema $ quote $ Fn Dynamic (-> Bool)
+          :schema $ quote $ Fn Input (-> Bool) (:generics Input)
         'is $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn is (x) (assert x "|assertion failed")
           :examples $ []
@@ -1961,7 +1961,7 @@
               not $ .unwrap-or (get x :ok?) false
               raise "|parser test expects a result map"
           :examples $ []
-          :schema $ quote $ Fn Dynamic (-> Bool)
+          :schema $ quote $ Fn Input (-> Bool) (:generics Input)
         'reload! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn reload! () (println |TODO)
           :examples $ []
@@ -1974,7 +1974,7 @@
                 not $ empty? $ .unwrap (get x :rest)
               raise "|parser test expects a result map"
           :examples $ []
-          :schema $ quote $ Fn Dynamic (-> Bool)
+          :schema $ quote $ Fn Input (-> Bool) (:generics Input)
         'test-combine $ %{} 'CodeEntry (:doc |)
           :code $ quote $ deftest test-combine
             testing "|is xy" $ is $ exactly-ok?
@@ -2201,8 +2201,9 @@
               (:ok states) states
               (:err message) (raise message)
           :examples $ []
-          :schema $ quote $ Fn Dynamic
+          :schema $ quote $ Fn Input
             -> $ Map Dynamic Dynamic
+            :generics Input
         'updater $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn updater (store op op-id op-time)
             match op
