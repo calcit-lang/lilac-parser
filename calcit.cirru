@@ -1253,6 +1253,26 @@
                   assert= "|[lilac-parser] missing key :value" component-error
                   assert= "|[lilac-parser] missing key :value" label-error
               :tags $ #{} :parser-dispatch :unit
+            %{} 'TestEntry (:name |preserves-false-constructor-transform)
+              :code $ quote $ let
+                  rules $ [] (is+ |x false) (one-of+ |x false) (other-than+ |y false) (unicode-range+ 120 120 false)
+                    optional+ (is+ |x) false
+                    many+ (is+ |x) false
+                    some+ (is+ |x) false
+                    combine+
+                      [] $ is+ |x
+                      , false
+                    or+
+                      [] $ is+ |x
+                      , false
+                    interleave+ (is+ |x) (is+ |y) false
+                each rules $ fn (rule)
+                  assert= (Some false) (get rule :transform)
+                assert= "|lilac rule :transform expects a function, got false" $ try
+                  parse-lilac |x $ is+ |x false
+                  fn (message) message
+                , &unit
+              :tags $ #{} :parser-dispatch :unit
         'parse-many $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn parse-many (xs0 rule)
             let
