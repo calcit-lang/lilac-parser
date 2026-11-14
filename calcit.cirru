@@ -982,7 +982,7 @@
                       :parser-node :is
                       :rest xs
           :examples $ []
-          :schema $ quote $ Fn (List Dynamic) Rule (-> ParseResult)
+          :schema $ quote $ Fn (List Token) Rule (-> ParseResult) (:generics Token)
         'parse-label $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn parse-label (xs rule)
             let
@@ -2291,8 +2291,8 @@
                 recur (&list:rest xs) (&list:rest ys)
               true None
           :examples $ []
-          :schema $ quote $ Fn (List T) (List T)
-            -> $ Option $ List T
-            :generics T
+          :schema $ quote $ Fn (List Token) (List Prefix)
+            -> $ Option $ List Token
+            :generics Token Prefix
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns lilac-parser.util
