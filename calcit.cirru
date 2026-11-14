@@ -605,12 +605,12 @@
         'combine+ $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn combine+ (xs & args)
             let
-                transform $ either
-                  .unwrap-or (first args) identity
-                  , identity
+                transform $ match (first args)
+                  (:some arg) (either arg identity)
+                  (:none) identity
               {} (:parser-node :combine) (:items xs) (:transform transform)
           :examples $ []
-          :schema $ quote $ Fn (List Item) (& Dynamic) (-> Rule) (:generics Item)
+          :schema $ quote $ Fn (List Item) (& Arg) (-> Rule) (:generics Item Arg)
         'core-methods $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def core-methods
             {} (:is parse-is) (:or parse-or) (:many parse-many) (:some parse-some) (:optional parse-optional) (:component parse-component) (:combine parse-combine) (:one-of parse-one-of) (:interleave parse-interleave) (:other-than parse-other-than) (:label parse-label) (:unicode-range parse-unicode-range)
@@ -690,12 +690,12 @@
         'interleave+ $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn interleave+ (x y & args)
             let
-                transform $ either
-                  .unwrap-or (first args) identity
-                  , identity
+                transform $ match (first args)
+                  (:some arg) (either arg identity)
+                  (:none) identity
               {} (:parser-node :interleave) (:x x) (:y y) (:transform transform)
           :examples $ []
-          :schema $ quote $ Fn Rule Rule (& Dynamic) (-> Rule)
+          :schema $ quote $ Fn Rule Rule (& Arg) (-> Rule) (:generics Arg)
         'is+ $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn is+ (x & args)
             let
@@ -713,12 +713,12 @@
         'many+ $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn many+ (item & args)
             let
-                transform $ either
-                  .unwrap-or (first args) identity
-                  , identity
+                transform $ match (first args)
+                  (:some arg) (either arg identity)
+                  (:none) identity
               {} (:parser-node :many) (:item item) (:transform transform)
           :examples $ []
-          :schema $ quote $ Fn Rule (& Dynamic) (-> Rule)
+          :schema $ quote $ Fn Rule (& Arg) (-> Rule) (:generics Arg)
         'one-of+ $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn one-of+ (xs & args)
             let
@@ -731,24 +731,24 @@
         'optional+ $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn optional+ (x & args)
             let
-                transform $ either
-                  .unwrap-or (first args) identity
-                  , identity
+                transform $ match (first args)
+                  (:some arg) (either arg identity)
+                  (:none) identity
               {} (:parser-node :optional) (:item x) (:transform transform)
           :examples $ []
-          :schema $ quote $ Fn Rule (& Dynamic) (-> Rule)
+          :schema $ quote $ Fn Rule (& Arg) (-> Rule) (:generics Arg)
         'or+ $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn or+ (xs & args)
             when
               not $ list? xs
               println "|Expected list passed to or+ :" xs
             let
-                transform $ either
-                  .unwrap-or (first args) identity
-                  , identity
+                transform $ match (first args)
+                  (:some arg) (either arg identity)
+                  (:none) identity
               {} (:parser-node :or) (:items xs) (:transform transform)
           :examples $ []
-          :schema $ quote $ Fn (List Item) (& Dynamic) (-> Rule) (:generics Item) (:features :io)
+          :schema $ quote $ Fn (List Item) (& Arg) (-> Rule) (:generics Item Arg) (:features :io)
         'other-than+ $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn other-than+ (items & args)
             let
@@ -1505,12 +1505,12 @@
           :code $ quote $ defn some+ (x & args)
             if (nil? x) (raise "|expected non-empty rule")
             let
-                transform $ either
-                  .unwrap-or (first args) identity
-                  , identity
+                transform $ match (first args)
+                  (:some arg) (either arg identity)
+                  (:none) identity
               {} (:parser-node :some) (:item x) (:transform transform)
           :examples $ []
-          :schema $ quote $ Fn Rule (& Dynamic) (-> Rule)
+          :schema $ quote $ Fn Rule (& Arg) (-> Rule) (:generics Arg)
         'unicode-range+ $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn unicode-range+ (min-code max-code & args)
             let
