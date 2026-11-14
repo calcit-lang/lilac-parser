@@ -699,12 +699,12 @@
         'is+ $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn is+ (x & args)
             let
-                transform $ either
-                  .unwrap-or (first args) identity
-                  , identity
+                transform $ match (first args)
+                  (:some arg) (either arg identity)
+                  (:none) identity
               {} (:parser-node :is) (:item x) (:transform transform)
           :examples $ []
-          :schema $ quote $ Fn String (& Dynamic) (-> Rule)
+          :schema $ quote $ Fn String (& Arg) (-> Rule) (:generics Arg)
         'label+ $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn label+ (label item)
             {} (:parser-node :label) (:label label) (:item item)
@@ -722,12 +722,12 @@
         'one-of+ $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn one-of+ (xs & args)
             let
-                transform $ either
-                  .unwrap-or (first args) identity
-                  , identity
+                transform $ match (first args)
+                  (:some arg) (either arg identity)
+                  (:none) identity
               {} (:parser-node :one-of) (:items xs) (:transform transform)
           :examples $ []
-          :schema $ quote $ Fn CharSet (& Dynamic) (-> Rule)
+          :schema $ quote $ Fn CharSet (& Arg) (-> Rule) (:generics Arg)
         'optional+ $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn optional+ (x & args)
             let
@@ -752,12 +752,12 @@
         'other-than+ $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn other-than+ (items & args)
             let
-                transform $ either
-                  .unwrap-or (first args) identity
-                  , identity
+                transform $ match (first args)
+                  (:some arg) (either arg identity)
+                  (:none) identity
               {} (:parser-node :other-than) (:items items) (:transform transform)
           :examples $ []
-          :schema $ quote $ Fn CharSet (& Dynamic) (-> Rule)
+          :schema $ quote $ Fn CharSet (& Arg) (-> Rule) (:generics Arg)
         'parse-combine $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn parse-combine (xs0 rule)
             let
@@ -1514,12 +1514,12 @@
         'unicode-range+ $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn unicode-range+ (min-code max-code & args)
             let
-                transform $ either
-                  .unwrap-or (first args) identity
-                  , identity
+                transform $ match (first args)
+                  (:some arg) (either arg identity)
+                  (:none) identity
               {} (:parser-node :unicode-range) (:min-code min-code) (:max-code max-code) (:transform transform)
           :examples $ []
-          :schema $ quote $ Fn Number Number (& Dynamic) (-> Rule)
+          :schema $ quote $ Fn Number Number (& Arg) (-> Rule) (:generics Arg)
         'unknown-node $ %{} 'CodeEntry
           :doc "|Logs a rule whose :parser-node is missing, not a Tag, or not registered, and returns nil. parse-lilac keeps returning nil for such rules."
           :code $ quote $ defn unknown-node (rule) (echo "|Unknown node" rule) nil
