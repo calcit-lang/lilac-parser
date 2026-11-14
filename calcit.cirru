@@ -616,7 +616,7 @@
             {} (:is parse-is) (:or parse-or) (:many parse-many) (:some parse-some) (:optional parse-optional) (:component parse-component) (:combine parse-combine) (:one-of parse-one-of) (:interleave parse-interleave) (:other-than parse-other-than) (:label parse-label) (:unicode-range parse-unicode-range)
           :examples $ []
           :schema $ quote $ Map Tag
-            Fn (List Dynamic) Rule $ -> ParseResult
+            Fn (List Dynamic) Rule (-> ParseResult) (:features :io :state)
         'defparser $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defmacro defparser (comp-name args value-fn body)
             assert "|args in a list" $ list? args
@@ -1939,11 +1939,11 @@
         'deftest $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defmacro deftest (name & body)
             quasiquote $ defn (~ name) ()
-              hint-fn $ Fn (-> Unit) (:features :js-ffi)
+              hint-fn $ Fn (-> Unit) (:features :js-ffi :io :state)
               do (~@ body) &unit
           :examples $ []
           :schema $ quote $ Macro SyntaxSymbol (& Syntax)
-            -> $ Definition $ Fn (-> Unit) (:features :js-ffi)
+            -> $ Definition $ Fn (-> Unit) (:features :io :js-ffi :state)
         'exactly-ok? $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn exactly-ok? (x)
             if (map? x)
