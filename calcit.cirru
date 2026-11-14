@@ -2233,7 +2233,7 @@
             if (nil? f) value $ if (fn? f) (f value)
               raise $ str "|lilac rule :transform expects a function, got " f
           :examples $ []
-          :schema $ quote $ Fn Dynamic Dynamic (-> Dynamic)
+          :schema $ quote $ Fn Transform Value (-> Dynamic) (:generics Transform Value)
         'get-field $ %{} 'CodeEntry
           :doc "|Looks up an optional field without conflating a missing key with a stored nil."
           :code $ quote $ defn get-field (data key) (get data key)
