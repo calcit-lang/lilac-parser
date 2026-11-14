@@ -861,7 +861,7 @@
                   {} (:ok? false) (:message "|failed branch") (:parser-node :component) (:label rule-name) (:rest xs)
               if blackbox? (assoc node :result nil) (assoc node :result result)
           :examples $ []
-          :schema $ quote $ Fn (List Dynamic) Rule (-> ParseResult) (:features :io :state)
+          :schema $ quote $ Fn (List Token) Rule (-> ParseResult) (:generics Token) (:features :io :state)
           :tests $ []
             %{} 'TestEntry (:name |preserves-maker-validation-order)
               :code $ quote $ let
@@ -1307,7 +1307,7 @@
                       :parser-node :one-of
                       :rest xs
           :examples $ []
-          :schema $ quote $ Fn (List Dynamic) Rule (-> ParseResult)
+          :schema $ quote $ Fn (List Token) Rule (-> ParseResult) (:generics Token)
         'parse-optional $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn parse-optional (xs rule)
             let
@@ -1327,7 +1327,7 @@
                   :result result
                 {} (:ok? true) (:value None) (:result result) (:parser-node :optional) (:rest xs)
           :examples $ []
-          :schema $ quote $ Fn (List Dynamic) Rule (-> ParseResult) (:features :io :state)
+          :schema $ quote $ Fn (List Token) Rule (-> ParseResult) (:generics Token) (:features :io :state)
         'parse-or $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn parse-or (xs rule)
             let
@@ -1360,7 +1360,7 @@
                         recur (&list:rest rules) (&list:append failures result)
                       raise "|parser result expects a map"
           :examples $ []
-          :schema $ quote $ Fn (List Dynamic) Rule (-> ParseResult) (:features :io :state)
+          :schema $ quote $ Fn (List Token) Rule (-> ParseResult) (:generics Token) (:features :io :state)
         'parse-other-than $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn parse-other-than (xs rule)
             match (destruct-list xs)
@@ -1384,7 +1384,7 @@
                       :rest xss
                       :parser-node :other-than
           :examples $ []
-          :schema $ quote $ Fn (List Dynamic) Rule (-> ParseResult)
+          :schema $ quote $ Fn (List Token) Rule (-> ParseResult) (:generics Token)
         'parse-some $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn parse-some (xs0 rule)
             let
