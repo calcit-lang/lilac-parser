@@ -153,8 +153,8 @@
                 .render load-plugin
           :examples $ []
           :schema $ quote $ Fn (reel.typed/State lilac-parser.schema/Op lilac-parser.schema/Store)
-            Fn reel.typed/Control $ -> Unit
-            Fn lilac-parser.schema/Op $ -> Unit
+            Fn reel.typed/Control (-> Unit) (:features :io :state)
+            Fn lilac-parser.schema/Op (-> Unit) (:features :io :state)
             -> respo.schema/Component
             :features :io :js-ffi :state
         'comp-node $ %{} 'CodeEntry (:doc |)
