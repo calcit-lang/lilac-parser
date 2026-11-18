@@ -11,9 +11,9 @@ For JSON, use `parse-lilac` with the rules in the `lilac-parser.demo.json` names
 the current browser button does not select the JSON parser. Load EDN displays an
 existing parsing result rather than changing that parser.
 
-### 当前版本 / Calcit 0.43.0
+### 当前版本 / Calcit 0.44.0
 
-将 CLI 与 `@calcit/procs` 对齐到正式 **0.43.0**，重新安装模块图并生成 JS。规则和内置解析结果沿用 Tag 键 Map。自定义解析回调可返回任意值，未注册的节点返回 nil。内部读取必需字段时会保留 Map 的键和值类型，缺键仍按原方式报错。
+将 CLI 与 `@calcit/procs` 对齐到正式 **0.44.0**，重新安装模块图并生成 JS。规则和内置解析结果沿用 Tag 键 Map。自定义解析回调可返回任意值，未注册的节点返回 nil。内部读取必需字段时会保留 Map 的键和值类型，缺键仍按原方式报错。
 
 ### 历史 / Calcit 0.35.1 与现代 Respo
 
