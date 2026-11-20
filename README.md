@@ -204,7 +204,7 @@ MIT
 
 ### Development
 
-使用 Node.js 24、Yarn 4.18.0、Caps 0.1.1 与 Calcit 0.43.0：
+使用 Node.js 24、Yarn 4.18.0、Caps 0.1.2 与 Calcit 0.44.0：
 
 ```sh
 caps --strict --ci
@@ -225,7 +225,7 @@ yarn vite build --base=./
 现有 parser-dispatch 合同由官方同版共享 runner 在 native/JS 回放，parser-gui 仅在 JS 回放。
 不复制 runner、不新增兼容开关，零匹配或排除不算运行成功；GUI 原 SSR 回放不替代浏览器交互验收。
 
-unresolved 增长门禁上限为 82；新依赖解析等待60分钟，无单包豁免。Actions 使用精确正式 tag，维护者接受 tag 可移动风险。
+unresolved 增长门禁上限为 39；新依赖解析等待60分钟，无单包豁免。Actions 使用精确正式 tag，维护者接受 tag 可移动风险。
 源码只维护 `calcit.cirru` / `deps.cirru`，生成的 `js-out/` 不提交；不加 concurrently、验证脚本或基线。
 
 CI 构建原 COS CDN 路径，使用 action 自身 verify，PR 预览沿用独立 number/run/attempt 前缀。原生产前缀和服务器目录保持，不把前端迁移扩展到后端。
