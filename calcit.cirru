@@ -1513,7 +1513,7 @@
             :features :io :state
         'replace-lilac $ %{} 'CodeEntry
           :doc "|Replaces every match of rule in content with (replacer value). Returns {:result String, :attempts (List ParseResult)}."
-          :code $ quote $ defn replace-lilac (content rule replacer) (echo |calling)
+          :code $ quote $ defn replace-lilac (content rule replacer)
             replace-iter | ([]) (lilac-parser.util/input-list content) rule replacer
           :examples $ []
           :schema $ quote $ Fn Input Rule
