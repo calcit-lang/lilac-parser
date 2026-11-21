@@ -674,7 +674,7 @@
                         , |
                       :value $ lilac-parser.util/require-key attempt :value
                     &list:append attempts attempt
-                    lilac-parser.util/require-list $ .unwrap $ lilac-parser.util/get-field attempt :rest
+                    require-progress content $ lilac-parser.util/require-list $ .unwrap (lilac-parser.util/get-field attempt :rest)
                     , rule
                   recur acc (&list:append attempts attempt) (&list:rest content) rule
           :examples $ []
@@ -924,13 +924,18 @@
                   xs xs0
                   x x0
                   y y0
+                  stalled? false
                 let
                     result $ lilac-parser.util/require-map $ parse-lilac xs x
                   if
                     .unwrap-or (lilac-parser.util/get-field result :ok?) false
-                    recur (&list:append acc result)
-                      lilac-parser.util/require-list $ .unwrap $ lilac-parser.util/get-field result :rest
-                      , y x
+                    let
+                        next-xs $ lilac-parser.util/require-list $ .unwrap (lilac-parser.util/get-field result :rest)
+                      let
+                          next-stalled? $ >= (.len next-xs) (.len xs)
+                        if (and stalled? next-stalled?)
+                          raise "|Interleaved parser succeeded twice without consuming input"
+                          recur (&list:append acc result) next-xs y x next-stalled?
                     if (empty? acc)
                       {} (:ok? false) (:message "|no match") (:parser-node :interleave) (:peek-result result) (:rest xs)
                       {} (:ok? true)
@@ -1271,6 +1276,34 @@
                   fn (message) message
                 , &unit
               :tags $ #{} :parser-dispatch :unit
+            %{} 'TestEntry (:name |zero-width-repetition)
+              :code $ quote $ do
+                let
+                    empty-rule $ optional+ $ is+ |b
+                    check-error $ fn (f expected)
+                      try
+                        do (f) false
+                        fn (error)
+                          includes? (str error) expected
+                  assert= true $ check-error
+                    fn () $ find-lilac |a empty-rule
+                    , "|without consuming input"
+                  assert= true $ check-error
+                    fn () $ parse-lilac |a $ many+ empty-rule
+                    , "|without consuming input"
+                  assert= true $ check-error
+                    fn () $ parse-lilac |a $ some+ empty-rule
+                    , "|without consuming input"
+                  assert= true $ check-error
+                    fn () $ replace-lilac |a empty-rule $ fn (x) |z
+                    , "|without consuming input"
+                  assert= true $ check-error
+                    fn () $ parse-lilac |a $ interleave+ empty-rule empty-rule
+                    , "|without consuming input"
+                  assert= true $ .unwrap $ get
+                    parse-lilac |aaa $ interleave+ empty-rule $ is+ |a
+                    , :ok?
+              :tags $ #{} :parser-dispatch
         'parse-many $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn parse-many (xs0 rule)
             let
@@ -1286,7 +1319,7 @@
                     if
                       .unwrap-or (lilac-parser.util/get-field result :ok?) false
                       recur (&list:append acc result)
-                        lilac-parser.util/require-list $ .unwrap $ lilac-parser.util/get-field result :rest
+                        require-progress xs $ lilac-parser.util/require-list $ .unwrap (lilac-parser.util/get-field result :rest)
                       if (empty? acc)
                         {} (:ok? false) (:message "|no match") (:parser-node :many) (:peek-result result) (:rest xs)
                         {} (:ok? true)
@@ -1418,7 +1451,7 @@
                   if
                     .unwrap-or (get result-map :ok?) false
                     recur (&list:append acc result-map)
-                      lilac-parser.util/require-list $ .unwrap $ get result-map :rest
+                      require-progress xs $ lilac-parser.util/require-list $ .unwrap (get result-map :rest)
                     {} (:ok? true)
                       :value $ let
                           v $ map acc $ fn (x)
@@ -1501,7 +1534,7 @@
                     recur
                       str acc $ replacer $ lilac-parser.util/require-key attempt :value
                       append attempts attempt
-                      lilac-parser.util/require-list $ .unwrap $ lilac-parser.util/get-field attempt :rest
+                      require-progress content $ lilac-parser.util/require-list $ .unwrap (lilac-parser.util/get-field attempt :rest)
                       , rule replacer
                     recur (str acc c0) (append attempts attempt) cs rule replacer
           :examples $ []
@@ -1519,6 +1552,15 @@
             -> $ Map Tag ReplaceResultValue
             :generics Input
             :features :io :state
+        'require-progress $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn require-progress (before after)
+            if
+              < (.len after) (.len before)
+              , after $ raise "|Repeated parser succeeded without consuming input"
+          :examples $ []
+          :schema $ quote $ Fn (List T) (List T)
+            -> $ List T
+            :generics T
         'some+ $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn some+ (x & args)
             if (nil? x) (raise "|expected non-empty rule")

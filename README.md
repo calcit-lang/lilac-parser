@@ -17,6 +17,8 @@ existing parsing result rather than changing that parser.
 
 GUI 的正式 Respo 依赖已同步到兼容版本，具体版本见 `deps.cirru`；现有解析器 API 和结果格式不变。
 
+重复解析、查找或替换时，如果成功规则没有消耗输入，现在会报告错误，避免无限循环；交替规则允许单侧不消耗，但连续两侧均不消耗会报错。正常匹配的结果格式不变。
+
 ### 历史 / Calcit 0.35.1 与现代 Respo
 
 模块配对正式 CLI / `@calcit/procs` **0.35.1**，同步正式 Respo **0.19.4**、UI **0.15.1**、Reel **0.9.2**、Feather **0.6.2**、Alerts **0.13.1**，传递 Router **0.12.1** 与 JS-FFI **0.2.13**。消费者需整图升级、重新安装并生成 JS，不能与旧 Respo 0.18 混装。本候选源码版本仍为未发版的 **0.1.0**；本 PR 不发布 tag 或部署业务应用。
