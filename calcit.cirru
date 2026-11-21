@@ -565,9 +565,8 @@
           :schema $ quote UnionDef
         'ParseResult $ %{} 'CodeEntry
           :doc "|Schema alias for what a built-in rule returns: a Tag-keyed map with :ok?, :parser-node, :rest (remaining tokens) and, depending on the kind, :value, :message, :label, :result, :results, :peek-result or :previous-results. Fields may be present with nil; see docs/types.md."
-          :code $ quote $ def ParseResult ({})
+          :code $ quote $ deftype ParseResult (Map Tag Dynamic)
           :examples $ []
-          :schema $ quote $ Map Tag Dynamic
         'ReplaceResultValue $ %{} 'CodeEntry
           :doc "|Value of :result (replacement text) or :attempts (parser results) in the legacy replacement Map."
           :code $ quote $ defunion ReplaceResultValue String (List lilac-parser.core/ParseResult)
@@ -575,9 +574,8 @@
           :schema $ quote UnionDef
         'Rule $ %{} 'CodeEntry
           :doc "|Schema alias for a parser rule: a Tag-keyed map whose :parser-node names the rule kind (:is, :one-of, :other-than, :optional, :many, :some, :or, :combine, :interleave, :label, :unicode-range, :component, or a tag registered with register-custom-rule!). Other fields depend on the kind; see docs/types.md."
-          :code $ quote $ def Rule ({})
+          :code $ quote $ deftype Rule (Map Tag Dynamic)
           :examples $ []
-          :schema $ quote $ Map Tag Dynamic
         'char-set-includes? $ %{} 'CodeEntry
           :doc "|Whether token `x` is one of the candidates in a CharSet."
           :code $ quote $ defn char-set-includes? (items x)
@@ -1513,7 +1511,7 @@
             :features :io :state
         'replace-lilac $ %{} 'CodeEntry
           :doc "|Replaces every match of rule in content with (replacer value). Returns {:result String, :attempts (List ParseResult)}."
-          :code $ quote $ defn replace-lilac (content rule replacer) (echo |calling)
+          :code $ quote $ defn replace-lilac (content rule replacer)
             replace-iter | ([]) (lilac-parser.util/input-list content) rule replacer
           :examples $ []
           :schema $ quote $ Fn Input Rule

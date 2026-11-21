@@ -7,7 +7,7 @@ Lilac Parser 的规则和解析结果都是普通的 Tag 键 Map，不是 Struct
 | `lilac-parser.core/Rule` | `Map Tag Dynamic` | 规则，由 `is+`、`many+` 等构造函数返回 |
 | `lilac-parser.core/ParseResult` | `Map Tag Dynamic` | 内置规则的解析结果 |
 
-别名只是名字，不做运行时包装，字段值仍然是 Dynamic。检查器能证明的是“这是一个以 Tag 为键的 Map”，字段本身的类型由下面的约定保证。
+`Rule` 和 `ParseResult` 通过 `deftype` 声明类型别名，不再是值为 `{}` 的普通定义；若调用方曾把这两个名字作为运行时空 Map 使用，应改为直接创建空 Map。别名不做运行时包装，字段值仍然是 Dynamic。检查器能证明的是“这是一个以 Tag 为键的 Map”，字段本身的类型由下面的约定保证。 Calcit 0.44.0 对旧值式别名与等价 `deftype` 的双向类型关系可能误报；下游若保留自己的旧别名，可迁移到 `deftype` 或等待 [calcit#2884](https://github.com/calcit-lang/calcit/issues/2884) 的修复发版。
 
 ## 输入
 
