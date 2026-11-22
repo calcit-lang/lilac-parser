@@ -17,6 +17,8 @@ existing parsing result rather than changing that parser.
 
 GUI 的正式 Respo 依赖已同步到兼容版本，具体版本见 `deps.cirru`；现有解析器 API 和结果格式不变。
 
+GUI 的 `dispatch-op` 类型槽绑定具名 `Op`，Prompt 状态事件由 Calcit 生成对应的具名操作；旧的 `DispatchOp` 定义保留，兼容受检入口仍可读取旧事件。
+
 重复解析、查找或替换时，如果成功规则没有消耗输入，现在会报告错误，避免无限循环；交替规则允许单侧不消耗，但连续两侧均不消耗或剩余输入变长会报错。正常匹配的结果格式不变。
 
 ### 历史 / Calcit 0.35.1 与现代 Respo

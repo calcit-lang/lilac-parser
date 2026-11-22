@@ -6,7 +6,7 @@
     :default $ {} (:description |) (:init-fn 'lilac-parser.main/main!) (:mode :js) (:reload-fn 'lilac-parser.main/reload!) (:target :browser)
       :feature-policy $ {}
       :modules $ [] |respo.calcit/ |respo-ui.calcit/ |reel.calcit/ |alerts.calcit/ |respo-feather.calcit/
-      :type-slots $ {} $ :dispatch-op 'lilac-parser.schema/DispatchOp
+      :type-slots $ {} $ :dispatch-op 'lilac-parser.schema/Op
     :test $ {} (:description |) (:init-fn 'lilac-parser.test/main!) (:mode :native) (:reload-fn 'lilac-parser.test/reload!) (:target :native)
       :feature-policy $ {}
       :modules $ []
